@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:workflow xmlns:ns2="http://vmware.com/vco/workflow" root-name="item2" object-name="workflow:name=generic" id="fc531682-a72e-417c-9961-c68b1edeca9e" editor-version="2.0" version="0.0.0" api-version="6.0.0" restartMode="1" resumeFromFailedMode="0">
+    <display-name>Add Additional Disk</display-name>
+    <position y="50.0" x="100.0"/>
+    <input>
+        <param name="vm" type="VC:VirtualMachine">
+            <description>Virtual machine to which to add the disk</description>
+        </param>
+    </input>
+    <output/>
+    <attrib name="datastore" type="VC:Datastore">
+        <value encoded="n"/>
+        <description>Datastore in which to put the virtual disk file</description>
+    </attrib>
+    <attrib name="diskIndex" type="number">
+        <value encoded="n"/>
+        <description>Disk index</description>
+    </attrib>
+    <attrib name="diskSize" type="number">
+        <value encoded="n"/>
+        <description>Disk size (in GB)</description>
+    </attrib>
+    <attrib name="diskMode" type="VC:VirtualDiskMode">
+        <value encoded="n"/>
+        <description>Disk persistence mode</description>
+    </attrib>
+    <attrib name="scsiBusNumber" type="number">
+        <value encoded="n"/>
+        <description>SCSI controller bus number</description>
+    </attrib>
+    <attrib name="thinProvisioned" type="boolean">
+        <value encoded="n">false</value>
+        <description>Use thin provisioning?</description>
+    </attrib>
+    <attrib name="var_0" type="VC:VirtualMachine">
+        <value encoded="n"/>
+    </attrib>
+    <workflow-item name="item0" type="end" end-mode="0" comparator="0">
+        <in-binding/>
+        <out-binding/>
+        <position y="50.0" x="460.0"/>
+    </workflow-item>
+    <workflow-item name="item2" out-name="item0" type="task" comparator="0">
+        <display-name>Scriptable task</display-name>
+        <script encoded="false">var datastores = vm.datastore
+var var_0 = vm
+</script>
+        <in-binding>
+            <bind name="vm" type="VC:VirtualMachine" export-name="vm"/>
+        </in-binding>
+        <out-binding>
+            <bind name="datastore" type="VC:Datastore" export-name="datastore"/>
+            <bind name="var_0" type="VC:VirtualMachine" export-name="var_0"/>
+        </out-binding>
+        <description>Simple task with custom script capability.</description>
+        <position y="50.0" x="240.0"/>
+    </workflow-item>
+</ns2:workflow>
