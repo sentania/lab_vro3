@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="6661f7ad-5d0a-4bb3-82e8-406c53be1895" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[get Properties]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="virtualMachine" type="vCAC:VirtualMachine">
+      <description><![CDATA[Virtual machine to get properties from]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="actionResult" type="Properties"/>
+  </output>
+  <attrib name="host" type="vCAC:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='b9c69cb3-e162-4919-be78-4fe8347bc925'&dunesName='vCAC:VCACHost']]></value>
+    <description><![CDATA[vCloud Automation Center host]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task" script-module="com.vmware.library.vcac/getPropertiesFromVirtualMachine">
+    <display-name><![CDATA[getPropertiesFromVirtualMachine]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.vmware.library.vcac").getPropertiesFromVirtualMachine(host,virtualMachine) ;]]></script>
+    <in-binding>
+      <bind name="host" type="vCAC:VCACHost" export-name="host">
+        <description><![CDATA[vCloud Automation Center host]]></description>
+      </bind>
+      <bind name="virtualMachine" type="vCAC:VirtualMachine" export-name="virtualMachine">
+        <description><![CDATA[Virtual machine to get properties from]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="Properties" export-name="actionResult"/>
+    </out-binding>
+    <description><![CDATA[Gets properties from a virtual machine entity.]]></description>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="virtualMachine">
+      <desc><![CDATA[Virtual machine to get properties from]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

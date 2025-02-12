@@ -1,0 +1,356 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="ucpCreateReservation" result-type="void" api-version="6.0.0" id="74a721ee-abf6-40b8-ae27-3e5a7ba5d20e" version="0.0.1" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="businessGroupName" t="string"/>
+  <param n="iaasHost" t="vCAC:VCACHost"/>
+  <param n="reservationName" t="string"/>
+  <param n="memorySize" t="string"/>
+  <param n="storageSize" t="string"/>
+  <param n="reservationPolicyName" t="string"/>
+  <param n="allocatedStoragePathLabel" t="string"/>
+  <param n="computeResourceName" t="string"/>
+  <param n="networkNameFRK" t="string"/>
+  <param n="networkProfileFRK" t="string"/>
+  <param n="cafeHost" t="vCACCAFE:VCACHost"/>
+  <param n="networkNameMKE" t="string"/>
+  <param n="networkProfileMKE" t="string"/>
+  <script encoded="false"><![CDATA[/***************************************
+* Create a Reservation   *
+/***************************************
+* Input parameters:
+---------------------
+* String reservationPolicyName
+* Attributes parameters
+-------------------------
+* String allocatedStoragePathLabel
+* String businessGroupName
+* String computeResourceName
+* String networkNameFRK
+* String networkProfileFRK
+* String reservationName
+* String eSXIHostName
+* String resourcePoolName
+* vCAC:vCACHost iaasHost
+* vCACCAFE:VCACHost cafeHost
+* Integer memorySize
+* Integer storageSize
+****************************************
+*/
+
+var tenantName = cafeHost.tenant;
+computeResourceName = getCaseSensitiveComputeResourceName(iaasHost, computeResourceName);
+System.log(tenantName);
+var cafeReservation = getReservationForComputeResource(cafeHost, computeResourceName);
+if(cafeReservation == null){
+var reservationTypeId = "Infrastructure.Reservation.Virtual.vSphere";
+//var allocatedMemorySize = getComputeResourceMemorySize(iaasHost, computeResourceName);
+//var allocatedStorageSize = getStorageFullSize(iaasHost, allocatedStoragePathLabel);
+
+// Client and Services
+var cafeReservationClient = cafeHost.createReservationClient();
+var reservationService = cafeReservationClient.getReservationReservationService();
+var businessGroup = getBusinessGroupByName(cafeHost, businessGroupName)
+var businessGroupID = businessGroup.getId();
+
+// Reservation Specification
+cafeReservation = new vCACCAFEReservation();
+cafeReservation.setName(reservationName);
+cafeReservation.setTenantId(tenantName);
+cafeReservation.setSubTenantId(businessGroupID);
+cafeReservation.setPriority(1);
+var reservationPolicyId = getReservationPolicyIdByPolicyName(iaasHost, reservationPolicyName)
+cafeReservation.setReservationPolicyId(reservationPolicyId);
+cafeReservation.setEnabled(true);
+cafeReservation.setReservationTypeId(reservationTypeId);
+
+// Reservation Arets
+var alertPrecentageDefaultValue = 80
+var reservationAlertPolicy = new vCACCAFEAlertPolicy()
+reservationAlertPolicy.setEnabled(true);
+reservationAlertPolicy.setEmailBgMgr(true);
+
+var storageAlert = new vCACCAFEAlert();
+storageAlert.setAlertPercentLevel(alertPrecentageDefaultValue);
+storageAlert.setReferenceResourceId("storage")
+
+var memoryAlert = new vCACCAFEAlert();
+memoryAlert.setAlertPercentLevel(alertPrecentageDefaultValue);
+memoryAlert.setReferenceResourceId("memory")
+
+var cpuAlert = new vCACCAFEAlert();
+cpuAlert.setAlertPercentLevel(alertPrecentageDefaultValue);
+cpuAlert.setReferenceResourceId("cpu")
+
+var machineAlert = new vCACCAFEAlert();
+machineAlert.setAlertPercentLevel(alertPrecentageDefaultValue);
+machineAlert.setReferenceResourceId("machine")
+
+System.getModule("com.vmware.library.vcaccafe.util").addElementToList(reservationAlertPolicy,"getAlerts", storageAlert);
+System.getModule("com.vmware.library.vcaccafe.util").addElementToList(reservationAlertPolicy,"getAlerts", memoryAlert);
+System.getModule("com.vmware.library.vcaccafe.util").addElementToList(reservationAlertPolicy,"getAlerts", cpuAlert);
+System.getModule("com.vmware.library.vcaccafe.util").addElementToList(reservationAlertPolicy,"getAlerts", machineAlert);
+cafeReservation.setAlertPolicy(reservationAlertPolicy);
+
+// Set Extension Data
+var computeResourceLiteral = buildComputeResource(iaasHost, computeResourceName);
+var machineQuota = new vCACCAFEIntegerLiteral(0);
+var memoryToAllocateLiteral =  buildMemoryLiteral(memorySize);
+var storageReservationPathLiteral = buildReservationStorageMultiLiteral(iaasHost, computeResourceName, allocatedStoragePathLabel, 0, storageSize);
+var networkLiteral = buildNetworksMultiLiteral(iaasHost,computeResourceName, networkNameFRK, networkProfileFRK);
+//var networkLiteralMKE = buildNetworksMultiLiteral(iaasHost,computeResourceName, networkNameMKE, networkProfileMKE);
+
+
+var extData = new vCACCAFELiteralMap();
+extData.put("computeResource", computeResourceLiteral);
+extData.put("machineQuota", machineQuota);
+extData.put("reservationMemory", memoryToAllocateLiteral);
+extData.put("reservationStorages", storageReservationPathLiteral);
+//extData.put("reservationNetworks", networkLiteralMKE);
+extData.put("reservationNetworks", networkLiteral);
+
+cafeReservation.setExtensionData(extData);
+reservationService.createReservation(cafeReservation);
+cafeReservation = getReservationByName(cafeHost, reservationName);
+System.log("Reservation with name " + reservationName + " created successfully.")
+}
+
+//--------------------------------------------------
+function getCaseSensitiveComputeResourceName(infrastructureHost, targetComputeResourceName){
+var modelName = 'ManagementModelEntities.svc';
+var entitySetName = "Hosts";
+var computeResourceEntities = vCACEntityManager.readModelEntitiesByCustomFilter(infrastructureHost.id, modelName, entitySetName, null, null);
+for each(var computeResourceEntity in computeResourceEntities){
+var caseSensitiveComputeResourceName = computeResourceEntity.getProperty("HostName");
+if(caseSensitiveComputeResourceName.toUpperCase() == targetComputeResourceName.toUpperCase()){
+return caseSensitiveComputeResourceName;
+}
+}
+throw("No compute resource with name " + targetComputeResourceName + " was found");
+}
+
+function getReservationForComputeResource(tenantCafeHost, computeResource){
+System.log("Search for reservation for compute resource " + computeResource);
+var reservationClient = tenantCafeHost.createReservationClient();
+var reservationService = reservationClient.getReservationReservationService();
+var tenantReservationPagedResources = reservationService.getAllReservations(null);
+var targetReservation;
+
+for each(var reservation in tenantReservationPagedResources.getContent()){
+var extensionData = reservation.getExtensionData();
+var reservationComputeResource = extensionData.get("computeResource").getLabel();
+System.log("reservation " + reservation.name);
+System.log("computeResource " + reservationComputeResource);
+}
+return targetReservation;
+}
+
+function getReservationByName(tenantCafeHost, name){
+System.log("Search for reservation with name " + name);
+var reservationClient = tenantCafeHost.createReservationClient();
+var reservationService = reservationClient.getReservationReservationService();
+var tenantReservationPagedResources = reservationService.getAllReservations(null);
+
+for each(var reservation in tenantReservationPagedResources.getContent()){
+System.log("Reservation " + reservation.getName())
+if(reservation.getName().toLowerCase() == name.toLowerCase()){
+return reservation;
+}
+}
+return null;
+}
+
+function getReservationPolicyIdByPolicyName(vcacHost, policyName){
+var reservationPolicyEntity = getInfrastructureManagementModelEntityByProperty(vcacHost, "HostReservationPolicies", "name", policyName);
+var policyId = null;
+if(reservationPolicyEntity != null){
+System.log("Reservation policy with name  " + policyName + " found.");
+policyId = reservationPolicyEntity.getProperty("id");
+}
+return policyId;
+}
+
+function getBusinessGroupByName(cafehost, groupName){
+var groups = vCACCAFEEntitiesFinder.getSubtenants(cafeHost);
+for each(var group in groups){
+if(group.getName() == groupName){
+return group;
+}
+}
+throw "Business group with name " + groupName + " was not found"
+}
+
+function buildComputeResource(vcacHost, computeResource){
+var id = getComputeResourceIdByComputeResourceName(vcacHost, computeResource);
+System.log("Compute Resource with properties: name= " + computeResource + " / id= " + id + " found.")
+var componentId = null;
+var classId = "ComputeResource";
+var entityReference = new vCACCAFEEntityReference(componentId, classId, id, computeResource) ;
+System.log("buildComputeResource successful");
+return entityReference;
+}
+
+function getComputeResourceIdByComputeResourceName(vcacHost, resourceName){
+var computeResourceEntity = getInfrastructureManagementModelEntityByProperty(vcacHost, "Hosts", "HostName", resourceName);
+if(computeResourceEntity != null){
+System.log("Compute Resource with name  " + resourceName + " found.");
+}else{
+System.log("Compute Resource with name" + resourceName + " not found.");
+}
+return computeResourceEntity.getProperty("HostID");;
+}
+
+function buildMemoryLiteral(memoryReservedSize){
+var literalMap = new vCACCAFELiteralMap() ;
+literalMap.put("memoryReservedSizeMb", new vCACCAFEIntegerLiteral(memoryReservedSize));
+var componentTypeId = "com.vmware.csp.iaas.blueprint.service";
+var componentId = null
+var classId = "Infrastructure.Reservation.Memory";
+var typeFilter = null;
+var memoryLiteral = new vCACCAFEComplexLiteral(componentTypeId , componentId , classId , typeFilter, literalMap);
+return memoryLiteral;
+}
+
+function buildComplexStoragePathLiteral(vcacHost, computeResourceHostName, storagePathLabel, storageReservationPrio, sizeGB){
+var literalMap =  new vCACCAFELiteralMap();
+literalMap.put("storagePath", getStoragePathEntityReferenceLiteral(vcacHost, computeResourceHostName, storagePathLabel));
+literalMap.put("storageReservationPriority", new vCACCAFEIntegerLiteral(storageReservationPrio)) ;
+literalMap.put("storageReservedSizeGB", new vCACCAFEIntegerLiteral(sizeGB));
+literalMap.put("storageEnabled", vCACCAFEBooleanLiteral.fromBoolean(true)) ;
+var componentTypeId = "com.vmware.csp.iaas.blueprint.service";
+var componentId = null;
+var classId = "Infrastructure.Reservation.Storage";
+var typeFilter = null;
+var storagePathComplexLiteral = new vCACCAFEComplexLiteral(componentTypeId, componentId, classId, typeFilter, literalMap);
+return storagePathComplexLiteral;
+}
+
+function buildReservationStorageMultiLiteral(vcacHost, computeResourceHostName, storagePathLabel, storageReservationPrio, sizeGB){
+var storagePathLiteralMap = buildComplexStoragePathLiteral(vcacHost, computeResourceHostName, storagePathLabel, storageReservationPrio, sizeGB);
+var complexArray =  new Array();
+complexArray.push(storagePathLiteralMap);
+var typeID = vCACCAFEDataTypeId.valueOf("COMPLEX") ;
+var multiLiteral = new vCACCAFEMultipleLiteral(complexArray, typeID);
+System.log("buildReservationStorage successful")
+return  multiLiteral;
+}
+
+function getStoragePathEntityReferenceLiteral(vcacHost, computeResourceHostName, computeResource){
+var id = getStoragePathIdByStoragePathLabel(vcacHost, computeResourceHostName, computeResource);
+System.log("Storage Path ID " + id)
+var componentId = null;
+var classId = "Storage";
+var entityReference = new vCACCAFEEntityReference(componentId, classId, id, computeResource);
+return entityReference;
+}
+
+function getStoragePathIdByStoragePathLabel(vcacHost, computeResourceHostName, storagePathLabel){
+var hostToStorages = getInfrastructureManagementModelEntitiesByProperty(vcacHost, "HostToStorage", "StoragePath", storagePathLabel);
+var hostToStorage = null;
+for each(var hostToStorageEntity in hostToStorages){
+var host = hostToStorageEntity.getLink(vcacHost, "Host")[0];
+if(host.getProperty("HostName") == computeResourceHostName){
+hostToStorage = hostToStorageEntity;
+break;
+}
+}
+
+if(hostToStorage != null){
+System.log("Storage with storage path " + hostToStorage.getProperty("StoragePath") + " found.");
+}else{
+System.log("Storage with storage path " + storagePath + " not found.");
+}
+return hostToStorage.getProperty("HostToStorageID");
+}
+
+function buildComplexNetworkLiteral(vcacHost, computeResourceHostName, netLabel, netProfileLabel){
+var literalMap =  new vCACCAFELiteralMap();
+literalMap.put("networkPath", getNetworkPathEntityReference(vcacHost, computeResourceHostName, netLabel));
+literalMap.put("networkProfile", getNetworkProfileEntityReference(vcacHost, netProfileLabel));
+var componentTypeId = "com.vmware.csp.iaas.blueprint.service";
+var componentId = null;
+var classId = "Infrastructure.Reservation.Network";
+var typeFilter = null;
+return new vCACCAFEComplexLiteral(componentTypeId, componentId, classId, typeFilter, literalMap);
+}
+
+function buildNetworksMultiLiteral(vcacHost, computeResourceHostName, netLabel, netProfileLabel){
+var complexNetworkLiteral = buildComplexNetworkLiteral(vcacHost, computeResourceHostName, netLabel, netProfileLabel);
+var complexArray =  new Array();
+complexArray.push(complexNetworkLiteral);
+var typeID = vCACCAFEDataTypeId.valueOf("COMPLEX") ;
+var networkMultiLiteral = new vCACCAFEMultipleLiteral(complexArray, typeID);
+System.log("buildNetworkLiteral successful")
+return  networkMultiLiteral;
+}
+
+function getNetworkPathEntityReference(vcacHost, computeResourceHostName, netLabel){
+var id = getNetworkId(vcacHost, netLabel, computeResourceHostName);
+System.log("Network ["+netLabel+"] id = " + id);
+var componentId = null;
+var classId = "Network";
+var entityReference = new vCACCAFEEntityReference(componentId, classId, id, netLabel);
+return entityReference;
+}
+
+function getNetworkProfileEntityReference(vcacHost, netProfileLabel){
+var id = getNetworkProfileIdByLabel(vcacHost, netProfileLabel);
+var entityReference =null;
+if(id){
+var componentId = null;
+var classId = "NetworkProfile";
+entityReference = new vCACCAFEEntityReference(componentId, classId, id, netProfileLabel);
+}
+return entityReference;
+}
+
+function getNetworkId(vcacHost, netLabel, computeResourceHostName){
+var networks = getInfrastructureManagementModelEntitiesByProperty(vcacHost, "HostNics", "HostNicName", netLabel);
+var resultNetwork = null;
+for each(var network in networks){
+var host = network.getLink(vcacHost, "Host")[0];
+var hostName = host.getProperty("HostName");
+if(hostName.toLowerCase() == computeResourceHostName.toLowerCase()){
+resultNetwork = network;
+break;
+}
+}
+
+if(resultNetwork == null){
+throw("No network with name [" + netLabel + "] was found for compute resource [" + computeResourceHostName +"]");
+}
+return resultNetwork.getProperty("HostNicID");
+}
+
+function getNetworkProfileIdByLabel(vcacHost, netProfileLabel){
+var networkProfileFRK = getInfrastructureManagementModelEntityByProperty(vcacHost, "StaticIPv4NetworkProfiles", "StaticIPv4NetworkProfileName", netProfileLabel);
+var id = null;
+if(networkProfileFRK != null){
+System.log("Netowork profile with name " + netProfileLabel + " found.");
+id = networkProfileFRK.getProperty("ID");
+}else{
+System.log("Netowork profile with name " + netProfileLabel + " not found.");
+}
+return id;
+}
+
+function getInfrastructureManagementModelEntitiesByProperty(vcacHost, entityType, propertyName, propertyValue){
+var modelName = 'ManagementModelEntities.svc';
+var entitySetName = entityType;
+var inputProperties = new Properties();
+inputProperties.put(propertyName, propertyValue );
+return vCACEntityManager.readModelEntitiesByCustomFilter(vcacHost.id, modelName, entitySetName, inputProperties, null);
+}
+
+function getInfrastructureManagementModelEntityByProperty(vcacHost, entityType, propertyName, propertyValue){
+var modelName = 'ManagementModelEntities.svc';
+var entitySetName = entityType;
+var inputProperties = new Properties();
+inputProperties.put(propertyName, propertyValue);
+return getInfrastructureManagementModelEntitiesByProperty(vcacHost, entityType, propertyName, propertyValue)[0];
+}
+
+ function getInfrastructureManagementModelEntities(vcacHost, entityType, inputProperties){
+var modelName = 'ManagementModelEntities.svc';
+var entitySetName = entityType;
+return vCACEntityManager.readModelEntitiesByCustomFilter(vcacHost.id, modelName, entitySetName, inputProperties, null);
+}]]></script>
+</dunes-script-module>

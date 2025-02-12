@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="get_utan_test" result-type="string" api-version="6.0.0" id="51216a6a-5662-463c-aa12-b0fc4400a345" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="UUTAN" t="string"/>
+  <script encoded="false"><![CDATA[if(UUTAN != null){
+var PublishDate = new Array();
+	var getHosts = Server.findAllForType("REST:RESTOperation")
+	for(var i =0; i < getHosts.length ; i++){
+		if(getHosts[i].name == "Unified Compute etcd GET"){
+			var R = getHosts[i]
+				System.log("name - " + R.name)
+			}
+	
+	}
+	//content = UTAN + '?recursive=true';
+      content = "/externalData/iAmpData/"+ UUTAN+ "/name";
+	//content = "/unifiedcompute/servers/ucpadmin01334/location"
+	var inParamtersValues = [content];
+	EtcdRestOperation = R
+	var request = EtcdRestOperation.createRequest(inParamtersValues);
+	request.contentType = "application\/json";
+	System.log("Request: " + request);
+	System.log("Request URL: " + request.fullUrl);
+	var response = request.execute();
+	statusCode = response.statusCode;
+	statusCodeAttribute = statusCode;
+	System.log(statusCodeAttribute + "Query Status Code")
+	headers = response.getAllHeaders();
+	contentAsString = response.contentAsString;
+	System.log("Content as string: " + contentAsString);
+	var currentStatus = JSON.parse(contentAsString)
+	
+	if(statusCodeAttribute == 404){
+		System.log("Utan not found")
+		return "UTAN Number not found, Please Enter a Valid UTAN Number"
+	 }else{
+			var Utan_App_Name = []
+			System.log(currentStatus.node.value)
+			System.log(currentStatus.node.key)
+            Utan_App_Name = currentStatus.node.value
+			return  Utan_App_Name
+		  }
+}
+
+
+
+/*
+else{
+		return "Please enter a valid UTAN Number"
+
+}
+
+*/
+
+
+
+
+
+
+
+
+
+]]></script>
+</dunes-script-module>

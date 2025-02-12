@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getAdComputerByName" result-type="AD:ComputerAD" api-version="6.0.0" id="6472b484-93f4-4775-9915-3e1e87a0e5a3" version="1.0.0" allowed-operations="evf" category-name="com.thinkahead.activedirectory">
+  <description><![CDATA[Returns an AD Computer object for the specified computer name.
+
+Be sure you've run the "Configure Active Directory plug-in options" workflow and set a default AD Server.]]></description>
+  <param n="computerName" t="string"><![CDATA[The name of the Computer object to find in AD]]></param>
+  <param n="adHost" t="AD:AdHost"><![CDATA[Active Directory Host]]></param>
+  <script encoded="false"><![CDATA[var computerObj = ActiveDirectory.getComputerAD(computerName,adHost);
+
+//Validate results
+if (!computerObj) { throw "Unable to find a Computer object in AD for '" + computerName + "'"; }
+System.debug("Retrieved AD Computer object for '" + computerName + "'");
+
+return computerObj;]]></script>
+</dunes-script-module>

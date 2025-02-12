@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getReclaimableMemMultiple" result-type="number" api-version="6.0.0" id="faea69c2-81c0-474e-8f37-ff8de26f64bf" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp">
+  <param n="server" t="Array/string"/>
+  <script encoded="false"><![CDATA[//Getting vrops Rest Host
+var getHosts = Server.findAllForType("REST:RESTHost")
+for(var i =0; i < getHosts.length ; i++){
+	if(getHosts[i].name == "vROPs"){
+		var R = getHosts[i]
+			System.log("Rest Host Name - " + R.name)
+		}
+}
+
+//Getting vrops username/password from configuration element
+var vropsElement = [];
+var ConfigElCategory = Server.getConfigurationElementCategoryWithPath("UCP");
+var configEls = ConfigElCategory.allConfigurationElements;
+	for(element in configEls) {
+		if(configEls[element].name == "vROPs") {
+			vropsElement = configEls[element];
+		}
+	}
+if(vropsElement.getAttributeWithKey("vropsUser") != null) {
+	var userName = vropsElement.getAttributeWithKey("vropsUser");
+	var userPass = vropsElement.getAttributeWithKey("vropsPass");
+}
+
+
+// variable that contains JSON string required for Token Request
+var tokenJSON = "{\"username\":\""+userName.value+"\",\"password\":\""+userPass.value+"\",\"others\":[],\"otherAttributes\":{}}"
+
+//variable required for post Function
+var content = tokenJSON
+var url = "suite-api/api/auth/token/acquire";
+
+//Token Request
+var output = postNoToken(url,content);
+var outputJSON = JSON.parse(output);
+var vropsToken = outputJSON.token;
+System.log("The vROps Token is: " +vropsToken);
+for each (var s in server){
+//Get ID
+url = "suite-api/api/resources?name="+server+"&resourceKind=virtualmachine"
+var output = get(url,server);
+var outputJSON = JSON.parse(output);
+var vmid = outputJSON.resourceList[0].identifier
+System.log("ID = "+ vmid)
+
+	
+//Get Reclaimable Memory
+url = encodeURI("suite-api/api/resources/stats/latest?resourceId="+vmid+"&statKey=summary|oversized|memory")
+var output = get(url,server);
+var outputJSON = JSON.parse(output);
+var mem = outputJSON.values[0]["stat-list"].stat[0].data[0]
+if (mem == "0" || mem == null){mem = "0"}
+var rmem = mem/1024
+System.log("Reclaimable memory = "+ rmem)
+return rmem
+}
+//		*****FUNCTIONS*****
+function post (link,content) {
+  var request = R.createRequest("POST",link,content);
+  request.setHeader("accept","application/JSON");
+  request.setHeader("Authorization", "vRealizeOpsToken " +vropsToken);  
+  request.setHeader("Content-Type","application/JSON");
+
+  var response = request.execute();
+  statusCode = response.statusCode;
+  return response.contentAsString;
+}
+
+function postNoToken (link,content) {
+  var request = R.createRequest("POST",link,content);
+  request.setHeader("accept","application/JSON"); 
+  request.setHeader("Content-Type","application/JSON");
+
+  var response = request.execute();
+  statusCode = response.statusCode;
+  return response.contentAsString;
+}
+
+function get (link,content) {
+  var request = R.createRequest("GET",link,content);
+  request.setHeader("accept","application/JSON");
+  request.setHeader("Authorization", "vRealizeOpsToken " +vropsToken);  
+  request.setHeader("Content-Type","application/JSON");
+
+  var response = request.execute();
+  statusCode = response.statusCode;
+
+  return response.contentAsString;
+}
+]]></script>
+</dunes-script-module>

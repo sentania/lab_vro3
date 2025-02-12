@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getAliasesFromHostRecordByIP" result-type="Array/string" api-version="6.0.0" id="73e78f1c-6b4d-4a06-b4da-3ae4a39cc538" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="ipAddress" t="string"/>
+  <script encoded="false"><![CDATA[var ipamConnection = System.getModule("com.infoblox.ipam").getDefaultIpamConnection();
+var networkView = "default";
+var hostManager = ipamConnection.getHostManager();
+var result = hostManager.findHostsByIP(ipAddress, networkView);
+var effectiveNetworkView = networkView ? "network view [" + networkView + "]" : "default network view";
+
+if (result.length == 0) {
+	throw "The host record with IP address [" + ipAddress + "] was not found in " + effectiveNetworkView + "."
+}
+
+if (result.length > 1) {
+	throw "More than one host records with IP address [" + ipAddress + "] were found in " + effectiveNetworkView + ".";
+}
+
+var refInfo = ReferenceInfo.parse(result[0].reference);
+var aliases = result[0].aliases;
+System.log("The host record [" + refInfo.description + "] was found by IP address [" + ipAddress + "] in " + effectiveNetworkView + ".");
+
+return aliases;]]></script>
+</dunes-script-module>

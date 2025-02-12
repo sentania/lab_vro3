@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<config-element id="49ee40b8-06c5-40c5-9b9b-fd0861407450" version="0.0.0">
+  <display-name><![CDATA[Infoblox]]></display-name>
+  <atts>
+    <att name="restHost" type="REST:RESTHost" read-only="false">
+      <value encoded="n"><![CDATA[__NULL__]]></value>
+      <description><![CDATA[Infoblox REST host]]></description>
+    </att>
+  </atts>
+</config-element>

@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_newMemoryDefinition" result-type="Properties" api-version="6.0.0" id="ec2ef75d-9802-4cb8-a06f-9a6d2cf89acc" version="0.0.1" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="memoryMb" t="number"/>
+  <script encoded="false"><![CDATA[var memoryMb = Math.round(memoryMb);
+
+var memoryDefinitionJsonString =	'{' + 
+										'"key": "reservationMemory",' + 
+										'"value": {' + 
+											'"type": "complex",' + 
+											'"componentTypeId": "com.vmware.csp.iaas.blueprint.service",' + 
+											'"componentId": null,' + 
+											'"classId": "Infrastructure.Reservation.Memory",' + 
+											'"typeFilter": null,' + 
+											'"values": {' + 
+												'"entries": [' + 
+													'{' +
+														'"key": "memoryReservedSizeMb",' + 
+														'"value": {' + 
+															'"type": "integer",' + 
+															'"value": ' +  memoryMb + 
+														'}' + 
+													'},' + 
+													'{' +
+														'"key": "computeResourceMemoryAllocatedTotalSizeMB",' + 
+														'"value": {' + 
+															'"type": "integer",' + 
+															'"value": 0' +
+														'}' + 
+													'},' + 
+													'{' +
+														'"key": "computeResourceMemoryReservedTotalSizeMB",' + 
+														'"value": {' + 
+															'"type": "integer",' + 
+															'"value": 0' +
+														'}' + 
+													'},' + 
+													'{' +
+														'"key": "computeResourceMemoryTotalSizeMB",' + 
+														'"value": {' + 
+															'"type": "integer",' + 
+															'"value": 0' +
+														'}' + 
+													'}' +
+												']' + 
+											'}' + 
+										'}' + 
+									'}'
+
+var memoryDefinition = JSON.parse(memoryDefinitionJsonString);
+
+return memoryDefinition;]]></script>
+</dunes-script-module>

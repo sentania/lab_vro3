@@ -1,0 +1,266 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="e50f529b-2841-4a48-8ace-1821845d2e89" version="0.0.20" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[VM_Lease_Expirationl_Notification]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <attrib name="tenant" type="string" read-only="false">
+    <value encoded="n"><![CDATA[vsphere.local]]></value>
+  </attrib>
+  <attrib name="password" type="SecureString" read-only="false">
+    <value encoded="n"><![CDATA[8BP6EN76N43U4CM40X49X7CJ31KBD459B5VFC04E8CQ95BEA50UE758170IDAB730N96BA10AZ240A6A2KDBBD900H5E491D4OBC94EFBI3B883D1HBDC9E93U25EA8A6T849A287O27D3C07TEE68C96KEFD7A9EL882211CP9D68D54R906FFD1S1D599CEQ66736D4S2F39759J8D9F14CO]]></value>
+  </attrib>
+  <attrib name="resthostUsername" type="string" read-only="false">
+    <value encoded="n"><![CDATA[vraconfig]]></value>
+  </attrib>
+  <attrib name="RestHost" type="REST:RESTHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='fb7471ca-6d77-45a8-998f-b5142c8d6362'&dunesName='REST:RESTHost']]></value>
+  </attrib>
+  <attrib name="Sessionid" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[function getdescription(vmname, tokenid, R){
+	var runrul1 = "/catalog-service/api/consumer/resources?" + '$filter=name+eq+%27'+ vmname +'%27'
+	var request1 = R.createRequest('GET',runrul1,null);
+	request1.setHeader("Authorization","Bearer " + tokenid );
+	request1.setHeader("Accept","application/json");
+	request1.setHeader("Content-Type","application/json");
+	request1.contentType = "application/json"
+	var response1 = request1.execute();
+	statusCode = response1.statusCode;
+	System.log("Status code: " + statusCode);
+	var contentAsString = response1.contentAsString;
+	var jsonContent = JSON.parse(contentAsString);
+	var items = jsonContent.content;
+	return items
+}
+
+
+var vcacHost = Server.findAllForType("vCAC:VCACHost")[1];  
+var BgList = Server.findAllForType("vCACCAFE:VCACHost")[0]
+var MODEL_MANAGEMENTMODELENTITIES = "ManagementModelEntities.svc";  
+var ENTITYSET_VIRTUALMACHINES = "VirtualMachines";  
+var virtualMachinesQueryProperties = new Properties();  
+var allVirtualMachineEntitiesList = vCACEntityManager.readModelEntitiesByCustomFilter(vcacHost.id, MODEL_MANAGEMENTMODELENTITIES, ENTITYSET_VIRTUALMACHINES, virtualMachinesQueryProperties, null);  
+
+
+function convertDate(date){
+ var parts = date.split(" ");
+ var months = {Jan: "01",Feb: "02",Mar: "03",Apr: "04",May: "05",Jun: "06",Jul: "07",Aug: "08",Sep: "09",Oct: "10",Nov: "11",Dec: "12"};
+ return months[parts[2]]+"-"+parts[1]+'-'+ parts[3]
+}
+
+function eMail(Content,vmName,Sub1, to){
+	var objEmail = new EmailMessage();
+	objEmail.fromAddress = 'DL-SDDC@northwesternmutual.com'
+	objEmail.fromName = 'DL-SDDC@northwesternmutual.com'
+	objEmail.smtpHost = 'hera.nml.com'
+	objEmail.smtpPort = 25
+ 	objEmail.toAddress = to
+	objEmail.bccAddress = "dineshsolaiappan@northwesternmutual.com"
+	objEmail.subject = (Sub1 + " - " + vmName)
+	objEmail.addMimePart(Content,"text/html; charset=UTF-8")
+	objEmail.sendMessage()
+}
+var text0 = "Team,"
+var space = "      "
+var text2 = 'https://video.nml.com/media/1_rg9e18vh' 
+var text3 = 'For Further Assistance, please contact DL-SDDC@northwesternmutual.com'
+var text4 = 'Thanks,'
+var text5 = "Unified Compute Platform Team"
+var text6 = "Slack - #unifiedcompute"
+var text7 = "Email: DL-SDDC@northwesternmutual.com"
+var text8 = "If the VM is no longer needed, Then please follow the below process to Decomission the VirtualMachine."
+var text9 = "https://confluence.nml.com/display/UCP/How+to+Decomission+a+Server+-+vRA"
+var text11 = "http://mutualnetdomino3.nml.com/stormgmt.nsf/frmAHSBR?openForm"
+
+//Date to Compare 
+var someDate = new Date();
+var numberOfDaysToAdd = 7;
+someDate.setDate(someDate.getDate() + numberOfDaysToAdd);
+var compareVmDate = System.formatDate(someDate, 'MM-dd-yyyy')
+System.log("Date compared against  - " + compareVmDate)
+var stupidjs = new Date(someDate)
+var today = new Date();
+System.log(today)
+// Actual VM Check Iteration
+for each(virtualMachine in allVirtualMachineEntitiesList){
+//System.log(virtualMachine)
+	   if(virtualMachine.getProperty("IsManaged") === true && virtualMachine.getProperty("IsTemplate") == false) {  
+			System.log("---------------------------------------------------------------")
+			var vmName = virtualMachine.getProperty("VirtualMachineName")
+			System.log("VirtualMachineName - " + vmName )
+			System.log(virtualMachine.getProperty("VirtualMachineID"))
+			var vmGuestOS = virtualMachine.getProperty("GuestOS")
+			//System.log("GuestOS - " + vmGuestOS)
+			var date = (virtualMachine.getProperty("Expires"))
+			var powerstate = (virtualMachine.getProperty("IsRunning"))
+			var ExtID = (virtualMachine.getProperty("ExternalReferenceID"))
+			System.log("My Ext Ref Id" + ExtID )
+			System.log("My Power " + powerstate)
+			System.log(date  + '   - date')
+			var dt = new Date(date)
+			var st = dt.toGMTString()
+			var VmExpiredate = convertDate(st)
+			System.log(VmExpiredate+ '   - vmexpire')
+			System.log(stupidjs + "--" + dt + "stupid and dt")
+			System.log(today + "--Today")
+			var Tempvalidate = " "
+			if(stupidjs > dt &&  dt > today){
+				Tempvalidate = true
+					var Sub = " is About to Expire, on " + date  
+					var Sub1 = "Lease Notification about VirtualMachine"
+				}else if (today > dt /*dt < today*/){
+					Tempvalidate = true
+					var Sub = " is in Archival Mode, which expired on " + date 
+					if(powerstate == false){
+							var Sub1 = "Lease Expired and VirtualMachine is in Powered Off State"
+					}else{
+							var Sub1 = "Lease Notification about VirtualMachine - Lease Expired"
+					}
+				}
+			if(Tempvalidate == true){
+				System.log("***************************************************************")
+				System.log("Compare With - "+stupidjs + " date - " +dt)
+				System.log("Am nearing dead Line - " + vmName )
+				System.log("My Dead line is - " +  VmExpiredate)
+				var vCACMachineEntityProperties = virtualMachine.getLink(vcacHost,"VirtualMachineProperties");
+				var vCACVmProperties = new Properties();
+				var vms = VcPlugin.getAllVirtualMachines(null, vmName);
+				if(vms != ''){
+					System.log(vms[0].name)
+					if(vms[0].name == vmName){
+					for each(customValue in vms[0].customValue){
+						var ax = null
+						var delta = customValue.value
+						var ax  = delta.match("VADP-UCP")
+						if(ax != null){
+							System.log("Bkup custom value - "+  customValue.value)
+							var Lbackup = customValue.value.split("-", 1)
+								System.log("My Last Backup date  - " +  Lbackup)
+							}
+						}
+					}
+				}else{
+					System.log("---------------VMS is NULL---------------")
+				}
+				
+				vmDescription = getdescription (vmName,Sessionid, RestHost )
+				x = JSON.stringify(vmDescription)
+				var desired = x.replace(new RegExp("\\" + ":", "gi"), "")
+				if(desired.match("ref")){
+					y =	desired.split("ref")[1]
+					a = y.split(",")[0]
+					b = a.replace(new RegExp("\\" + '"', "gi"), "")
+				 }
+				description = vmDescription.map(function(content){
+							return	content.description
+					 });
+					if(b == null){b = "NA"}
+					if(description == null){description = "NA"}
+				var text12 = "VM Description  -> " + description 
+				var text13 = "Requestor -> " + b
+				
+				if(Lbackup == null){Lbackup = "Unable to find the last backup date"}
+				var vCACMachineEntityProperties = virtualMachine.getLink(vcacHost,"VirtualMachineProperties");
+				var vCACVmProperties = new Properties();
+				var text10 = "Note: Last Available backup for the VM is on - " + Lbackup + ", if you would like to take a full-back before Decomissioning a VM, Please fill out the below request, Post success completion of the request follow the above process for Decomissioning a VM."
+				for each (var vCACMachineEntityProperty in vCACMachineEntityProperties) {
+					if(vCACMachineEntityProperty.getProperty("PropertyName") == "nm.ucp.BusinessGroupName"){
+							var BgName = vCACMachineEntityProperty.getProperty("PropertyValue")
+							System.log("Business Group - " + BgName )
+							var App_EmailDL_query = vCACCAFEEntitiesFinder.findBusinessGroups(BgList,BgName)
+							var App_EmailDL = App_EmailDL_query[0].administratorEmail 
+							System.log("Email ADmin DL -"+ App_EmailDL)
+							var text1 = "Virtual Machine " + vmName +  Sub + '. Please Extend the lease in VRA portal if VM is need for more time. Please refer the below link for how to change lease in the VRA Portal'
+							var Content =  text0 + '<br />' + '<br />' + text1 + '<br />'+'<br />' + text12 +'<br />'+'<br />'+ text13 +'<br />'+'<br />' + space + text2 + '<br />'+'<br />' + text8 + '<br />'+'<br />' + text9 +'<br />'+'<br />' + text10 + '<br />'+'<br />'+ text11 + '<br />'+'<br />' + text3 + '<br />'+'<br />' + text4 + '<br />'+ text5 +'<br />' + text6 + '<br />'+ text7 		  
+							//System.log(Content)
+							eMail(Content,vmName, Sub1,App_EmailDL)
+				    	}
+			  	   }
+			  }
+    	  }  
+
+}]]></script>
+    <in-binding>
+      <bind name="RestHost" type="REST:RESTHost" export-name="RestHost"/>
+      <bind name="Sessionid" type="string" export-name="Sessionid"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item1" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var getHosts = Server.findAllForType("REST:RESTHost")
+for(var i =0; i < getHosts.length ; i++){
+	if(getHosts[i].name == "vRA - myucp"){
+		var R = getHosts[i]
+			System.log("name - " + R.name)
+		}
+}
+R = RestHost
+var inParamtersValues = [tenant];
+var bodyJSON = new Object();
+bodyJSON.username 		= resthostUsername;
+bodyJSON.password 		= password;
+bodyJSON.tenant			= tenant
+bodyJSON.issueToken 	= "true";
+var body = JSON.stringify(bodyJSON);
+var acceptHeaders;
+var headerParams = [];
+var acceptHeadersValue = "";
+
+//Setting up the url for rest operation
+var runrul = "/identity/api/tokens"
+System.log(runrul)
+
+//Creating Execution request of rest call
+var request = R.createRequest('POST',runrul,body);
+request.setHeader("Accept","application/json");
+request.setHeader("Content-Type","application/json");
+request.contentType = "application/json"
+
+//Executing rest call and getting Token id
+var response = request.execute();
+statusCode = response.statusCode;
+System.log("Status code: " + statusCode);
+
+//Parsing output as Json
+var contentAsString = response.contentAsString;
+var jsonContent = JSON.parse(contentAsString);
+Sessionid = jsonContent.id;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></script>
+    <in-binding>
+      <bind name="tenant" type="string" export-name="tenant"/>
+      <bind name="password" type="SecureString" export-name="password"/>
+      <bind name="resthostUsername" type="string" export-name="resthostUsername"/>
+      <bind name="RestHost" type="REST:RESTHost" export-name="RestHost"/>
+    </in-binding>
+    <out-binding>
+      <bind name="Sessionid" type="string" export-name="Sessionid"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

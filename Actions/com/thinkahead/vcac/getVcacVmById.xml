@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getVcacVmById" result-type="vCAC:VirtualMachine" api-version="6.0.0" id="f19e9ce3-a21e-43aa-b308-de539c62ec40" version="1.0.0" allowed-operations="evf" category-name="com.thinkahead.vcac">
+  <description><![CDATA[Gets the vCAC Virtual Machine object for the specified vCAC Entity ID]]></description>
+  <param n="vcacEntityId" t="string"><![CDATA[vCAC Virtual Machine ID to find]]></param>
+  <script encoded="false"><![CDATA[//Search vRO for all vCAC virtual machine objects, match the specified entity ID
+var vcacVms = Server.findAllForType("vCAC:VirtualMachine", "VirtualMachineID eq guid'" + vcacEntityId + "'");
+
+//Error handling
+if(vcacVms === null || vcacVms.length == 0){
+	throw "Cannot find any vCAC VMs for the specified ID: '" + vcacEntityId + "'";
+}
+if (vcacVms.length > 1) {
+	System.warn("Multiple vCAC VM objects were found (" + vcacVms.length + ") in vRO for the "
+		+ "specified ID: '" + vcacEntityId + "'. This could be caused by duplicate vCAC plugin connections.");
+}
+
+//Return the first vCAC VM that was found.
+return vcacVms[0];]]></script>
+</dunes-script-module>

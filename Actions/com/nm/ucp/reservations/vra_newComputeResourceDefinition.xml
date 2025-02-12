@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_newComputeResourceDefinition" result-type="Properties" api-version="6.0.0" id="9778f4e2-e46a-404d-93cd-cf07a1f688a0" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="computeResourceId" t="string"/>
+  <param n="computeResourceLabel" t="string"/>
+  <script encoded="false"><![CDATA[var computeResourceDefinition = new Properties();
+
+computeResourceDefinition.key = "computeResource";
+
+var valueObject = new Properties();
+valueObject.type = "entityRef";
+valueObject.componentId = null;
+valueObject.classId = "ComputeResource";
+valueObject.id = computeResourceId;
+valueObject.label = computeResourceLabel;
+
+computeResourceDefinition.value = valueObject
+
+return computeResourceDefinition;]]></script>
+</dunes-script-module>

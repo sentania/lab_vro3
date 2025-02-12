@@ -1,0 +1,349 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item15" object-name="workflow:name=generic" id="7f7dcc2b-677a-4041-8bb6-8fe5040e658c" version="1.0.2" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Run Program in guest and wait]]></display-name>
+  <description><![CDATA[Starts a program in the guest operating system, and waits for it to finish.
+Outputs the program's exit code, but doesn't capture its output text.
+
+Notes: 
+A) This is a much simpler workflow than COE's "Run Script in Guest" which comes with the Guest Script Manager.  However, it doesn't capture output text like that workflow does.
+B) If you get a "Permission to perform this operation was denied" error, try adding the global Administrator role in vCenter to the vCenter plug-in's service account.]]></description>
+  <position y="63.59090909090908" x="125.0"/>
+  <input>
+    <param name="vm" type="VC:VirtualMachine">
+      <description><![CDATA[Virtual machine]]></description>
+    </param>
+    <param name="interactiveSession" type="boolean">
+      <description><![CDATA[This is set to true if the client wants an interactive session in the guest.]]></description>
+    </param>
+    <param name="programPath" type="string">
+      <description><![CDATA[The absolute path to the program to start. For Linux guest operating systems, /bin/bash is used to start the program.  For Solaris guest operating systems, /bin/bash is used to start the program if it exists. Otherwise /bin/sh is used. If /bin/sh is used, then the process ID returned will be that of the shell used to start the program, rather than the program itself, due to the differences in how /bin/sh and /bin/bash work. This PID will still be usable for watching the process with this API to find its exit code and elapsed time. ]]></description>
+    </param>
+    <param name="arguments" type="string">
+      <description><![CDATA[The arguments to the program. In Linux and Solaris guest operating systems, the program will be executed by a guest shell. This allows stdio redirection, but may also require that characters which must be escaped to the shell also be escaped on the command line provided. For Windows guest operating systems, prefixing the command with "cmd /c" can provide stdio redirection. ]]></description>
+    </param>
+    <param name="workingDirectory" type="string">
+      <description><![CDATA[The absolute path of the working directory for the program to be run. VMware recommends explicitly setting the working directory for the program to be run. If this value is unset or is an empty string, the behavior depends on the guest operating system. For Linux guest operating systems, if this value is unset or is an empty string, the working directory will be the home directory of the user associated with the guest authentication. For other guest operating systems, if this value is unset, the behavior is unspecified. ]]></description>
+    </param>
+    <param name="terminateOnTimeout" type="boolean">
+      <description><![CDATA[If true the process will be terminated on timeout.]]></description>
+    </param>
+    <param name="vmUsername" type="string">
+      <description><![CDATA[Username for the virtual machine]]></description>
+    </param>
+    <param name="vmPassword" type="SecureString">
+      <description><![CDATA[Password for the virtual machine]]></description>
+    </param>
+    <param name="checkInterval" type="number">
+      <description><![CDATA[How often to check process status, in secs - input will override]]></description>
+    </param>
+    <param name="processTimeout" type="number">
+      <description><![CDATA[Timeout for process to complete in mins - input will override]]></description>
+    </param>
+    <param name="logCommandLine" type="boolean">
+      <description><![CDATA[(optional) No logging unless this flag is set, in case the command contains a password]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="processExitCode" type="number"/>
+  </output>
+  <attrib name="pid" type="number" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[The pid of the program started.]]></description>
+  </attrib>
+  <attrib name="guestProcesses" type="Array/CompositeType(pid:number,name:string,owner:string,cmdLine:string,startTime:Date,endTime:Date,exitCode:number):GuestProcessInfoType" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[The list running processes.]]></description>
+  </attrib>
+  <attrib name="processRunning" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[false]]></value>
+    <description><![CDATA[Bool attr if process found running]]></description>
+  </attrib>
+  <attrib name="countdownTimer" type="number" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Timer created and used in workflow]]></description>
+  </attrib>
+  <attrib name="environment" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[An array of environment variables, specified in the guest OS notation (eg PATH=c:\bin;c:\windows\system32 or LD_LIBRARY_PATH=/usr/lib:/lib), to be set for the program being run. Note that these are not additions to the default environment variables; they define the complete set available to the program. If none are specified the values are guest dependent. ]]></description>
+  </attrib>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-note x="80.0" y="118.18181818181819" w="440.0" h="127.27272727272727">
+    <description><![CDATA[Process Timed Out]]></description>
+  </workflow-note>
+  <workflow-note x="560.0" y="54.54545454545455" w="280.0" h="190.9090909090909">
+    <description><![CDATA[Wait for Process to Finish]]></description>
+  </workflow-note>
+  <workflow-item name="item1" out-name="item3" type="link" linked-workflow-id="C98080808080808080808080808080805E80808001322751030482b80adf61e7c">
+    <display-name><![CDATA[Run program in guest]]></display-name>
+    <in-binding>
+      <bind name="vmUsername" type="string" export-name="vmUsername">
+        <description><![CDATA[Username for the virtual machine]]></description>
+      </bind>
+      <bind name="vmPassword" type="SecureString" export-name="vmPassword">
+        <description><![CDATA[Password for the virtual machine]]></description>
+      </bind>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm">
+        <description><![CDATA[Virtual machine]]></description>
+      </bind>
+      <bind name="interactiveSession" type="boolean" export-name="interactiveSession">
+        <description><![CDATA[This is set to true if the client wants an interactive session in the guest.]]></description>
+      </bind>
+      <bind name="programPath" type="string" export-name="programPath">
+        <description><![CDATA[The absolute path to the program to start. For Linux guest operating systems, /bin/bash is used to start the program.  For Solaris guest operating systems, /bin/bash is used to start the program if it exists. Otherwise /bin/sh is used. If /bin/sh is used, then the process ID returned will be that of the shell used to start the program, rather than the program itself, due to the differences in how /bin/sh and /bin/bash work. This PID will still be usable for watching the process with this API to find its exit code and elapsed time. ]]></description>
+      </bind>
+      <bind name="arguments" type="string" export-name="arguments">
+        <description><![CDATA[The arguments to the program. In Linux and Solaris guest operating systems, the program will be executed by a guest shell. This allows stdio redirection, but may also require that characters which must be escaped to the shell also be escaped on the command line provided. For Windows guest operating systems, prefixing the command with "cmd /c" can provide stdio redirection. ]]></description>
+      </bind>
+      <bind name="workingDirectory" type="string" export-name="workingDirectory">
+        <description><![CDATA[The absolute path of the working directory for the program to be run. VMware recommends explicitly setting the working directory for the program to be run. If this value is unset or is an empty string, the behavior depends on the guest operating system. For Linux guest operating systems, if this value is unset or is an empty string, the working directory will be the home directory of the user associated with the guest authentication. For other guest operating systems, if this value is unset, the behavior is unspecified. ]]></description>
+      </bind>
+      <bind name="environment" type="Array/string" export-name="environment">
+        <description><![CDATA[An array of environment variables, specified in the guest OS notation (eg PATH=c:\bin;c:\windows\system32 or LD_LIBRARY_PATH=/usr/lib:/lib), to be set for the program being run. Note that these are not additions to the default environment variables; they define the complete set available to the program. If none are specified the values are guest dependent. ]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="result" type="number" export-name="pid">
+        <description><![CDATA[The pid of the program started.]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Starts a program in the guest operating system.
+A process started this way can have its status queried with this API. When the process completes, its exit code and end time will be available for 5 minutes after completion.]]></description>
+    <position y="73.59090909090908" x="364.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item4" type="link" linked-workflow-id="C98080808080808080808080808080800180808001322751030482b80adf61e7c">
+    <display-name><![CDATA[Get processes from guest]]></display-name>
+    <in-binding>
+      <bind name="vmUsername" type="string" export-name="vmUsername">
+        <description><![CDATA[Username for the virtual machine]]></description>
+      </bind>
+      <bind name="vmPassword" type="SecureString" export-name="vmPassword">
+        <description><![CDATA[Password for the virtual machine]]></description>
+      </bind>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm">
+        <description><![CDATA[Virtual machine]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="result" type="Array/CompositeType(pid:number,name:string,owner:string,cmdLine:string,startTime:Date,endTime:Date,exitCode:number):GuestProcessInfoType" export-name="guestProcesses">
+        <description><![CDATA[The list running processes.]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[List the processes running in the guest operating system, plus those started by this API that have recently completed]]></description>
+    <position y="73.59090909090908" x="564.5"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item5" type="task">
+    <display-name><![CDATA[Find Process]]></display-name>
+    <script encoded="false"><![CDATA[//Loop through the list of PIDs and find the specified PID
+processExitCode = null;
+for (var i = 0; i < processIds.length; i++){
+	if (processIds[i] == pid){
+		System.debug("PID: " + processIds[i] + "  Name: " + processNames[i] + "  Exit: " + exitCode[i]);
+		processExitCode = exitCode[i];  //null if process is still running
+		break;
+	}
+}
+
+//Check the specified PID's exit code
+if (processExitCode == null) {
+	System.debug("Process still running: " + programPath + " " + arguments);
+	processRunning = true;
+} else {
+	System.debug("Process finished. Exit code: " + processExitCode);
+	processRunning = false;
+}
+
+]]></script>
+    <in-binding>
+      <bind name="processIds" type="Array/number" export-name="guestProcesses.pid"/>
+      <bind name="processNames" type="Array/string" export-name="guestProcesses.name"/>
+      <bind name="pid" type="number" export-name="pid"/>
+      <bind name="exitCode" type="Array/number" export-name="guestProcesses.exitCode"/>
+      <bind name="programPath" type="string" export-name="programPath"/>
+      <bind name="arguments" type="string" export-name="arguments"/>
+    </in-binding>
+    <out-binding>
+      <bind name="processRunning" type="boolean" export-name="processRunning"/>
+      <bind name="processExitCode" type="number" export-name="processExitCode"/>
+    </out-binding>
+    <description><![CDATA[Find the process in the Guest, and outputs whether it is still running.]]></description>
+    <position y="73.59090909090908" x="704.5"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item14" type="condition" alt-out-name="item0" comparator="0">
+    <display-name><![CDATA[Process running?]]></display-name>
+    <script encoded="false"><![CDATA[//Generated by the system, cannot be edited
+return (processRunning == true) ;]]></script>
+    <in-binding>
+      <bind name="processRunning" type="boolean" export-name="processRunning"/>
+    </in-binding>
+    <condition name="processRunning" type="boolean" comparator="0" label="null">false</condition>
+    <position y="127.22727272727272" x="704.5"/>
+  </workflow-item>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="127.22727272727272" x="924.5"/>
+  </workflow-item>
+  <workflow-item name="item7" out-name="item8" type="task">
+    <display-name><![CDATA[Decrement Timer]]></display-name>
+    <script encoded="false"><![CDATA[countdownTimer -= checkInterval;]]></script>
+    <in-binding>
+      <bind name="countdownTimer" type="number" export-name="countdownTimer"/>
+      <bind name="checkInterval" type="number" export-name="checkInterval">
+        <description><![CDATA[How often to check process status, in secs - input will override]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="countdownTimer" type="number" export-name="countdownTimer"/>
+    </out-binding>
+    <position y="200.86363636363635" x="564.5"/>
+  </workflow-item>
+  <workflow-item name="item8" out-name="item12" type="custom-condition" alt-out-name="item3">
+    <display-name><![CDATA[Timeout?]]></display-name>
+    <script encoded="false"><![CDATA[if (countdownTimer < 0)
+	return true
+else
+	return false
+]]></script>
+    <in-binding>
+      <bind name="countdownTimer" type="number" export-name="countdownTimer"/>
+    </in-binding>
+    <position y="127.22727272727272" x="564.5"/>
+  </workflow-item>
+  <workflow-item name="item11" out-name="item13" type="condition" alt-out-name="item9" comparator="0">
+    <display-name><![CDATA[Terminate process?]]></display-name>
+    <script encoded="false"><![CDATA[//Generated by the system, cannot be edited
+return (terminateOnTimeout == true) ;]]></script>
+    <in-binding>
+      <bind name="terminateOnTimeout" type="boolean" export-name="terminateOnTimeout"/>
+    </in-binding>
+    <condition name="terminateOnTimeout" type="boolean" comparator="0" label="null">false</condition>
+    <position y="127.22727272727272" x="224.5"/>
+  </workflow-item>
+  <workflow-item name="item13" out-name="item10" type="link" linked-workflow-id="C98080808080808080808080808080807B80808001322751030482b80adf61e7c">
+    <display-name><![CDATA[Kill process in guest]]></display-name>
+    <in-binding>
+      <bind name="vmUsername" type="string" export-name="vmUsername">
+        <description><![CDATA[Username for the virtual machine]]></description>
+      </bind>
+      <bind name="vmPassword" type="SecureString" export-name="vmPassword">
+        <description><![CDATA[Password for the virtual machine]]></description>
+      </bind>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm">
+        <description><![CDATA[Virtual machine]]></description>
+      </bind>
+      <bind name="pid" type="number" export-name="pid">
+        <description><![CDATA[Process ID of the process to be terminated ]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Terminates a process in the guest OS.]]></description>
+    <position y="137.22727272727272" x="84.5"/>
+  </workflow-item>
+  <workflow-item name="item15" out-name="item1" type="task">
+    <display-name><![CDATA[Initialize + Log]]></display-name>
+    <script encoded="false"><![CDATA[if (logCommandLine) {
+	System.debug("Starting process:\n" + programPath + " " + arguments);
+	System.debug("workingDirectory: '" + workingDirectory + "'");
+	System.debug("environment: '" + environment + "'");
+}
+
+//Initialize Loop Timer = Max run time (convert from minutes to seconds)
+countdownTimer = processTimeout * 60;]]></script>
+    <in-binding>
+      <bind name="programPath" type="string" export-name="programPath"/>
+      <bind name="arguments" type="string" export-name="arguments"/>
+      <bind name="workingDirectory" type="string" export-name="workingDirectory"/>
+      <bind name="environment" type="Array/string" export-name="environment"/>
+      <bind name="processTimeout" type="number" export-name="processTimeout"/>
+      <bind name="logCommandLine" type="boolean" export-name="logCommandLine"/>
+    </in-binding>
+    <out-binding>
+      <bind name="countdownTimer" type="number" export-name="countdownTimer"/>
+    </out-binding>
+    <position y="73.59090909090908" x="224.5"/>
+  </workflow-item>
+  <workflow-item name="item10" out-name="item9" type="task">
+    <display-name><![CDATA[Log Termination]]></display-name>
+    <script encoded="false"><![CDATA[errorCode = "Process did not finish within the timeout of " + processTimeout + " minutes.  Process terminated.";]]></script>
+    <in-binding>
+      <bind name="processTimeout" type="number" export-name="processTimeout">
+        <description><![CDATA[Timeout for process to complete in mins - input will override]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+    </out-binding>
+    <position y="200.86363636363635" x="84.5"/>
+  </workflow-item>
+  <workflow-item name="item9" throw-bind-name="errorCode" type="end" end-mode="1">
+    <position y="190.86363636363635" x="264.5"/>
+  </workflow-item>
+  <workflow-item name="item12" out-name="item11" type="task">
+    <display-name><![CDATA[Log Error]]></display-name>
+    <script encoded="false"><![CDATA[errorCode = "Process did not finish within the timeout of " + processTimeout + " minutes.  Process terminated.";
+System.error(errorCode);]]></script>
+    <in-binding>
+      <bind name="processTimeout" type="number" export-name="processTimeout">
+        <description><![CDATA[Timeout for process to complete in mins - input will override]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+    </out-binding>
+    <position y="137.22727272727272" x="364.5"/>
+  </workflow-item>
+  <workflow-item name="item14" prototype-id="sleep" out-name="item7" content-mode="x" type="task">
+    <display-name><![CDATA[Sleep]]></display-name>
+    <script encoded="false"><![CDATA[//Auto-generated script
+if ( sleepTime != null )  {
+	System.sleep(sleepTime*1000);
+}
+else  {
+	throw "'sleepTime' is NULL";
+}
+]]></script>
+    <in-binding>
+      <bind name="sleepTime" type="number" export-name="checkInterval">
+        <description><![CDATA[Time to sleep in seconds]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Sleep a given number of seconds]]></description>
+    <position y="200.86363636363635" x="704.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="vm">
+      <desc><![CDATA[Virtual machine]]></desc>
+    </p-param>
+    <p-param name="interactiveSession">
+      <desc><![CDATA[This is set to true if the client wants an interactive session in the guest.]]></desc>
+    </p-param>
+    <p-param name="programPath">
+      <desc><![CDATA[The absolute path to the program to start. For Linux guest operating systems, /bin/bash is used to start the program.  For Solaris guest operating systems, /bin/bash is used to start the program if it exists. Otherwise /bin/sh is used. If /bin/sh is used, then the process ID returned will be that of the shell used to start the program, rather than the program itself, due to the differences in how /bin/sh and /bin/bash work. This PID will still be usable for watching the process with this API to find its exit code and elapsed time. ]]></desc>
+    </p-param>
+    <p-param name="arguments">
+      <desc><![CDATA[The arguments to the program. In Linux and Solaris guest operating systems, the program will be executed by a guest shell. This allows stdio redirection, but may also require that characters which must be escaped to the shell also be escaped on the command line provided. For Windows guest operating systems, prefixing the command with "cmd /c" can provide stdio redirection. ]]></desc>
+    </p-param>
+    <p-param name="workingDirectory">
+      <desc><![CDATA[The absolute path of the working directory for the program to be run. VMware recommends explicitly setting the working directory for the program to be run. If this value is unset or is an empty string, the behavior depends on the guest operating system. For Linux guest operating systems, if this value is unset or is an empty string, the working directory will be the home directory of the user associated with the guest authentication. For other guest operating systems, if this value is unset, the behavior is unspecified. ]]></desc>
+    </p-param>
+    <p-param name="terminateOnTimeout">
+      <desc><![CDATA[If true the process will be terminated on timeout.]]></desc>
+    </p-param>
+    <p-param name="vmUsername">
+      <desc><![CDATA[Username for the virtual machine]]></desc>
+    </p-param>
+    <p-param name="vmPassword">
+      <desc><![CDATA[Password for the virtual machine]]></desc>
+    </p-param>
+    <p-param name="checkInterval">
+      <desc><![CDATA[How often to check process status, in secs - input will override]]></desc>
+    </p-param>
+    <p-param name="processTimeout">
+      <desc><![CDATA[Timeout for process to complete in mins - input will override]]></desc>
+    </p-param>
+    <p-param name="logCommandLine">
+      <desc><![CDATA[(optional) No logging unless this flag is set, in case the command contains a password]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

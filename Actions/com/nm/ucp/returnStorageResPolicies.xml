@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="returnStorageResPolicies" result-type="Array/string" api-version="6.0.0" id="1ebd94b6-2feb-46b1-b9ae-c47d97e011f9" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <description><![CDATA[Returns storage reservation policies based on data center selection.]]></description>
+  <param n="location" t="string"><![CDATA[Data center location]]></param>
+  <script encoded="false"><![CDATA[var policies = [];
+
+if (location) {
+	if (location == "frk") {
+		policies = ["Replicated - Franklin Primary", "Non-replicated - Franklin Only"];
+	} else {
+		policies = ["Replicated - Milwaukee Primary", "Non-replicated - Milwaukee Only"];
+	}
+} else {
+	policies = ["Please select the location above."];
+}
+
+return policies;]]></script>
+</dunes-script-module>

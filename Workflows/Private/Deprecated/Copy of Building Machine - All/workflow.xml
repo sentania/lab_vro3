@@ -1,0 +1,480 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item3" object-name="workflow:name=generic" id="ef105ffd-8a42-4aed-b973-49c1f47b80fe" version="0.0.6" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Copy of Building Machine - All]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="payload" type="Properties"/>
+  </input>
+  <output>
+    <param name="virtualMachineAddOrUpdateProperties" type="Properties">
+      <description><![CDATA[Updates to any of the vRA custom properties]]></description>
+    </param>
+  </output>
+  <attrib name="logPayload" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[true]]></value>
+    <description><![CDATA[Determines if the contents of the payload input will be logged]]></description>
+  </attrib>
+  <attrib name="vcVm" type="VC:VirtualMachine" read-only="false">
+    <description><![CDATA[vCenter VM (null for BuildingMachine)]]></description>
+  </attrib>
+  <attrib name="vcacEntity" type="vCAC:Entity" read-only="false">
+    <description><![CDATA[vCAC Entity object of the target VM]]></description>
+  </attrib>
+  <attrib name="vcacHost" type="vCAC:VCACHost" read-only="false">
+    <description><![CDATA[IaaS Host of the target VM]]></description>
+  </attrib>
+  <attrib name="customProperties" type="Properties" read-only="false">
+    <description><![CDATA[vRA Custom Properties of the target VM]]></description>
+  </attrib>
+  <attrib name="vcacVm" type="vCAC:VirtualMachine" read-only="false">
+    <description><![CDATA[vCAC VM object ofthe target VM]]></description>
+  </attrib>
+  <attrib name="vmName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[The name of the target VM in vRA and vCenter]]></description>
+  </attrib>
+  <attrib name="environment" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="custSpec" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[The selected Customization Spec]]></description>
+  </attrib>
+  <attrib name="domainName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Active Directory domain name]]></description>
+  </attrib>
+  <attrib name="prodWinOU" type="AD:OrganizationalUnit" read-only="false" conf-id="7d4164f2-efb0-4873-9161-17cb9f36e414" conf-key="prodWinOU">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="prodNixOU" type="AD:OrganizationalUnit" read-only="false" conf-id="7d4164f2-efb0-4873-9161-17cb9f36e414" conf-key="prodLinuxOU">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="NonProdWinOU" type="AD:OrganizationalUnit" read-only="false" conf-id="7d4164f2-efb0-4873-9161-17cb9f36e414" conf-key="nonProdWinOU">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="NonProdNixOU" type="AD:OrganizationalUnit" read-only="false" conf-id="7d4164f2-efb0-4873-9161-17cb9f36e414" conf-key="nonProdLinuxOU">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="devWinOU" type="AD:OrganizationalUnit" read-only="false" conf-id="7d4164f2-efb0-4873-9161-17cb9f36e414" conf-key="devWinOU">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="devNixOU" type="AD:OrganizationalUnit" read-only="false" conf-id="7d4164f2-efb0-4873-9161-17cb9f36e414" conf-key="devLinuxOU">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="adOU" type="AD:OrganizationalUnit" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Selected OU]]></description>
+  </attrib>
+  <attrib name="createdAdObject" type="AD:ComputerAD" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[The computer object created within Active Directory.]]></description>
+  </attrib>
+  <attrib name="storageResPolicy" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="primaryDns" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[The primary DNS address]]></description>
+  </attrib>
+  <attrib name="secondaryDns" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[The secondary DNS address]]></description>
+  </attrib>
+  <attrib name="dnsSuffix" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="dnsSearchSuffixes" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="ipamConnection" type="InfobloxIPAM:IpamConnection" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='4b4474b5-760d-4f49-b012-352dd85ccfb5'&dunesName='InfobloxIPAM:IpamConnection']]></value>
+    <description><![CDATA[Connection to the IPAM server.]]></description>
+  </attrib>
+  <attrib name="hostName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Host name (FQDN).]]></description>
+  </attrib>
+  <attrib name="dnsView" type="string" read-only="false">
+    <value encoded="n"><![CDATA[Internal]]></value>
+    <description><![CDATA[DNS view, in which the host exists/will be created.]]></description>
+  </attrib>
+  <attrib name="ipAddress" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[IPv4/IPv6 address assigned to the host.]]></description>
+  </attrib>
+  <attrib name="enableDhcp" type="boolean" read-only="false">
+    <description><![CDATA[Enable DHCP flag for the created host entry.]]></description>
+  </attrib>
+  <attrib name="enableDns" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[true]]></value>
+    <description><![CDATA[Enable DNS flag for the created host entry.]]></description>
+  </attrib>
+  <attrib name="aliases" type="Array/string" read-only="false">
+    <description><![CDATA[List of aliases for the host entry in FQDN format.  Used only on creation of the host.]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="1364.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item4" type="task">
+    <display-name><![CDATA[Add/Update Props]]></display-name>
+    <script encoded="false"><![CDATA[//Update or add any Custom Properties here
+// Event Broker Workflow Subscription must be set to Blocking.  To change an existing 
+// subscription from non-Blocking to Blocking, delete it and re-create it.
+
+//Preserve any custom property additions from previous workflows in this LifeCycle state
+var newProps = payload.get("virtualMachineAddOrUpdateProperties");
+if (!newProps) {
+	newProps = new Properties();
+}
+
+//Example custom property addition:
+//newProps.put('VirtualMachine.Network0.Name', 'dvPortGroup');
+newProps.put('CloneSpec', custSpec);
+newProps.put('ucp.domain', domainName);
+newProps.put('VirtualMachine.Disk0.StorageReservationPolicy', storageResPolicy);
+newProps.put('VirtualMachine.Network0.PrimaryDns', primaryDns);
+newProps.put('VirtualMachine.Network0.SecondaryDns', secondaryDns);
+newProps.put('VirtualMachine.Network0.DnsSuffix', dnsSuffix);
+newProps.put('VirtualMachine.Network0.DnsSearchSuffix', dnsSearchSuffixes);
+
+
+
+virtualMachineAddOrUpdateProperties = newProps;]]></script>
+    <in-binding>
+      <bind name="payload" type="Properties" export-name="payload"/>
+      <bind name="custSpec" type="string" export-name="custSpec"/>
+      <bind name="domainName" type="string" export-name="domainName"/>
+      <bind name="storageResPolicy" type="string" export-name="storageResPolicy"/>
+      <bind name="primaryDns" type="string" export-name="primaryDns"/>
+      <bind name="secondaryDns" type="string" export-name="secondaryDns"/>
+      <bind name="dnsSuffix" type="string" export-name="dnsSuffix"/>
+      <bind name="dnsSearchSuffixes" type="string" export-name="dnsSearchSuffixes"/>
+    </in-binding>
+    <out-binding>
+      <bind name="virtualMachineAddOrUpdateProperties" type="Properties" export-name="virtualMachineAddOrUpdateProperties">
+        <description><![CDATA[Custom or system properties that were modified by the vRO workflow and returned to vRA]]></description>
+      </bind>
+    </out-binding>
+    <position y="55.40909090909091" x="1044.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item5" type="link" linked-workflow-id="b8a3f3e0-b05a-4d54-831c-94b2f02ce37a">
+    <display-name><![CDATA[Get Lifecycle Objects]]></display-name>
+    <in-binding>
+      <bind name="payload" type="Properties" export-name="payload">
+        <description><![CDATA[Input object from the vRA Event Subscription]]></description>
+      </bind>
+      <bind name="logPayload" type="boolean" export-name="logPayload">
+        <description><![CDATA[Determines if the contents of the payload input will be logged]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="vcVm" type="VC:VirtualMachine" export-name="vcVm">
+        <description><![CDATA[vCenter VM (null for BuildingMachine)]]></description>
+      </bind>
+      <bind name="vcacEntity" type="vCAC:Entity" export-name="vcacEntity">
+        <description><![CDATA[vCAC Entity object of the target VM]]></description>
+      </bind>
+      <bind name="vcacHost" type="vCAC:VCACHost" export-name="vcacHost">
+        <description><![CDATA[IaaS Host of the target VM]]></description>
+      </bind>
+      <bind name="customProperties" type="Properties" export-name="customProperties">
+        <description><![CDATA[vRA Custom Properties of the target VM]]></description>
+      </bind>
+      <bind name="vcacVm" type="vCAC:VirtualMachine" export-name="vcacVm">
+        <description><![CDATA[vCAC VM object ofthe target VM]]></description>
+      </bind>
+      <bind name="vmName" type="string" export-name="vmName">
+        <description><![CDATA[The name of the target VM in vRA and vCenter]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Uses the vRA 7 'payload' input to get most the vRA 6 workflow input objects,
+such as the Custom Properties, vCenter VM, vCAC VM, etc.]]></description>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item3" prototype-id="system-log" out-name="item1" type="task" interaction="l">
+    <display-name><![CDATA[Start Workflow]]></display-name>
+    <script encoded="false"><![CDATA[//Auto-generated script
+System.log("Starting 'BuildingMachine - All' master workflow.");
+]]></script>
+    <in-binding/>
+    <out-binding/>
+    <description><![CDATA[Log the input text to the console log with level 'log']]></description>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item4" prototype-id="system-log" out-name="item0" type="task" interaction="l">
+    <display-name><![CDATA[End Workflow]]></display-name>
+    <script encoded="false"><![CDATA[//Auto-generated script
+System.log("Ending 'BuildingMachine - All' master workflow.");
+]]></script>
+    <in-binding/>
+    <out-binding/>
+    <description><![CDATA[Log the input text to the console log with level 'log']]></description>
+    <position y="55.40909090909091" x="1184.5"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item7" type="task">
+    <display-name><![CDATA[Define Variables]]></display-name>
+    <script encoded="false"><![CDATA[// 1. Define Variables
+var environment = customProperties.get("ucp.tag.environment");
+var os = customProperties.get("ucp.os");
+var location = customProperties.get("ucp.tag.location");
+var storageResPolicy = customProperties.get("VirtualMachine.Disk0.StorageReservationPolicy");
+
+// 2. Define default selection of Storage Reservation Policy if the field was not selected in form.
+if(!storageResPolicy) {
+	if(location == "frk") {
+		storageResPolicy = "Replicated - Franklin Primary";
+	} else {
+		storageResPolicy = "Replicated - Milwaukee Primary";
+	}
+}
+			
+
+
+// 3. For Windows Machines
+// Windows 2016 Deployments
+if(os.search("Windows 2016") > -1) {
+	switch(environment) {
+		case "Production":
+			custSpec = "Server_2016_nm";
+			adOU = prodWinOU;
+			domainName = "nm.nmfco.com";
+			break;
+		case "Non-Production":
+			custSpec = "Server_2016_nmtest";
+			adOU = NonProdWinOU;
+			domainName = "nmtest.nmfco.com";
+			break;
+		case "Development":
+			custSpec = "Server_2016_nmdev";
+			adOU = devWinOU;
+			domainName = "nmdev.nmfco.com";
+	}
+// Windows 2012 Deployments
+} else if(os.search("Windows 2012") > -1) {
+	switch(environment) {
+		case "Production":
+			custSpec = "Server_2016_nm";
+			adOU = prodWinOU;
+			domainName = "nm.nmfco.com";
+			break;
+		case "Non-Production":
+			custSpec = "Server_2016_nmtest";
+			adOU = NonProdWinOU;
+			domainName = "nmtest.nmfco.com";
+			break;
+		case "Development":
+			custSpec = "Server_2016_nmdev";
+			adOU = devWinOU;
+			domainName = "nmdev.nmfco.com";
+	}
+// Linux Deployments
+// For reasons until we have non-posix support all machines need to go to NM
+} else {
+	switch(environment) {
+		case "Production":
+			custSpec = "Enterprise Linux 7 - nm.nmfco.com";
+			adOU = prodNixOU;
+			domainName = "nm.nmfco.com";
+			break;
+		case "Non-Production":
+			//custSpec = "Enterprise Linux 7 - nmtest.nmfco.com";
+			custSpec = "Enterprise Linux 7 - nm.nmfco.com";
+//			adOU = NonProdNixOU;
+			adOU = prodNixOU;
+			domainName = "nm.nmfco.com";;
+			break;
+		case "Development":
+//			custSpec = "Enterprise Linux 7 - nmdev.nmfco.com";
+			custSpec = "Enterprise Linux 7 - nm.nmfco.com";
+			//adOU = devNixOU;
+			adOU = prodNixOU;
+			domainName = "nm.nmfco.com";
+	}
+}]]></script>
+    <in-binding>
+      <bind name="customProperties" type="Properties" export-name="customProperties"/>
+      <bind name="environment" type="string" export-name="environment"/>
+      <bind name="prodWinOU" type="AD:OrganizationalUnit" export-name="prodWinOU"/>
+      <bind name="prodNixOU" type="AD:OrganizationalUnit" export-name="prodNixOU"/>
+      <bind name="NonProdWinOU" type="AD:OrganizationalUnit" export-name="NonProdWinOU"/>
+      <bind name="NonProdNixOU" type="AD:OrganizationalUnit" export-name="NonProdNixOU"/>
+      <bind name="devWinOU" type="AD:OrganizationalUnit" export-name="devWinOU"/>
+      <bind name="devNixOU" type="AD:OrganizationalUnit" export-name="devNixOU"/>
+    </in-binding>
+    <out-binding>
+      <bind name="custSpec" type="string" export-name="custSpec"/>
+      <bind name="domainName" type="string" export-name="domainName"/>
+      <bind name="adOU" type="AD:OrganizationalUnit" export-name="adOU"/>
+      <bind name="storageResPolicy" type="string" export-name="storageResPolicy"/>
+    </out-binding>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item6" out-name="item8" type="link" linked-workflow-id="958080808080808080808080808080804C81808001175609873343b6bbd2e3eea">
+    <display-name><![CDATA[Create a computer in an organizational unit]]></display-name>
+    <in-binding>
+      <bind name="ou" type="AD:OrganizationalUnit" export-name="adOU">
+        <description><![CDATA[Parent organizational unit for the new computer]]></description>
+      </bind>
+      <bind name="computerName" type="string" export-name="vmName">
+        <description><![CDATA[Name for the new computer]]></description>
+      </bind>
+      <bind name="domainName" type="string" export-name="domainName">
+        <description><![CDATA[Domain name in form: company.sample (optional)]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="newComputer" type="AD:ComputerAD" export-name="createdAdObject"/>
+    </out-binding>
+    <description><![CDATA[Creates an Active Directory computer in an organizational unit.]]></description>
+    <position y="55.40909090909091" x="764.5"/>
+  </workflow-item>
+  <workflow-item name="item7" out-name="item6" type="task">
+    <display-name><![CDATA[Define Networking]]></display-name>
+    <script encoded="false"><![CDATA[// Set DNS servers based on location
+var location = customProperties.get("ucp.tag.location");
+var primaryDns;
+var secondaryDns;
+
+if(location == "frk") {
+	primaryDns = "172.16.31.41";
+	secondaryDns = "172.16.29.41";
+} else { 
+	primaryDns = "172.16.29.41";
+	secondaryDns = "172.16.31.41";
+}
+
+var dnsSuffix = domainName;
+var dnsSearchSuffixes = "nml.com,nm.nmfco.com,nmtest.nmfco.com,nmdev.nmfco.com";
+
+// Set variables for Infoblox Host Record Creation
+var hostName = vmName+"."+domainName;
+var ipAddress = customProperties.get("VirtualMachine.Network0.Address");
+
+// Set a single alias
+var alias = customProperties.get("ucp.alias");
+alias = alias+"."+domainName;
+//var alias = vmName+".nml.com";
+var aliases = [alias];]]></script>
+    <in-binding>
+      <bind name="customProperties" type="Properties" export-name="customProperties"/>
+      <bind name="vmName" type="string" export-name="vmName"/>
+      <bind name="domainName" type="string" export-name="domainName"/>
+    </in-binding>
+    <out-binding>
+      <bind name="primaryDns" type="string" export-name="primaryDns"/>
+      <bind name="secondaryDns" type="string" export-name="secondaryDns"/>
+      <bind name="dnsSuffix" type="string" export-name="dnsSuffix"/>
+      <bind name="dnsSearchSuffixes" type="string" export-name="dnsSearchSuffixes"/>
+      <bind name="hostName" type="string" export-name="hostName"/>
+      <bind name="ipAddress" type="string" export-name="ipAddress"/>
+      <bind name="aliases" type="Array/string" export-name="aliases"/>
+    </out-binding>
+    <position y="55.40909090909091" x="624.5"/>
+  </workflow-item>
+  <workflow-item name="item8" out-name="item2" type="task" script-module="com.infoblox.ipam/addHost">
+    <display-name><![CDATA[addHost]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+System.getModule("com.infoblox.ipam").addHost(ipamConnection,hostName,dnsView,ipAddress,macAddress,enableDhcp,enableDns,aliases,comment,ea1Definition,ea1Value,ea2Definition,ea2Value,ea3Definition,ea3Value,ea4Definition,ea4Value,ea5Definition,ea5Value,ea6Definition,ea6Value,ea7Definition,ea7Value,ea8Definition,ea8Value,ea9Definition,ea9Value,ea10Definition,ea10Value,restartIfNeeded) ;]]></script>
+    <in-binding>
+      <bind name="ipamConnection" type="InfobloxIPAM:IpamConnection" export-name="ipamConnection">
+        <description><![CDATA[Connection to the IPAM server.]]></description>
+      </bind>
+      <bind name="hostName" type="string" export-name="hostName">
+        <description><![CDATA[Host name (FQDN).]]></description>
+      </bind>
+      <bind name="dnsView" type="string" export-name="dnsView">
+        <description><![CDATA[DNS view, in which the host exists/will be created.]]></description>
+      </bind>
+      <bind name="ipAddress" type="string" export-name="ipAddress">
+        <description><![CDATA[IPv4/IPv6 address assigned to the host.]]></description>
+      </bind>
+      <bind name="macAddress" type="string" explicitly-not-bound="true">
+        <description><![CDATA[MAC address or DUID of the host. Required if enableDhcp is true.]]></description>
+      </bind>
+      <bind name="enableDhcp" type="boolean" export-name="enableDhcp">
+        <description><![CDATA[Enable DHCP flag for the created host entry.]]></description>
+      </bind>
+      <bind name="enableDns" type="boolean" export-name="enableDns">
+        <description><![CDATA[Enable DNS flag for the created host entry.]]></description>
+      </bind>
+      <bind name="aliases" type="Array/string" export-name="aliases">
+        <description><![CDATA[List of aliases for the host entry in FQDN format.  Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="comment" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Comments about the host.  Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea1Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #1. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea1Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #1. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea2Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #2. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea2Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #2. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea3Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #3. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea3Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #3. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea4Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #4. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea4Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #4. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea5Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #5. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea5Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #5. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea6Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #6. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea6Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #6. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea7Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #7. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea7Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #7. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea8Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #8. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea8Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #8. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea9Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #9. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea9Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #9. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea10Definition" type="InfobloxIPAM:IpamExtensibleAttributeDefinition" explicitly-not-bound="true">
+        <description><![CDATA[Definition of the Extensible Attribute #10. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="ea10Value" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Value of the Extensible Attribute #10. Used only on creation of the host.]]></description>
+      </bind>
+      <bind name="restartIfNeeded" type="boolean" explicitly-not-bound="true">
+        <description><![CDATA[Perform restart of DHCP service if needed]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Adds a host record to IPAM with the specified static IP address.]]></description>
+    <position y="55.40909090909091" x="904.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="payload">
+      <desc><![CDATA[payload]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

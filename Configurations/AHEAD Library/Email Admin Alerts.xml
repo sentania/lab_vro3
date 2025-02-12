@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<config-element id="6937c29c-fa14-4b19-adf7-afcf6e38b4d3" version="1.0.0">
+  <display-name><![CDATA[Email Admin Alerts]]></display-name>
+  <atts>
+    <att name="smtpHost" type="string" read-only="false">
+      <value encoded="n"><![CDATA[mail.aheadaviation.local]]></value>
+      <description><![CDATA[SMTP host]]></description>
+    </att>
+    <att name="smtpPort" type="number" read-only="false">
+      <value encoded="n"><![CDATA[25.0]]></value>
+      <description><![CDATA[SMTP port]]></description>
+    </att>
+    <att name="username" type="string" read-only="false">
+      <value encoded="n"><![CDATA[]]></value>
+      <description><![CDATA[Username for authentication]]></description>
+    </att>
+    <att name="password" type="SecureString" read-only="false">
+      <description><![CDATA[Password for authentication]]></description>
+    </att>
+    <att name="fromName" type="string" read-only="false">
+      <value encoded="n"><![CDATA[vRealize Automation]]></value>
+      <description><![CDATA[Sender's name]]></description>
+    </att>
+    <att name="fromAddress" type="string" read-only="false">
+      <value encoded="n"><![CDATA[vra@aheadaviation.local]]></value>
+      <description><![CDATA[Sender's address]]></description>
+    </att>
+    <att name="toAddressList" type="Array/string" read-only="false">
+      <value encoded="n"><![CDATA[[37:string#vra-admins@aheadaviation.local]]]></value>
+      <description><![CDATA[List of destination addresses]]></description>
+    </att>
+    <att name="useSsl" type="boolean" read-only="false">
+      <value encoded="n"><![CDATA[false]]></value>
+      <description><![CDATA[If set to true, use SSL to connect ]]></description>
+    </att>
+    <att name="useStartTls" type="boolean" read-only="false">
+      <value encoded="n"><![CDATA[false]]></value>
+      <description><![CDATA[If true, enables the use of the STARTTLS command (if supported by the server) to switch the connection to a TLS-protected connection before issuing any login commands.]]></description>
+    </att>
+  </atts>
+</config-element>

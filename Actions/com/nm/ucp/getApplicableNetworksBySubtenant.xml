@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getApplicableNetworksBySubtenant" result-type="Properties" api-version="6.0.0" id="f60c434d-a508-4d6d-87b6-19056b1830b3" version="0.0.2" allowed-operations="evf" category-name="com.nm.ucp">
+  <description><![CDATA[To use this action for a custom property the name of the property should be VirtualMachine.Network0.Name]]></description>
+  <param n="subtenant" t="string"/>
+  <script encoded="false"><![CDATA[var blueprint = System.getContext().getParameter("__asd_composition_blueprintId");
+var component = System.getContext().getParameter("__asd_composition_componentId");
+var user = System.getContext().getParameter("__asd_requestedFor");
+var tenant = System.getContext().getParameter("__asd_tenantRef");
+
+var host = vCACCAFEHostManager.getDefaultHostForTenant(tenant , true);
+var reservations = System.getModule("com.vmware.vra.reservations").getReservationsForUserAndComponent(user, tenant, host, blueprint, component);
+
+var subtenants = vCACCAFEEntitiesFinder.findSubtenants(host, subtenant);
+var applicableNetworks = new Properties();
+
+for each(var res in reservations) {
+	if(res.getSubTenantId() == subtenants[0].id){
+		var extensionData = res.getExtensionData();
+		if(extensionData) {
+			var networks = extensionData.get("reservationNetworks");
+			if(networks) {
+				for each(var network in networks.getValue()) {
+					var path = network.getValue().get("networkPath");
+					applicableNetworks.put(path.label, path.label);
+				}
+			}
+		}
+	}
+}
+
+return applicableNetworks;]]></script>
+</dunes-script-module>

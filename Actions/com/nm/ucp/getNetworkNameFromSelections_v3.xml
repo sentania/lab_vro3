@@ -1,0 +1,124 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getNetworkNameFromSelections_v3" result-type="Properties" api-version="6.0.0" id="9e14b5b3-e4cd-40a5-a001-46ba55a8cfca" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp">
+  <param n="location" t="string"><![CDATA[Datacenter location]]></param>
+  <param n="environment" t="string"/>
+  <param n="subtenant" t="string"><![CDATA[Subtenant Name]]></param>
+  <param n="blueprintId" t="string"/>
+  <param n="componentId" t="string"/>
+  <param n="user" t="string"/>
+  <param n="tenant" t="string"/>
+  <param n="subtenantId" t="string"/>
+  <script encoded="false"><![CDATA[///////////////////////////////////////////// TESTING
+/*
+var blueprintId = "RHEL7";
+var componentId = "RHEL_7_POSIX";
+var user = "kol2843-nm@nm.nmfco.com";
+var tenant = "vsphere.local";
+var subtenant = "UCP Admin";
+*/
+
+if(location && environment) {
+// Pull in variables from context of form
+/*var blueprintId = System.getContext().getParameter("__asd_composition_blueprintId");
+var componentId = System.getContext().getParameter("__asd_composition_componentId");
+var user = System.getContext().getParameter("__asd_requestedFor");
+var tenant = System.getContext().getParameter("__asd_tenantRef");
+var subtenantId = System.getContext().getParameter("__asd_subtenantRef");
+*/
+
+
+// Get reservations and subtenants
+var host = vCACCAFEHostManager.getDefaultHostForTenant(tenant , true);
+var reservations = System.getModule("com.nm.ucp").getReservationsForUserAndComponent_v2(user, tenant, host, blueprintId, componentId, subtenantId);
+//var reservations = System.getModule("com.vmware.vra.reservations").getReservationsForUserAndComponent(user, tenant, host, blueprintId, componentId, subtenantId);
+var subtenants = vCACCAFEEntitiesFinder.findSubtenants(host, subtenant);
+
+// Define new property
+var applicableNetworks = new Properties();
+var availableNetworks = [];
+
+//Compile network name to search for.
+var label = subtenant+" - "+location+" - "+environment;
+var location = location.toLowerCase();
+var environment = environment.toLowerCase();
+	// Change development to nonproduction
+if(environment == "development") {
+	environment = "nonproduction";
+}
+	//Remove dash in Non-Production
+environment = environment.replace("-", "");
+subtenant = subtenant.toLowerCase();
+var netName = subtenant+"-"+location;
+	// Create Network Name with environment if more than one network is returned.
+var netNameE = subtenant+"-"+location+"-"+environment;
+
+//Get available networks from subtenant's reservations.
+for each(var res in reservations) {
+	if(res.getSubTenantId() == subtenants[0].id){
+		var extensionData = res.getExtensionData();
+		if(extensionData) {
+			var networks = extensionData.get("reservationNetworks");
+			if(networks) {
+				for each(var network in networks.getValue()) {
+					var path = network.getValue().get("networkPath");
+					availableNetworks.push(path.label);
+				}
+			}
+		}
+	}
+}
+System.log("Available Networks: " +availableNetworks.length);
+
+// Create array of unique networks.
+var uNets = [];
+uNets = removeDuplicates(availableNetworks);
+//System.log("Found the following networks for location "+location);
+for (n in uNets) {
+	System.log(uNets[n]);
+}
+System.log(uNets.length);
+
+// If only 1 network, return that network and skip to end.
+if(uNets.length == 1) {
+	applicableNetworks.put(uNets[0], label);
+} else {
+
+	// Pull out networks for specific Networks.
+	var locNets = [];
+	for (l in uNets) {
+		if(uNets[l].search(netName) > -1) {
+			locNets.push(uNets[l]);
+		}
+	}
+
+	// If more than one, select appropriate environment Network.
+	if(locNets.length > 1) {
+		for (n in locNets) {
+			if(locNets[n].search(netNameE) > -1) {
+				applicableNetworks.put(locNets[n], label);
+			}
+		}
+	} else {
+		applicableNetworks.put(locNets[0], label);
+	}
+}
+return applicableNetworks;
+} else { 
+	var incomplete = "Please complete fields above.";
+	var applicableNetworks = new Properties;
+	applicableNetworks.put(incomplete, incomplete);
+	return applicableNetworks;
+}
+
+/////FUNCTIONS
+//Remove duplicates from Array
+function removeDuplicates(arr) {
+	//var unique_array = [];
+	for (i = 0; i< arr.length; i++) {
+		if(uNets.indexOf(arr[i]) == -1) {
+			uNets.push(arr[i])
+		}
+	}
+	return uNets;
+}]]></script>
+</dunes-script-module>

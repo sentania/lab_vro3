@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="e2a9ae7e-b346-4a04-9f20-ea1baa452f1b" version="1.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Copy of Update etcd]]></display-name>
+  <description><![CDATA[The workflow will get all the vcac:virtualmachines from the vRA environment.  It will then determine if the virtual machine is managed by vRA.  If it is, the workflow will get all the properties of the vm, get the necessary properties to populate etcd, and then update etcd.]]></description>
+  <position y="50.0" x="100.0"/>
+  <output>
+    <param name="var" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)"/>
+  </output>
+  <attrib name="etcd_keys" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="etcd_values" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var host = Server.findAllForType("vCAC:VCACHost")[0]; //find vcac host
+var vms = Server.findAllForType("vCAC:VirtualMachine");//find all vcac virtual machines
+var module = System.getModule("com.vmware.library.vcac")//pulling getmodule out of the loop for performance
+var baseURL = 'unifiedcompute/servers/';  //the base URL for all UCP records in etcd
+
+var etcd_keys = [];
+var etcd_values = [];
+				
+
+//Sorting vms
+vms.sort();
+		
+for each (vm in vms) {
+	if (vm.isManaged == true) {
+		
+		//Documenting server name and is managed
+		System.log("vm name = "+vm.virtualMachineName);
+		System.log("VM IS managed = "+vm.isManaged);
+		
+		//Getting Properties of vm
+		var props = module.getPropertiesFromVirtualMachine(host, vm);
+		
+		//Setting up etcd config
+		var VMName = vm.virtualMachineName;
+		var serverURL = baseURL + VMName + '/';
+
+		//Adding Location
+		var location = props.get("ucp.tag.location");
+		etcd_keys.push(serverURL + 'location');
+		etcd_values.push(location);
+		
+		//Adding OS
+		var os = props.get("ucp.os");
+		etcd_keys.push(serverURL + 'operatingSystem');
+		etcd_values.push(encodeURI(os));
+		
+		//Adding localadmins
+		var localAdmin = props.get("ucp.local_administrators");
+		etcd_keys.push(serverURL + 'primaryGroup');
+		etcd_values.push(localAdmin);
+		
+		//Adding environment
+		var environment = props.get("ucp.tag.environment");
+		etcd_keys.push(serverURL + 'environment');
+		etcd_values.push(environment);
+
+		//Adding Business Group
+		var businessGroup = props.get("nm.ucp.BusinessGroupName");
+		etcd_keys.push(serverURL + 'businessGroup');
+		etcd_values.push(encodeURI(businessGroup));
+
+		//Adding contact PDL
+		var contactPDL = props.get("nm.ucp.businessGroupPDL");
+		etcd_keys.push(serverURL + 'contactPDL');
+		etcd_values.push(contactPDL);
+		
+		//Adding Server Owner
+		var serverOwner = props.get("__Legacy.Workflow.User");
+		etcd_keys.push(serverURL + 'serverOwner');
+		etcd_values.push(serverOwner)
+
+		//Adding Domain
+		var domain = props.get("ucp.domain");
+		etcd_keys.push(serverURL + 'domain');
+		etcd_values.push(domain);
+
+		//yes this is redundant given that the server name is part of the URL, but it simpilfies making the VMname available to ansible
+		etcd_keys.push(serverURL + 'serverName');
+		etcd_values.push(VMName);
+		
+		//Setting State to Active
+		etcd_keys.push(serverURL + 'state');
+		etcd_values.push('active');
+	}	
+}
+
+
+
+]]></script>
+    <in-binding/>
+    <out-binding>
+      <bind name="etcd_keys" type="Array/string" export-name="etcd_keys"/>
+      <bind name="etcd_values" type="Array/string" export-name="etcd_values"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item0" catch-name="item3" throw-bind-name="errorCode" type="foreach">
+    <display-name><![CDATA[Foreach (etcd - Add Key)]]></display-name>
+    <in-binding>
+      <bind name="key" type="Array/string" export-name="*etcd_keys">
+        <description><![CDATA[etcd key to update]]></description>
+      </bind>
+      <bind name="value" type="Array/string" export-name="*etcd_values">
+        <description><![CDATA[value of the key]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="statusCode" type="Array/Number" export-name="*var.statusCode"/>
+      <bind name="contentLength" type="Array/Number" export-name="*var.contentLength"/>
+      <bind name="headers" type="Array/Properties" export-name="*var.headers"/>
+      <bind name="contentAsString" type="Array/String" export-name="*var.contentAsString"/>
+    </out-binding>
+    <reference type="Workflow" id="1fa52ce3-f6c0-43f8-a28f-6790c2e93f13"/>
+    <description><![CDATA[Autogenerated workflow.]]></description>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item3" throw-bind-name="errorCode" type="end" end-mode="1">
+    <position y="109.04545454545453" x="385.0"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

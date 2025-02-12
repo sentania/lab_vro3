@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="asdGetAllF5HealthMonitorsFromCache" result-type="Array/string" api-version="6.0.0" id="d77b0085-897e-47b7-a390-6e621302d9e7" version="0.0.0" allowed-operations="evf" category-name="com.sovlabs.f5">
+  <param n="tenant" t="string"/>
+  <param n="f5EndpointName" t="string"/>
+  <param n="partition" t="string"/>
+  <script encoded="false"><![CDATA[var inventory = System.getModule("com.sovlabs.f5").getF5Cache();
+
+if (inventory !== "") {
+	for each (var inv in inventory[tenant]) {
+		if (inv.label == f5EndpointName) {
+			for each (var key in Object.keys(inv.monitors)) {
+				if (key == partition) {
+					return inv.monitors[key];
+				}
+			}
+		}
+	}
+}
+
+return [];]]></script>
+</dunes-script-module>

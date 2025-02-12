@@ -1,0 +1,353 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="97b2231d-ef4a-4b89-98b2-f90ca9f1c3ca" version="0.0.17" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Business Group Resource Utilization]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <attrib name="vcachost" type="vCACCAFE:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='bd23869b-b58a-43ca-b0b2-b08857c76199'&dunesName='vCACCAFE:VCACHost']]></value>
+  </attrib>
+  <attrib name="tenant" type="string" read-only="false">
+    <value encoded="n"><![CDATA[vsphere.local]]></value>
+  </attrib>
+  <attrib name="resthostUsername" type="string" read-only="false">
+    <value encoded="n"><![CDATA[vraconfig]]></value>
+  </attrib>
+  <attrib name="password" type="SecureString" read-only="false">
+    <value encoded="n"><![CDATA[8BL6ER76X43H4CQ40K49H7CK31JC08B25CH7B2EF7DK3227EE7VF7E9141RFB265CAI47A5DF4X353D6B1S7A71971M95FB8B1NF610124Q39AD5B4VF545EC9M639C1EBUCD97A48OB818A5DQ5E647E2WFADEA01XF44C3F6NE4A787AKC32C18FM9C839D4XF0513NF002A68Z993D83DR]]></value>
+  </attrib>
+  <attrib name="Sessionid" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="RestHost" type="REST:RESTHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='fb7471ca-6d77-45a8-998f-b5142c8d6362'&dunesName='REST:RESTHost']]></value>
+  </attrib>
+  <attrib name="IBAddress" type="REST:RESTOperation" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='09c302a5-31bd-43a7-90df-a35219b79078:b3ecb46a-b9d3-4e00-a7a5-035564d6251e'&dunesName='REST:RESTOperation']]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="544.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[// Email Data
+Data1 = 'If any New deployments are planned that might need more then available capacity, please email DL-SDDC@northwesternmutual.com'
+Data2 = 'Thanks,'
+Data3 = "Unified Compute Platform Team"
+Data4 = "Slack - #unifiedcompute"
+Data5 = "Email: DL-SDDC@northwesternmutual.com"
+
+//Email Function
+function eMail(mail_body,Sub1, app){
+	var objEmail = new EmailMessage();
+	objEmail.fromAddress = 'ucp-vro@nm.nmfco.com'
+	objEmail.fromName = 'DL-SDDC@northwesternmutual.com'
+	objEmail.smtpHost = 'hera.nml.com'
+	objEmail.smtpPort = 25
+	objEmail.toAddress = app // 'dineshsolaiappan@northwesternmutual.com' //'DL-SDDC@northwesternmutual.com'
+	objEmail.bccAddress = 'dineshsolaiappan@northwesternmutual.com'
+	objEmail.subject = Sub1
+	objEmail.addMimePart(mail_body,"text/html; charset=UTF-8")
+	objEmail.sendMessage()
+}
+
+// Function to find subnet
+function getipsubnet(dvportname, tokenid, R){
+	var BGN  =dvportname.replace(/\s/g, "%20" )
+	var runrul1 = "/iaas-proxy-provider/api/network/profiles?$filter=name+eq+%27" + BGN + '%27'
+	System.log(runrul1)
+	var request1 = R.createRequest('GET',runrul1,null);
+	request1.setHeader("Authorization","Bearer " + tokenid );
+	request1.setHeader("Accept","application/json");
+	request1.setHeader("Content-Type","application/json");
+	request1.contentType = "application/json"
+	var response1 = request1.execute();
+	statusCode = response1.statusCode;
+	System.log("Status code: " + statusCode);
+	var contentAsString = response1.contentAsString;
+	var jsonContent = JSON.parse(contentAsString);
+	var items = jsonContent.content
+	return items
+}
+
+// function to find number of free ip in the subnet
+function getfreeip(resthostoperation, subnet){
+	var inParamtersValues = [subnet];
+	var request = resthostoperation.createRequest(inParamtersValues, null);
+	System.log("IB Url - " + request.fullUrl)
+	var response = request.execute();
+	System.log("Response: " + response);
+	statusCode = response.statusCode;
+	statusCodeAttribute = statusCode;
+	System.log("Status code for Infoblox Call : " + statusCode);
+	contentAsString = response.contentAsString;
+	var jsonContent = JSON.parse(contentAsString);
+	return jsonContent
+}
+// Check and email IP Capacity
+function IPCapacity(reservation, BGroup){		
+LIp = 'false'
+var IP_MSubnet = [];
+var IP_Mcapacity = [];
+var IP_Mfree = []
+var IP_MCampus = []
+var IP_MPrct = []
+var IP_FSubnet = [];
+var IP_Fcapacity = [];
+var IP_Ffree = []
+var IP_FCampus = []
+var IP_FPrct = []
+	var extensionData = reservation.getExtensionData();
+	var aa = extensionData.get('reservationNetworks').getValue()
+	System.log("Business group name - " + reser.name)
+	System.log("Total Available Network Profile - " + aa.length)
+	for each(a in aa){
+					LIp = 'false'
+					NWPrflabel = a.getValue().get("networkProfile")
+					vmDescription = getipsubnet(NWPrflabel.label, Sessionid, RestHost) 
+					x = JSON.stringify(vmDescription)
+					teststr  = (((x.split("definedRanges")[1].split("name"))[1]).split('"')[2])
+					System.log('checking on :' + teststr)
+					freeipaddr = getfreeip(IBAddress,teststr)
+					Campcheck = (NWPrflabel.label).toLowerCase()
+					if(Campcheck.match("franklin") || Campcheck.match("frk") ){
+							campus = "Franklin"
+						}else{
+							campus = "Milwuakee"
+						}
+					System.log("Campcheck - " + Campcheck )
+					var freeip = 0
+					var usedip = 0
+					for each (json in freeipaddr){
+						if(json.status == 'UNUSED'){
+									var freeip = freeip +1
+							}else{
+									usedip = usedip +1
+							}
+						}
+				    TotalIp = freeip + usedip
+					System.log('Total IP - ' + (freeip + usedip))
+					System.log('Total Free IP - ' + freeip)
+					System.log('Total Used IP - ' + usedip)
+					System.log('Total Used IP - ' + parseInt((usedip/TotalIp)*100))
+					IPUtil = parseInt((usedip/TotalIp)*100)
+					if(campus == 'Franklin'){	
+							IP_FSubnet.push(teststr )
+							IP_Fcapacity.push(TotalIp )
+							IP_Ffree.push(freeip)
+							IP_FCampus.push (campus)
+							IP_FPrct.push(IPUtil )
+					 }else{
+							IP_MSubnet.push(teststr )
+							IP_Mcapacity.push(TotalIp )
+							IP_Mfree.push(freeip)
+							IP_MCampus.push (campus)
+							IP_MPrct.push(IPUtil )
+					 }
+		}	
+var maxM = IP_MPrct[0];
+for (i = 0 ; i < IP_MPrct.length; i++) {
+   if (IP_MPrct[i] <= maxM) {
+      maxM = i;
+   }
+}
+
+var maxF = IP_FPrct[0];
+for (i=0; i<IP_FPrct.length; i++) {
+   if (IP_FPrct[i] <= maxF) {
+	System.log("Am in check Loop")
+      maxF = i;
+   }
+}
+var FRKEMail = 0
+var MKEEMail = 0
+System.log(IP_FPrct[maxF] + 'DataMAXF')
+if(IP_FPrct[maxF] > 60){
+LIp = 'true'
+FRKEMail = 1
+	Email_SUBF = 'IP SubNetCapacity :- ' + '<br />'+'<br />' +
+				 'Subnet : ' + IP_FSubnet[maxF] + '<br />' +
+				 'Utilization % : ' + IP_FPrct[maxF] + '<br />'+
+				 'Datacenter : ' + IP_FCampus[maxF] + '<br />'+
+				 'Total Subnet Capacity : ' + IP_Fcapacity[maxF] + '<br />'+
+				 'Available ip: ' + IP_Ffree[maxF] + '<br />' +'<br />'  
+	}
+
+System.log(IP_MPrct[maxM] + 'DataMAXM')
+if(IP_MPrct[maxM] > 60){
+LIp = 'true'
+MKEEMail = 1
+	Email_SUBM = 'IP SubNetCapacity :- ' + '<br />' + '<br />' +
+				 'Subnet : ' + IP_MSubnet[maxM] + '<br />' +
+				 'Utilization % : ' + IP_MPrct[maxM] + '<br />'+
+				 'Datacenter : ' + IP_MCampus[maxM] + '<br />'+
+				 'Total Subnet Capacity : ' + IP_Mcapacity[maxM] + '<br />'+
+				 'Available ip: ' + IP_Mfree[maxM] + '<br />' +'<br />'  
+	}
+System.log(LIp + "LIp Value")
+if((FRKEMail!= 0) && (MKEEMail != 0)){
+		IP_EMail = Email_SUBF +'<br />' +'<br />' + 
+				   Email_SUBM
+	}else if(FRKEMail ==1){
+		IP_EMail = Email_SUBF
+	}else if(MKEEMail == 1){
+		IP_EMail = Email_SUBM
+	}else(IP_EMail = "More that 50% of IP Address Availablity found in both campus")
+
+  	LStorage = LMemory = 'false'
+//System.log(BusG[0] + 'My Check ---------')
+//	if(BusG[0].administratorEmail){appdl =BusG[0].administratorEmail}else{appdl = 'dl-sddc@northwesternmutual.com'}
+	TMemory = BusG[0].totalMemory
+	TStorage = BusG[0].totalStorage 
+	TMachines = BusG[0].totalMachines
+	AMemory = BusG[0].allocatedMemory
+	AStorage = BusG[0].allocatedStorage
+	BName = BusG[0].name
+	Cmem = parseInt((AMemory/TMemory)*100)
+	Cstor = parseInt((AStorage/TStorage)*100)
+	if(Cmem > 60){LMemory = 'true'}
+	if(Cstor > 60){LStorage = 'true'}
+					if(LIp == 'true' || LStorage == 'true' || LMemory == 'true'){
+							Sub1 = "Capacity Alert, More than 60% Utilization in UCP"  
+							mail_body =  'Team, ' + '<br />' +'<br />' + 
+								'Resource Utilization of either one or more component (Compute\Network\Storage) has crossed threshold of 60%, please find the details below' + '<br />' +'<br />' +
+							    IP_EMail + '<br />' +'<br />' + 
+							    'Memory Utilization :-'+ '<br />'+'<br />' +
+							    'Total Memory Utilized/Allocated in GB : ' + AMemory +  '<br />' +
+							    'Utilization % :  ' + Cmem + '<br />'+ '<br />'+
+							    'Storage Utilzation :- '+ '<br />' +'<br />' +
+							    'Storage Utilized/Allocated in GB : ' + AStorage + '<br />'+
+							    'Utilization % :  ' + Cstor + '<br />' +'<br />' + 
+								'Total Number of Machines Provisioned : ' + TMachines + '<br />' +'<br />' + 
+								'Business Group Name :- ' + BName + '<br />' +'<br />' + 
+								Data1 +'<br />' +'<br />'+ Data2 +'<br />'+ Data3 +'<br />'+ Data4 +'<br />'+ Data5 +'<br />'
+								to = 'dineshsolaiappan@northwesternmutual.com'
+							eMail(mail_body,Sub1, to)
+						}
+}
+
+
+var host = Server.findAllForType("vCACCAFE:VCACHost")[1];
+var reservation = Server.findAllForType("vCACCAFE:Reservation"); 
+for each(res in reservation){
+System.log(res.name)
+	Tax = res.name
+	if(Tax == "PPA"){
+	var reser = res.name
+		BusG = vCACCAFEEntitiesFinder.findBusinessGroups(vcachost, Tax)
+			 	IPCapacity(res,BusG)
+		}
+	
+	
+	
+	/*if(Tax.match('Splunk')){
+			var reser = "Splunk"
+		}else{
+			var reser = res.name
+		}
+	 BusG = vCACCAFEEntitiesFinder.findBusinessGroups(vcachost, res.name)
+	 IPCapacity(res,BusG)	*/
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//nwbgname = reser.name + '-'+ (Prodileid -1)
+//System.log(nwbgname + ' -  Network BG Name' )
+
+/*
+if(freeip == 29){
+			
+	var workflowToLaunch = Server.getWorkflowWithId("170fc7c5-2d83-4561-b9fc-b756fd9b1a5c");
+		if (workflowToLaunch == null) {
+				throw "Workflow not found";
+		    }
+		var workflowParameters = new Properties();
+		workflowParameters.put("location","mke");
+		workflowParameters.put("bg",nwbgname);
+		workflowParameters.put("environment","Non-Prod");
+		workflowParameters.put("cidr","27");
+		System.log(workflowParameters)
+		workflowToLaunch.execute(workflowParameters);		
+	}	
+*/	]]></script>
+    <in-binding>
+      <bind name="Sessionid" type="string" export-name="Sessionid"/>
+      <bind name="RestHost" type="REST:RESTHost" export-name="RestHost"/>
+      <bind name="IBAddress" type="REST:RESTOperation" export-name="IBAddress"/>
+      <bind name="vcachost" type="vCACCAFE:VCACHost" export-name="vcachost"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item1" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var getHosts = Server.findAllForType("REST:RESTHost")
+for(var i =0; i < getHosts.length ; i++){
+	if(getHosts[i].name == "vRA - myucp"){
+		var R = getHosts[i]
+			//System.log("name - " + R.name)
+		}
+}
+R = RestHost
+var inParamtersValues = [tenant];
+var bodyJSON = new Object();
+bodyJSON.username 		= resthostUsername;
+bodyJSON.password 		= password;
+bodyJSON.tenant			= tenant
+bodyJSON.issueToken 	= "true";
+var body = JSON.stringify(bodyJSON);
+var acceptHeaders;
+var headerParams = [];
+var acceptHeadersValue = "";
+
+//Setting up the url for rest operation
+var runrul = "/identity/api/tokens"
+//System.log(runrul)
+
+//Creating Execution request of rest call
+var request = R.createRequest('POST',runrul,body);
+request.setHeader("Accept","application/json");
+request.setHeader("Content-Type","application/json");
+request.contentType = "application/json"
+
+//Executing rest call and getting Token id
+var response = request.execute();
+statusCode = response.statusCode;
+System.log("Status code: " + statusCode);
+
+//Parsing output as Json
+var contentAsString = response.contentAsString;
+var jsonContent = JSON.parse(contentAsString);
+Sessionid = jsonContent.id;
+]]></script>
+    <in-binding>
+      <bind name="tenant" type="string" export-name="tenant"/>
+      <bind name="resthostUsername" type="string" export-name="resthostUsername"/>
+      <bind name="password" type="SecureString" export-name="password"/>
+      <bind name="RestHost" type="REST:RESTHost" export-name="RestHost"/>
+    </in-binding>
+    <out-binding>
+      <bind name="Sessionid" type="string" export-name="Sessionid"/>
+    </out-binding>
+    <position y="55.40909090909091" x="184.5"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

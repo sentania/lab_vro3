@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item3" object-name="workflow:name=generic" id="2b276e7c-fa13-41f7-a162-844a217e3a06" version="0.0.3" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Ed Test - Send Project Create email]]></display-name>
+  <description><![CDATA[Gets all business groups and extracts the custom attribute nm.ucp.businessGroupPDL.]]></description>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="subject" type="string">
+      <description><![CDATA[Email subject]]></description>
+    </param>
+    <param name="content" type="string">
+      <description><![CDATA[Email content (text or HTML)]]></description>
+    </param>
+    <param name="pdls" type="Array/string"/>
+  </input>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="fromName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[UCP Team]]></value>
+    <description><![CDATA[Sender's name]]></description>
+  </attrib>
+  <attrib name="fromAddress" type="string" read-only="false">
+    <value encoded="n"><![CDATA[UCPUpdates@northwesternmutual.com]]></value>
+    <description><![CDATA[Sender's address]]></description>
+  </attrib>
+  <attrib name="useSsl" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[false]]></value>
+    <description><![CDATA[If set to true, use SSL to connect ]]></description>
+  </attrib>
+  <attrib name="useStartTls" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[false]]></value>
+    <description><![CDATA[If true, enables the use of the STARTTLS command (if supported by the server) to switch the connection to a TLS-protected connection before issuing any login commands]]></description>
+  </attrib>
+  <attrib name="smtpHost" type="string" read-only="false">
+    <value encoded="n"><![CDATA[hera.nml.com]]></value>
+    <description><![CDATA[SMTP host]]></description>
+  </attrib>
+  <attrib name="smtpPort" type="number" read-only="false">
+    <value encoded="n"><![CDATA[25.0]]></value>
+    <description><![CDATA[SMTP port]]></description>
+  </attrib>
+  <attrib name="ccList" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[#{#string#DL-SDDC@northwesternmutual.com#}#]]></value>
+    <description><![CDATA[List of carbon copy addresses]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item0" type="link" linked-workflow-id="8F808080808080808080808080808080B1808080012318760241416446ce5b52f">
+    <display-name><![CDATA[Send notification to mailing list]]></display-name>
+    <in-binding>
+      <bind name="smtpHost" type="string" export-name="smtpHost">
+        <description><![CDATA[SMTP host]]></description>
+      </bind>
+      <bind name="smtpPort" type="number" export-name="smtpPort">
+        <description><![CDATA[SMTP port]]></description>
+      </bind>
+      <bind name="username" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Username for authentication]]></description>
+      </bind>
+      <bind name="password" type="SecureString" explicitly-not-bound="true">
+        <description><![CDATA[Password for authentication]]></description>
+      </bind>
+      <bind name="fromName" type="string" export-name="fromName">
+        <description><![CDATA[Sender's name]]></description>
+      </bind>
+      <bind name="fromAddress" type="string" export-name="fromAddress">
+        <description><![CDATA[Sender's address]]></description>
+      </bind>
+      <bind name="toAddressList" type="Array/string" export-name="pdls">
+        <description><![CDATA[List of destination addresses]]></description>
+      </bind>
+      <bind name="subject" type="string" export-name="subject">
+        <description><![CDATA[Email subject]]></description>
+      </bind>
+      <bind name="content" type="string" export-name="content">
+        <description><![CDATA[Email content (text or HTML)]]></description>
+      </bind>
+      <bind name="ccList" type="Array/string" explicitly-not-bound="true">
+        <description><![CDATA[List of carbon copy addresses]]></description>
+      </bind>
+      <bind name="bccList" type="Array/string" explicitly-not-bound="true">
+        <description><![CDATA[List of blind carbon copy addresses]]></description>
+      </bind>
+      <bind name="useSsl" type="boolean" export-name="useSsl">
+        <description><![CDATA[If set to true, use SSL to connect ]]></description>
+      </bind>
+      <bind name="useStartTls" type="boolean" export-name="useStartTls">
+        <description><![CDATA[If true, enables the use of the STARTTLS command (if supported by the server) to switch the connection to a TLS-protected connection before issuing any login commands]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Sends an email with specified content to a given email address list, CC list, and BCC list.
+
+Uses the default settings from the Orchestrator Configuration interface for the following optional input parameters:
+SMTP host, SMTP port, username, password, from Address and from Name. You can override these values by providing input parameters.]]></description>
+    <position y="55.40909090909091" x="265.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="subject">
+      <desc><![CDATA[Email subject]]></desc>
+    </p-param>
+    <p-param name="content">
+      <desc><![CDATA[Email content (text or HTML)]]></desc>
+    </p-param>
+    <p-param name="pdls">
+      <desc><![CDATA[pdls]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

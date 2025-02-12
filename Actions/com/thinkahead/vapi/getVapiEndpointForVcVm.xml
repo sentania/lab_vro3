@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getVapiEndpointForVcVm" result-type="VAPI:VAPIEndpoint" api-version="6.0.0" id="386d5de9-6714-4c28-aa15-6b272a27f701" version="1.0.0" allowed-operations="evf" category-name="com.thinkahead.vapi">
+  <description><![CDATA[Returns the vAPI Endpoint that matches the vCenter SDK Connection of the specified VM.
+
+NOTE: only matches short hostname, since FQDN might not have been used for both the 
+Endpoint and the SDK Connection.]]></description>
+  <param n="vcVm" t="VC:VirtualMachine"><![CDATA[the vCenter VM for which to find a vAPI Endpoirnt ]]></param>
+  <script encoded="false"><![CDATA[System.debug("Getting VAPI Endpoint for the specified VM...");
+
+//Get the URL of the VM's vCenter plug-in connection
+var vmVcConn = vcVm.sdkConnection.name;
+System.debug("VM '" + vcVm.name + "' is on vRO's vCenter Connection '" + vmVcConn + "'");
+
+//Look for a vAPI Endpoint that matches the name of the VM's vCenter plug-in Connection
+// NOTE: only matching short hostname, since FQDN might not have been used for both the 
+//  vCenter plug-in Connection and the vAPI Endpoint.
+var allVapiEndpoints = VAPIManager.getAllEndpoints();
+for each (var endpoint in allVapiEndpoints){
+	System.debug("Comparing vC Connection '" + vmVcConn + "' to vAPI Endpoint '" + endpoint.name + "'");	
+	System.debug("Comparing: '" + getHostnameFromUrl(vmVcConn) + "','" + getHostnameFromUrl(endpoint.name) + "'");
+	if( getHostnameFromUrl(vmVcConn) == getHostnameFromUrl(endpoint.name) ){
+		System.debug("Match! Found VAPI Endpoint '" + endpoint.name + "'");
+		return endpoint;
+	}
+}
+
+//Not found
+throw "Unable to find a vAPI Endpoint with the same hostname as vCenter Connection '" + vmVcConn + "'";
+
+
+function getHostnameFromUrl(url){
+//Chops the hostname out of the url, starting with the first "//" and ending
+// with any of the following: / . :
+	var afterSlashes = url.split("//")[1];
+	var beforeNextSlash = afterSlashes.split("/")[0];
+	var beforeDot = beforeNextSlash.split(".")[0];
+	var beforeColon = beforeDot.split(":")[0];
+	return beforeColon.toLowerCase();
+}]]></script>
+</dunes-script-module>

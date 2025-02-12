@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="31ce2b39-eda8-4655-a2c4-14ae94daecdd" version="0.0.15" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Copy of Patch_Multiple_Servers_Current]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="propertyValue" type="Array/string"/>
+    <param name="propertyValue1" type="Array/string"/>
+    <param name="p1" type="string"/>
+    <param name="Server_List" type="Array/string"/>
+  </input>
+  <output>
+    <param name="foreach_out_arg" type="Array/string"/>
+    <param name="foreach_out_arg1" type="Array/string"/>
+  </output>
+  <attrib name="Servers" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="604.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[Servers = Server_List
+
+/*var propertyName = "nm.ucp.BusinessGroupName";
+var propertyName1 = "ucp.tag.environment"
+var propertyValue 
+var propertyValue1 
+var host = Server.findAllForType("vCAC:VCACHost")[1];
+var Servers = new Array();
+// Define the filter that is used for search for the entities
+var filter = "VirtualMachineProperties/any(p: p/PropertyName eq '" + propertyName + "' and p/PropertyValue eq '" +propertyValue+ "')";
+System.log(filter)
+var machines = vCACEntityManager.readModelEntitiesBySystemQuery(
+    host.id,                        //vCAC IaaS host id
+    "ManagementModelEntities.svc",  //model
+    "VirtualMachines",              //Entity Type in IaaS API
+    filter                          //filter
+    )
+if(propertyValue1 == "All"){
+	machines.forEach(function(machine) {
+			var servername = (machine.getProperty("VirtualMachineName"));
+			Servers.push(servername);
+		}
+	)
+ }else{
+		machines.forEach(function(machine) {
+		var servername = (machine.getProperty("VirtualMachineName"));
+		vcacVm = Server.findAllForType("vCAC:VirtualMachine", "VirtualMachineName eq '" +servername+"'");
+		var vCACMachineEntity = vcacVm[0].getEntity();
+		var vCACMachineEntityProperties = vCACMachineEntity.getLink(host,"VirtualMachineProperties");
+		var vCACVmProperties = new Properties();
+	 	for each (var vCACMachineEntityProperty in vCACMachineEntityProperties) {
+			if(vCACMachineEntityProperty.getProperty("PropertyName") == propertyName1 &&  vCACMachineEntityProperty.getProperty("PropertyValue") == propertyValue1){
+				Servers.push(servername);
+			 }
+		  }
+	   }
+	)
+}	
+Servers.sort()
+System.log(Servers)
+
+
+*/
+
+
+
+
+]]></script>
+    <in-binding>
+      <bind name="Server_List" type="Array/string" export-name="Server_List"/>
+    </in-binding>
+    <out-binding>
+      <bind name="Servers" type="Array/string" export-name="Servers"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item0" type="foreach">
+    <display-name><![CDATA[Foreach (Patching Snapshot 48 hours)]]></display-name>
+    <in-binding>
+      <bind name="VMName" type="Array/string" export-name="*Servers"/>
+      <bind name="SName" type="string"/>
+      <bind name="Description" type="string"/>
+      <bind name="Snapshottodelete1" type="VC:VirtualMachineSnapshot">
+        <description><![CDATA[Snapshot Created in previous task]]></description>
+      </bind>
+      <bind name="workflowScheduleDate" type="Date">
+        <description><![CDATA[Schedule execution date]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="null" type="Array/CompositeType(actionResult:VC:Task,actionResult1:VC:Task,scheduledTask:Task)"/>
+    </out-binding>
+    <reference type="Workflow" id="4b17cbfd-4b8c-4c8f-a497-f5ab1f9f1677"/>
+    <position y="55.40909090909091" x="345.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="propertyValue">
+      <desc><![CDATA[propertyValue]]></desc>
+    </p-param>
+    <p-param name="propertyValue1">
+      <desc><![CDATA[propertyValue1]]></desc>
+    </p-param>
+    <p-param name="p1">
+      <desc><![CDATA[p1]]></desc>
+    </p-param>
+    <p-param name="Server_List">
+      <desc><![CDATA[Server_List]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

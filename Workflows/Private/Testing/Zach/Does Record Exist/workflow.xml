@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="a3733c81-ad4c-4b5a-879b-a1a902eb2cdf" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Does Record Exist]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="hostName" type="string">
+      <description><![CDATA[Host name]]></description>
+    </param>
+  </input>
+  <attrib name="hostNameExists" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var hostNameExists = System.resolveHostName(hostName);]]></script>
+    <in-binding>
+      <bind name="hostName" type="string" export-name="hostName"/>
+    </in-binding>
+    <out-binding>
+      <bind name="hostNameExists" type="string" export-name="hostNameExists"/>
+    </out-binding>
+    <position y="55.90909090909091" x="205.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="hostName">
+      <desc><![CDATA[Host name]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

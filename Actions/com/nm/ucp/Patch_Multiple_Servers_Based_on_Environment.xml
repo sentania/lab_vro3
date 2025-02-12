@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="Patch_Multiple_Servers_Based_on_Environment" result-type="Array/string" api-version="6.0.0" id="3b611aca-9e5a-4cf4-a3a4-8cb20bfddda7" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="propertyValue" t="string"/>
+  <param n="propertyValue1" t="string"/>
+  <script encoded="false"><![CDATA[var propertyName = "nm.ucp.BusinessGroupName";
+var propertyName1 = "ucp.tag.environment"
+var propertyValue
+var propertyValue1 
+var host = Server.findAllForType("vCAC:VCACHost")[1];
+var servers = new Array();
+// Define the filter that is used for search for the entities
+var filter = "VirtualMachineProperties/any(p: p/PropertyName eq '" + propertyName + "' and p/PropertyValue eq '" +propertyValue+ "')";
+System.log(filter)
+var machines = vCACEntityManager.readModelEntitiesBySystemQuery(
+    host.id,                        //vCAC IaaS host id
+    "ManagementModelEntities.svc",  //model
+    "VirtualMachines",              //Entity Type in IaaS API
+    filter                          //filter
+    )
+if(propertyValue1 == "All"){
+	machines.forEach(function(machine) {
+			var servername = (machine.getProperty("VirtualMachineName"));
+			servers.push(servername);
+		}
+	)
+ }else{
+		machines.forEach(function(machine) {
+		var servername = (machine.getProperty("VirtualMachineName"));
+		vcacVm = Server.findAllForType("vCAC:VirtualMachine", "VirtualMachineName eq '" +servername+"'");
+		var vCACMachineEntity = vcacVm[0].getEntity();
+		var vCACMachineEntityProperties = vCACMachineEntity.getLink(host,"VirtualMachineProperties");
+		var vCACVmProperties = new Properties();
+	 	for each (var vCACMachineEntityProperty in vCACMachineEntityProperties) {
+			if(vCACMachineEntityProperty.getProperty("PropertyName") == propertyName1 &&  vCACMachineEntityProperty.getProperty("PropertyValue") == propertyValue1){
+				servers.push(servername);
+			 }
+		  }
+	   }
+	)
+}	
+servers.sort();
+System.log(servers)
+return servers]]></script>
+</dunes-script-module>

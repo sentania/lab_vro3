@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="createDNSRecord" result-type="boolean" api-version="6.0.0" id="a52ed95b-1945-4440-abe8-210d70cbc07a" version="0.0.0" category-name="net.sentania.net.Actions.MSDNS">
+  <runtime><![CDATA[powershell:7.4]]></runtime>
+  <param n="DNSServer" t="string"/>
+  <param n="Hostname" t="string"/>
+  <param n="IPAddress" t="string"/>
+  <param n="ForwardZone" t="string"/>
+  <param n="UserName" t="string"/>
+  <param n="Password" t="string"/>
+  <script encoded="false"><![CDATA[function Handler($Context, $inputs)
+{
+    # Expected Inputs:
+    #   DNSServer   - The target DNS server (hostname or IP)
+    #   Hostname    - Fully qualified domain name for the host (e.g. host1.example.com)
+    #   IPAddress   - IPv4 address for the host (e.g. 192.168.1.10)
+    #   ForwardZone - The forward DNS zone in which to create the A record (e.g. example.com)
+    #   UserName    - The username for authentication on the DNS server
+    #   Password    - The plain-text password for the above user
+    #   TTL         - (Optional) Time-to-live for the DNS record in seconds (default: 3600)
+
+    $DNSServer   = $inputs.DNSServer
+    $Hostname    = $inputs.Hostname
+    $IPAddress   = $inputs.IPAddress
+    $ForwardZone = $inputs.ForwardZone
+    $UserName    = $inputs.UserName
+    $Password    = $inputs.Password
+    $TTL         = $inputs.TTL
+    if (-not $TTL) { $TTL = 3600 }  # default TTL
+
+    # Convert the plain text password to a secure string and create the credential object.
+    $securePassword = ConvertTo-SecureString $Password -AsPlainText -Force
+    $Cred = New-Object System.Management.Automation.PSCredential ($UserName, $securePassword)
+
+    # Simple logging function.
+    function Log($message) {
+        Write-Host $message
+    }
+
+    Log "Starting DNS record creation via WMI on server '$DNSServer' for host '$Hostname' (IP: $IPAddress) in zone '$ForwardZone'."
+
+    try {
+        # Retrieve the MicrosoftDNS_AType WMI class from the target DNS server.
+        $dnsAClass = Get-WmiObject -Namespace "root\MicrosoftDNS" -List -ComputerName $DNSServer -Credential $Cred | Where-Object { $_.Name -eq "MicrosoftDNS_AType" }
+        if (-not $dnsAClass) {
+            Log "Error: Unable to retrieve the MicrosoftDNS_AType class from server '$DNSServer'."
+            return $false
+        }
+
+        #
+        # The WMI method signature for CreateInstanceFromPropertyData is:
+        #    uint32 CreateInstanceFromPropertyData(
+        #        [in] string ZoneName,
+        #        [in] string OwnerName,
+        #        [in] string RecordClass,
+        #        [in] string RecordType,
+        #        [in] uint32 TTL,
+        #        [in] string IPAddress,
+        #        [in] boolean CreatePtr,
+        #        [in] string PtrDomainName
+        #    );
+        #
+        # We'll pass:
+        #   - ZoneName: the ForwardZone (e.g. "example.com")
+        #   - OwnerName: the full hostname (e.g. "host1.example.com")
+        #   - RecordClass: "IN" (for Internet)
+        #   - RecordType: "A"
+        #   - TTL: as specified (default 3600)
+        #   - IPAddress: the host's IP address
+        #   - CreatePtr: $true (to request creation of the associated PTR record)
+        #   - PtrDomainName: the full hostname (this will be used for the PTR record)
+        #
+
+        Log "Invoking WMI method CreateInstanceFromPropertyData on zone '$ForwardZone' for owner '$Hostname'."
+        $result = $dnsAClass.CreateInstanceFromPropertyData($ForwardZone, $Hostname, "IN", "A", $TTL, $IPAddress, $true, $Hostname)
+        
+        # According to Microsoft, a return value of 0 indicates success.
+        if ($result -eq 0) {
+            Log "Successfully created A record (and associated PTR record) for '$Hostname' with IP '$IPAddress'."
+            return $true
+        }
+        else {
+            Log "Error: CreateInstanceFromPropertyData returned error code: $result"
+            return $false
+        }
+    }
+    catch {
+        Log "Exception encountered during DNS record creation: $_"
+        return $false
+    }
+}
+]]></script>
+</dunes-script-module>

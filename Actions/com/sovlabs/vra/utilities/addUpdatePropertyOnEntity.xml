@@ -1,0 +1,111 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="addUpdatePropertyOnEntity" result-type="vCAC:Entity" api-version="6.0.0" id="9b949896-af2b-43b8-88db-1f5e36026827" version="0.0.11" allowed-operations="evf" category-name="com.sovlabs.vra.utilities">
+  <param n="entity" t="vCAC:Entity"><![CDATA[vCloud Automation Center entity]]></param>
+  <param n="propertyName" t="string"><![CDATA[property name]]></param>
+  <param n="propertyValue" t="string"><![CDATA[property value]]></param>
+  <param n="propertyIsHidden" t="boolean"><![CDATA[property 'isHidden' flag]]></param>
+  <param n="propertyIsRuntime" t="boolean"><![CDATA[property 'isRuntime' flag]]></param>
+  <param n="propertyIsEncrypted" t="boolean"><![CDATA[property 'isHidden' flag]]></param>
+  <param n="doNotUpdate" t="boolean"><![CDATA[Update flag]]></param>
+  <script encoded="false"><![CDATA[var modelName = entity.modelName;
+var entitySet = entity.entitySetName;
+
+var host = Server.findForType("vCAC:VCACHost", entity.hostId);
+
+switch (entitySet) {
+	case "VirtualMachineTemplates":
+		var entityLabel = "blueprint";
+		var linkedEntityType = "VirtualMachineTemplate";
+		var linkedEntityTypeName = "VirtualMachineTemplateName";
+		var propEntitySet = "VirtualMachineTemplateProperties";
+		var propNameQuery = "PropertyName";
+		var propValueQuery = "PropertyValue";
+		break;
+	case "VirtualMachines":
+		var entityLabel = "virtual machine";
+		var linkedEntityType = "VirtualMachine";
+		var linkedEntityTypeName = "VirtualMachineName";
+		var propEntitySet = "VirtualMachineProperties";
+		var propNameQuery = "PropertyName";
+		var propValueQuery = "PropertyValue";
+		break;
+	case "ManagementEndpoints":
+		var entityLabel = "management endpoint";
+		var linkedEntityType = "ManagementEndpoint";
+		var linkedEntityTypeName = "Name";
+		var propEntitySet = "ManagementEndpointProperties";
+		var propNameQuery = "Name";
+		var propValueQuery = "Value";
+		break;
+	case "ProvisioningGroups":
+		var entityLabel = "business group";
+		var linkedEntityType = "ProvisioningGroup";
+		var linkedEntityTypeName = "GroupName";
+		var propEntitySet = "ProvisioningGroupProperties"
+		var propNameQuery = "PropertyName";
+		var propValueQuery = "PropertyValue";
+		break;
+	case "Hosts":
+		var entityLabel = "compute resource";
+		var linkedEntityType = "Host";
+		var linkedEntityTypeName = "HostName";
+		var propEntitySet = "HostProperties";
+		var propNameQuery = "PropertyName";
+		var propValueQuery = "PropertyValue";
+		break;
+	case "GlobalProfiles":
+		var entityLabel = "build profile";
+		var linkedEntityType = "GlobalProfile";
+		var linkedEntityTypeName = "ProfileName";
+		var propEntitySet = "GlobalProfileProperties"
+		var propNameQuery = "PropertyName";
+		var propValueQuery = "PropertyValue";
+		break;
+	default:
+		throw "Unknown entity set: " + entitySet;
+}
+var name = entity.getProperty(linkedEntityTypeName);
+var found = false;
+
+//Find property by propety name
+var propertyEntities = entity.getLink(host, propEntitySet);
+var foundPropEntityObj = null;
+for each (var propertyEntity in propertyEntities) {
+	if (propertyEntity.getProperty(propNameQuery) == propertyName) {
+		found = true;
+		foundPropEntityObj = propertyEntity;
+		System.log("Found existing property " + propertyName + " on " + entityLabel + " " + name);
+		break;
+	}	
+}
+
+var properties = new Properties();
+properties.put(propNameQuery, propertyName);
+properties.put(propValueQuery, propertyValue);
+properties.put("IsHidden", propertyIsHidden);
+properties.put("IsRuntime", propertyIsRuntime);
+properties.put("IsEncrypted", propertyIsEncrypted);
+
+var links = new Properties();
+links.put(linkedEntityType,entity);
+
+if (found == true) {
+	if (doNotUpdate == false) {
+		System.log(	"Updating entity id " + entity.keyString + " existing property: '" + propertyName + "', value: '" + propertyValue +
+					"' on " +  entityLabel + " " + name);
+		var entityKeyId = foundPropEntityObj.entityKey.get("Id");
+		return vCACEntityManager.updateModelEntityBySerializedKey(host.id, modelName, propEntitySet, entityKeyId, properties, links, null);
+	} else {
+		if (doNotUpdate == true) System.log("- doNotUpdate set to true - not updating existing property " + propertyName);	
+	}
+}
+else {
+	if (doNotUpdate == false) {
+		System.log(	"Updating entity id " + entity.keyString + " with new property: '" + propertyName + "', value: '" + propertyValue +
+					"' on " +  entityLabel + " " + name);
+		return vCACEntityManager.createModelEntity(host.id, modelName, propEntitySet, properties, links);
+	} else {
+		if (doNotUpdate == true) System.log("- doNotUpdate set to true - not adding new property " + propertyName);	
+	}
+}]]></script>
+</dunes-script-module>

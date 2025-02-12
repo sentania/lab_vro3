@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="d0a54f7c-c134-40fb-a925-33d58e72ac31" version="0.0.3" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Patch_My_Server_Now]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="VirtualMachine_Name" type="VC:VirtualMachine"/>
+  </input>
+  <output>
+    <param name="actionResult" type="VC:Task"/>
+    <param name="actionResult1" type="VC:Task"/>
+    <param name="scheduledTask" type="Task">
+      <description><![CDATA[Scheduled workflow task]]></description>
+    </param>
+  </output>
+  <attrib name="Datetime" type="Date" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="VM_Name" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var vm_name = param
+VM_Name = vm_name.name
+
+System.log(VM_Name + " is scheduled to be right now")]]></script>
+    <in-binding>
+      <bind name="param" type="VC:VirtualMachine" export-name="VirtualMachine_Name"/>
+    </in-binding>
+    <out-binding>
+      <bind name="VM_Name" type="string" export-name="VM_Name"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item0" type="link" linked-workflow-id="4b17cbfd-4b8c-4c8f-a497-f5ab1f9f1677">
+    <display-name><![CDATA[Patching Snapshot 48 hours]]></display-name>
+    <in-binding>
+      <bind name="VMName" type="string" export-name="VM_Name"/>
+      <bind name="SName" type="string" explicitly-not-bound="true"/>
+      <bind name="Description" type="string" explicitly-not-bound="true"/>
+      <bind name="Snapshottodelete1" type="VC:VirtualMachineSnapshot" explicitly-not-bound="true">
+        <description><![CDATA[Snapshot Created in previous task]]></description>
+      </bind>
+      <bind name="workflowScheduleDate" type="Date" explicitly-not-bound="true">
+        <description><![CDATA[Schedule execution date]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="VC:Task" export-name="actionResult"/>
+      <bind name="actionResult1" type="VC:Task" export-name="actionResult1"/>
+      <bind name="scheduledTask" type="Task" export-name="scheduledTask">
+        <description><![CDATA[Scheduled workflow task]]></description>
+      </bind>
+    </out-binding>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="VirtualMachine_Name">
+      <desc><![CDATA[VirtualMachine_Name]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

@@ -1,0 +1,264 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item5" object-name="workflow:name=generic" id="0c83f23b-4aa9-4515-ac52-a3c0394fd639" version="2.0.1" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Associate_Create a VM Tag_Category from vRA MachineProvisioned]]></display-name>
+  <description><![CDATA[Looks for the following vRA Custom Properties, which indicate the VM's needed vSphere Tags.  Missing tags will be created.  
+
+Tagging.<CategoryName> = <Tag>
+Tagging.<CategoryName>.TagDescription = <description> (optional)
+Tagging.<CategoryName>.CatDescription = <description> (optional)
+Tagging.<CategoryName>.MultiCard = <true/false> (optional)
+
+Example of properties on a Business Group:
+Tagging.CostCenter = 12345
+Tagging.CostCenter.TagDescription = Marketing
+Tagging.CostCenter.CatDescription = For chargeback
+Tagging.CostCenter.MultiCard = false
+
+OPTIONS - see Configuration Element  'vCenter Tagging' to change:
+* Missing tag categories can be created (instead of throwing an error).
+* Missing VAPI Endpoint (requires vCenter 6+) for the VM's vCenter can be skipped (instead of throwing an error).]]></description>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="vcVm" type="VC:VirtualMachine">
+      <description><![CDATA[vCenter VM (null for BuildingMachine)]]></description>
+    </param>
+    <param name="customProperties" type="Properties">
+      <description><![CDATA[vRA Custom Properties of the target VM]]></description>
+    </param>
+  </input>
+  <attrib name="tagsToCreate" type="Array/Properties" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Each tag to create is stored as a Properties object in this array]]></description>
+  </attrib>
+  <attrib name="taggingPrefix" type="string" read-only="true">
+    <value encoded="n"><![CDATA[Tagging.]]></value>
+    <description><![CDATA[Prefix of all vRA custom properties that are for tagging]]></description>
+  </attrib>
+  <attrib name="vraTagProps" type="Properties" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Pared down list of vRA Custom Props - only includes tagging props, and the taggingPrefix has been removed from each keys]]></description>
+  </attrib>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="skipMissingVapiEndpoint" type="boolean" read-only="true">
+    <value encoded="n"><![CDATA[true]]></value>
+    <description><![CDATA[Determines if a missing VAPI Endpoint will throw an error]]></description>
+  </attrib>
+  <attrib name="vAPIEndpoint" type="VAPI:VAPIEndpoint" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <workflow-note x="360.0" y="100.0" w="524.0" h="63.0">
+    <description><![CDATA[Get Tag/Category info from vRA, and create/associate them as needed]]></description>
+  </workflow-note>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="172.68181818181816" x="944.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item3" type="task">
+    <display-name><![CDATA[Filter vRA Props]]></display-name>
+    <script encoded="false"><![CDATA[//Filter the list of vRA Custom Properties to just the tagging properties
+// Also remove the "vCenterTagging." prefixes from the keys
+// Example: vCenterTagging.<TagName> will be saved as <TagName>
+
+vraTagProps = new Properties();
+var debugMsg = "Flitering vRA Custom Props by prefix '" + taggingPrefix + "':";
+for each (var key in customProperties.keys) {
+	//Check if the key starts with the taggingPrefix
+	if (key.indexOf(taggingPrefix) === 0) {
+		var shortKey = key.slice(taggingPrefix.length);  //remove the prefix
+		var value = customProperties.get(key);
+		vraTagProps.put(shortKey, value);
+		debugMsg += "\n" + shortKey + " : " + value;
+	}
+}
+System.debug(debugMsg);
+]]></script>
+    <in-binding>
+      <bind name="customProperties" type="Properties" export-name="customProperties">
+        <description><![CDATA[vRA Custom Properties of the target VM]]></description>
+      </bind>
+      <bind name="taggingPrefix" type="string" export-name="taggingPrefix">
+        <description><![CDATA[Prefix of all vRA custom properties that are for tagging]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="vraTagProps" type="Properties" export-name="vraTagProps">
+        <description><![CDATA[Pared down list of vRA Custom Props - only includes tagging props, and the taggingPrefix has been removed from each keys]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Filters the list of vRA Custom Properties to just the tagging properties. 
+Also removes the "Client.Tagging." prefixes from the keys. 
+Example: Client.Tagging.CategoryName will be saved as CategoryName]]></description>
+    <position y="119.04545454545453" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item6" type="foreach">
+    <display-name><![CDATA[Create Tags]]></display-name>
+    <in-binding>
+      <bind name="vcVm" type="VC:VirtualMachine" export-name="vcVm">
+        <description><![CDATA[vCenter VM to which the tag will be associated]]></description>
+      </bind>
+      <bind name="tagProperties" type="Array/Properties" export-name="*tagsToCreate">
+        <description><![CDATA[Expected keys: tagName, tagDescription (optional), categoryName, categoryDescription (optional), categoryMultipleCardinality (optional: true/false)]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <reference type="Workflow" id="01a7845e-95b0-4794-a3d3-c672f3d589cb"/>
+    <description><![CDATA[Creates a tag and (optionally) its tag category using data from the input Properties object.
+Associates the new tag with the input VM.
+
+Expected keys for the input properties: 
+tagName, tagDescription (optional), categoryName, categoryDescription (optional), categoryMultipleCardinality: true/false (optional)]]></description>
+    <position y="119.04545454545453" x="764.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item4" type="task">
+    <display-name><![CDATA[Save Tag Info]]></display-name>
+    <script encoded="false"><![CDATA[//Process the pared down list of custom properties from vRA
+// Don't forget that keys were shortened to no longer start with the taggingPrefix. 
+
+// Declare empty array for tags to be created or associated.
+tagsToCreate = [];
+
+for each (var key in vraTagProps.keys) {
+	// Find a base Tag
+	if(key.indexOf(".") == -1){
+		if (!isTagInArray(key, tagsToCreate) ) {
+			var tag = new Properties();
+			tag.put("tagName", vraTagProps.get(key));
+			tag.put("categoryName", key);
+			tag.put("categoryDescription", vraTagProps.get(key + ".CatDescription"));
+			tag.put("tagDescription", vraTagProps.get(key + ".TagDescription"));
+			tag.put("categoryMultipleCardinality", vraTagProps.get(key + ".MultiCard"));
+		
+			tagsToCreate.push(tag)
+			logTagInfo(tag);
+		}	
+	}
+}
+
+//***************** Functions *******************
+
+function isTagInArray(tag, propArray) {
+	for (var i=0; i < propArray.length; i++) {
+		var tagCatName = propArray[i].get("tagCatName")
+		if (tag == tagCatName) return true;
+	}
+	return false;
+}
+
+function logTagInfo(tag){
+	var info = "Saving tag info from vRA Custom Properties:";
+	for each (var key in tag.keys) {
+		info += "\n" + key + " : " + tag.get(key);
+	}
+	System.debug(info);
+}]]></script>
+    <in-binding>
+      <bind name="vraTagProps" type="Properties" export-name="vraTagProps">
+        <description><![CDATA[Pared down list of vRA Custom Props - only includes tagging props, and the taggingPrefix has been removed from each keys]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="tagsToCreate" type="Array/Properties" export-name="tagsToCreate">
+        <description><![CDATA[Each tag to create is stored as a Properties object in this array]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Stores the tags to create as an array of Properties() object.  Each object has the info for a tag to create.]]></description>
+    <position y="119.04545454545453" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item4" prototype-id="system-log" out-name="item2" type="task" interaction="l">
+    <display-name><![CDATA[System log]]></display-name>
+    <script encoded="false"><![CDATA[var logMsg = "vRA Custom Properties specified the following Tags/Categories:";
+for (var i=0; i < tagsToCreate.length; i++) {
+	logMsg += "\nTag: " + tagsToCreate[i].get("tagName") + ", Category: " + tagsToCreate[i].get("categoryName");
+}
+System.log(logMsg);]]></script>
+    <in-binding>
+      <bind name="tagsToCreate" type="Array/Properties" export-name="tagsToCreate">
+        <description><![CDATA[Each tag to create is stored as a Properties object in this array]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Log all of the tags/categories to be created and/or assigned]]></description>
+    <position y="119.04545454545453" x="624.5"/>
+  </workflow-item>
+  <workflow-item name="item5" prototype-id="system-log" out-name="item7" type="task" interaction="l">
+    <display-name><![CDATA[Begin Workflow]]></display-name>
+    <script encoded="false"><![CDATA[System.log("Begin workflow: '" + workflow.currentWorkflow.name + "'");
+]]></script>
+    <in-binding/>
+    <out-binding/>
+    <description><![CDATA[Log the input text to the console log with level 'log']]></description>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item6" prototype-id="system-log" out-name="item0" type="task" interaction="l">
+    <display-name><![CDATA[End Workflow]]></display-name>
+    <script encoded="false"><![CDATA[System.log("End workflow: '" + workflow.currentWorkflow.name + "'");
+]]></script>
+    <in-binding/>
+    <out-binding/>
+    <description><![CDATA[Log the input text to the console log with level 'log']]></description>
+    <position y="182.68181818181816" x="764.5"/>
+  </workflow-item>
+  <workflow-item name="item9" out-name="item13" type="condition" alt-out-name="item8" comparator="0">
+    <display-name><![CDATA[OK to skip this VM?]]></display-name>
+    <script encoded="false"><![CDATA[//Generated by the system, cannot be edited
+return (skipMissingVapiEndpoint == true) ;]]></script>
+    <in-binding>
+      <bind name="skipMissingVapiEndpoint" type="boolean" export-name="skipMissingVapiEndpoint"/>
+    </in-binding>
+    <condition name="skipMissingVapiEndpoint" type="boolean" comparator="0" label="null">false</condition>
+    <position y="172.68181818181816" x="205.0"/>
+  </workflow-item>
+  <workflow-item name="item12" throw-bind-name="errorCode" type="end" end-mode="1">
+    <position y="236.3181818181818" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item13" prototype-id="system-warning" out-name="item6" type="task" interaction="l">
+    <display-name><![CDATA[Log Missing Endpt]]></display-name>
+    <script encoded="false"><![CDATA[System.warn("A VAPI Endpoint for the VM '" + vcVm.name + "' is not configured in vRO. Configuration Element Attribute 'skipMissingVapiEndpoint' is set to Yes.");
+]]></script>
+    <in-binding>
+      <bind name="vcVm" type="VC:VirtualMachine" export-name="vcVm">
+        <description><![CDATA[vCenter VM (null for BuildingMachine)]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Log the input text to the console log with level 'warn']]></description>
+    <position y="182.68181818181816" x="345.0"/>
+  </workflow-item>
+  <workflow-item name="item8" out-name="item12" type="task">
+    <display-name><![CDATA[Set Error Msg]]></display-name>
+    <script encoded="false"><![CDATA[errorCode = "A VAPI Endpoint for the VM '" + vcVm.name + "' is not configured in vRO. Configuration Element Attribute 'skipMissingVapiEndpoint' is set to No.";
+]]></script>
+    <in-binding/>
+    <out-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+    </out-binding>
+    <position y="246.3181818181818" x="205.0"/>
+  </workflow-item>
+  <workflow-item name="item7" out-name="item1" catch-name="item9" throw-bind-name="errorCode" type="task" script-module="com.thinkahead.vapi/getVapiEndpointForVcVm">
+    <display-name><![CDATA[VAPI Endpoint?]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.thinkahead.vapi").getVapiEndpointForVcVm(vcVm) ;]]></script>
+    <in-binding>
+      <bind name="vcVm" type="VC:VirtualMachine" export-name="vcVm">
+        <description><![CDATA[the vCenter VM for which to find a vAPI Endpoirnt ]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="VAPI:VAPIEndpoint" export-name="vAPIEndpoint"/>
+    </out-binding>
+    <description><![CDATA[Returns the vAPI Endpoint that matches the vCenter SDK Connection of the specified VM.
+
+NOTE: only matches short hostname, since FQDN might not have been used for both the 
+Endpoint and the SDK Connection.]]></description>
+    <position y="119.04545454545453" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="vcVm">
+      <desc><![CDATA[vCenter VM (null for BuildingMachine)]]></desc>
+    </p-param>
+    <p-param name="customProperties">
+      <desc><![CDATA[vRA Custom Properties of the target VM]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

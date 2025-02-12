@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item3" object-name="workflow:name=generic" id="8a7acab9-1c83-49fc-914b-bd07406b825a" version="1.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Associate a vSphere Tag with a VM]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="vcVm" type="VC:VirtualMachine">
+      <description><![CDATA[The VM to which the tag should be associated]]></description>
+    </param>
+    <param name="tagId" type="string">
+      <description><![CDATA[ID of the tag to associate]]></description>
+    </param>
+  </input>
+  <attrib name="vapiEndpoint" type="VAPI:VAPIEndpoint" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[The vAPI Endpoint to connect to]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Attach Tag]]></display-name>
+    <script encoded="false"><![CDATA[//Create a dynamic type ID for the VM (required by the attach() method)
+System.log("Associating tag ID '" + tagId + "' with VM '" + vcVm.name + "'...");
+var client = vapiEndpoint.client();
+var tagging = new com_vmware_cis_tagging_tag__association(client);
+var dynamicId = new com_vmware_vapi_std_dynamic__ID() ;
+dynamicId.id = vcVm.id;
+dynamicId.type = vcVm.vimType;
+System.debug(dynamicId);
+
+//Call the attach() method and look for a common error
+try {
+	tagging.attach(tagId, dynamicId);
+} catch (err) {
+	if (err.message.indexOf("com.vmware.vapi.std.errors.invalid_argument") != -1) {
+		err.message += " NOTE: one of the causes of this error is trying to assign "
+					+  "a single-cardinality tag, when there is already one assigned.";
+	}
+	throw err;
+}
+
+System.log("Tag association was successful.");]]></script>
+    <in-binding>
+      <bind name="vcVm" type="VC:VirtualMachine" export-name="vcVm">
+        <description><![CDATA[The VM to which the tag should be associated]]></description>
+      </bind>
+      <bind name="tagId" type="string" export-name="tagId">
+        <description><![CDATA[ID of the tag to associate]]></description>
+      </bind>
+      <bind name="vapiEndpoint" type="VAPI:VAPIEndpoint" export-name="vapiEndpoint">
+        <description><![CDATA[The vAPI Endpoint to connect to]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item1" type="task" script-module="com.thinkahead.vapi/getVapiEndpointForVcVm">
+    <display-name><![CDATA[getVapiEndpointForVcVm]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.thinkahead.vapi").getVapiEndpointForVcVm(vcVm) ;]]></script>
+    <in-binding>
+      <bind name="vcVm" type="VC:VirtualMachine" export-name="vcVm">
+        <description><![CDATA[the vCenter VM for which to find a vAPI Endpoirnt ]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="VAPI:VAPIEndpoint" export-name="vapiEndpoint"/>
+    </out-binding>
+    <description><![CDATA[Returns the vAPI Endpoint that matches the vCenter SDK Connection of the specified VM.
+
+NOTE: only matches short hostname, since FQDN might not have been used for both the 
+Endpoint and the SDK Connection.]]></description>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item2" type="task">
+    <display-name><![CDATA[Validate Inputs]]></display-name>
+    <script encoded="false"><![CDATA[if (tagId == null) {
+  throw "'tagId' parameter should not be null";
+}
+if (vcVm == null) {
+  throw "'vcVm' parameter should not be null";
+}]]></script>
+    <in-binding>
+      <bind name="vcVm" type="VC:VirtualMachine" export-name="vcVm">
+        <description><![CDATA[The VM to which the tag should be associated]]></description>
+      </bind>
+      <bind name="tagId" type="string" export-name="tagId">
+        <description><![CDATA[ID of the tag to associate]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="vcVm">
+      <desc><![CDATA[The VM to which the tag should be associated]]></desc>
+    </p-param>
+    <p-param name="tagId">
+      <desc><![CDATA[ID of the tag to associate]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="asdValidateVirtualIp" result-type="string" api-version="6.0.0" id="91b404ec-b44a-43ba-9e73-ca47d99cb60c" version="0.0.0" allowed-operations="evf" category-name="com.sovlabs.f5">
+  <param n="virtualIp" t="string"/>
+  <script encoded="false"><![CDATA[var ipFormat = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;  
+
+if(virtualIp.match(ipFormat)) {
+	return "";
+} else {
+	return "Please input a valid IP Address for the Virtual IP Address";
+}]]></script>
+</dunes-script-module>

@@ -1,0 +1,364 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="6184c18d-2af0-4fbf-ab79-1ca84a417240" version="0.0.14" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Copy of checkPatchStatus]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="server_name" type="string"/>
+  </input>
+  <output>
+    <param name="WF_status" type="string"/>
+  </output>
+  <attrib name="check_status" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="RequestedBy" type="string" read-only="false">
+    <value encoded="n"><![CDATA[Dinesh Solaiappan]]></value>
+  </attrib>
+  <attrib name="Source" type="string" read-only="false">
+    <value encoded="n"><![CDATA[Event]]></value>
+  </attrib>
+  <attrib name="ShortDescription" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="Description" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="Service" type="string" read-only="false">
+    <value encoded="n"><![CDATA[Servers and Storage Service]]></value>
+  </attrib>
+  <attrib name="Category" type="string" read-only="false">
+    <value encoded="n"><![CDATA[UCP - Unified Compute Platform]]></value>
+  </attrib>
+  <attrib name="Subcategory" type="string" read-only="false">
+    <value encoded="n"><![CDATA[UCP Core Infra]]></value>
+  </attrib>
+  <attrib name="Impact" type="string" read-only="false">
+    <value encoded="n"><![CDATA[Medium]]></value>
+  </attrib>
+  <attrib name="Urgency" type="string" read-only="false">
+    <value encoded="n"><![CDATA[High]]></value>
+  </attrib>
+  <attrib name="Priority" type="string" read-only="false">
+    <value encoded="n"><![CDATA[3]]></value>
+  </attrib>
+  <attrib name="OwnedByTeam" type="string" read-only="false">
+    <value encoded="n"><![CDATA[UCP Unified Compute Platform]]></value>
+  </attrib>
+  <attrib name="CustomerDisplayName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[Dinesh Solaiappan]]></value>
+  </attrib>
+  <attrib name="ConfigItemDisplayName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[UCP Automation]]></value>
+  </attrib>
+  <attrib name="etcd_key" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="INC_number" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="tINC_Date" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="bgpdl" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[/*System will do an hard sleep for 20 mins, for Ansible to pick up and run
+  A loop will run for every 5 mins to check the status of machine, Loop will get timed out when it's iteration count is 25
+  For Linux, Patch updated gets completed sooner when compared to Windows
+*/
+var getHosts = Server.findAllForType("REST:RESTHost")
+for(var i =0; i < getHosts.length ; i++){
+	if(getHosts[i].name == "ucp-etcd"){
+		var R = getHosts[i]
+		}
+}
+var serverUrl = "/unifiedcompute/servers/" + server_name + '?recursive=true' //+ '/state'
+System.log(serverUrl)
+var Connection = R.createRequest('GET',serverUrl)
+Connection.contentType = "application/x-www-form-urlencoded"
+var response = Connection.execute()
+var valueq = JSON.parse(response.contentAsString)
+temp_key = valueq.node.nodes
+for each(Tkey in temp_key){
+		if (Tkey.key.match('contactPDL')){
+			System.log(" contactPDL - " + Tkey.value)
+			bgpdl = Tkey.value
+		}
+}
+bgpdl = "dineshsolaiappan@northwesternmutual.com"
+//var misec =  0.01 * 60 * 60 * 1000
+var misec =  3000
+var i = 0
+System.log("In a one time hard sleep for 20 mins")
+//System.sleep(1200000)
+//for(var i =0 ; i < 3 ; i++){
+date = null
+got_data = "No"
+System.log("done with hard sleep")
+do{
+System.log("Checking loop : " + i)
+var response = Connection.execute()
+var valueq = JSON.parse(response.contentAsString)
+temp_key = valueq.node.nodes
+for each(Tkey in temp_key){
+	if (Tkey.key.match('state') && Tkey.value == "active"){
+	System.log("My Key Value ------ " + Tkey.value)
+		System.log(server_name + "Status changed to Active, Checking for Patch date")
+		for each(Tkey in temp_key){
+			if (Tkey.key.match('lastPatched')){
+				System.log(" Last patched value in ETCD - "+Tkey.value)
+				date = Tkey.value
+				i = 35
+	        }
+	     }
+	  }
+	}
+	if(date == null || i < 35){
+		System.log("Waiting for staus check to be completed")		
+		System.sleep(misec)
+	}
+	i = i+1
+}while(i < 30)
+//}
+var brk = false
+if(date == null || date == 'error'){
+		System.log("No Last Patch date Found in ETCD")
+		brk = true
+		check_status = "Failed"
+	}
+if (brk != true){
+	var patched = new Date();
+	patched.setDate(date.substring(6,8))
+	patched.setYear(date.substring(0,4))
+	patched.setMonth((date.substring(4,6) -1))
+	patched.setHours(date.substring(9,11))
+	patched.setMinutes(date.substring(11,13))
+	current  = new Date()
+	System.log(current + 'Current Time')
+	System.log(patched + 'patched Time from ETCD')
+	date_compare = new Date()
+	date_compare.setHours(-4)
+	System.log(date_compare + '-4hrs to compare' )
+	//bgpdl = 'dineshsolaiappan@northwesternmutual.com'
+	if (/*patched < current &&*/ patched > date_compare ){
+		System.log("Patched Successfully")
+		check_status = "Success"
+	}else{
+		System.log("Patching Process failed")
+		check_status = "Failed"
+		INC_date =  new Date
+		//System.log(INC_date)
+		var s = new Date(INC_date).toLocaleDateString("en-US")
+		//System.log(s)
+		check = s.split(" ")[0]
+		//System.log(check)
+		var Month 
+		switch(check){
+			case "December": 
+				   Month = '12'
+			       break;
+			case "November": 
+				   Month = '11'
+			       break;
+			case "October": 
+				   Month = '10'
+			       break;
+			case "September": 
+				   Month = '09'
+			       break;
+			case "August": 
+				   Month = '08'
+			       break;
+			case "July": 
+				   Month = '07'
+			       break;
+			case "June": 
+				   Month = '06'
+			       break;
+			case "May": 
+				   Month = '05'
+			       break;
+			case "April": 
+				   Month = '04'
+			       break;
+			case "March": 
+				   Month = '03'
+			       break;
+			case "February": 
+				   Month = '02'
+			       break;
+			case "January": 
+				   Month = '01'
+			       break;
+			}
+		Day = (s.split(" ")[1]).split(",")[0]
+		if(Day < 10){
+				Day = 0 + Day
+			}
+		Year = s.split(" ")[2]
+		tINC_Date = Year+Month+Day
+		Time =  INC_date.getHours()+ "_"+ INC_date.getMinutes() + "_"+ INC_date.getSeconds() 
+		Add_to_key  = tINC_Date + '-' +Time
+		RequestedBy = "Dinesh Solaiappan"
+		Source = "Event"
+		ShortDescription = "Server Patching Process Failed for - " + server_name
+		Description = "Patching Process Failed for - " + server_name + "Need Further investigation"
+		Service = "Servers and Storage Service"
+		Category = "UCP - Unified Compute Platform"
+		Subcategory = "UCP Core Infra"
+		Impact = "Medium"
+		Urgency = "High"
+		Priority = 3
+		OwnedByTeam = "UCP Unified Compute Platform"
+		CustomerDisplayName = "Dinesh Solaiappan"
+		ConfigItemDisplayName = "UCP Automation"
+		etcd_key = "patchHistory/" + "patchfailed_" + Add_to_key
+	}
+}
+]]></script>
+    <in-binding>
+      <bind name="server_name" type="string" export-name="server_name"/>
+    </in-binding>
+    <out-binding>
+      <bind name="tINC_Date" type="string" export-name="tINC_Date"/>
+      <bind name="ShortDescription" type="string" export-name="ShortDescription"/>
+      <bind name="etcd_key" type="string" export-name="etcd_key"/>
+      <bind name="Description" type="string" export-name="Description"/>
+      <bind name="check_status" type="string" export-name="check_status"/>
+      <bind name="bgpdl" type="string" export-name="bgpdl"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item2" type="end" end-mode="0">
+    <position y="45.40909090909091" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item0" out-name="item5" type="custom-condition" alt-out-name="item4">
+    <display-name><![CDATA[Custom decision]]></display-name>
+    <script encoded="false"><![CDATA[if (check_status == "Success"){
+		return true
+	}else{
+		return false
+	}]]></script>
+    <in-binding>
+      <bind name="check_status" type="string" export-name="check_status"/>
+    </in-binding>
+    <position y="45.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item3" type="end" end-mode="0">
+    <position y="254.5" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item2" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[//Successfull Email //
+
+function eMail(Content,vmName,Sub1, bgpdl){
+	var objEmail = new EmailMessage();
+	objEmail.fromAddress = 'ucp-vro@nm.nmfco.com'
+	objEmail.fromName = 'DL-SDDC@northwesternmutual.com'
+	objEmail.smtpHost = 'hera.nml.com'
+	objEmail.smtpPort = 25
+	objEmail.toAddress = 'dineshsolaiappan@nortwesternmutual.com'//bgpdl
+	//objEmail.ccAddress = 'DL-SDDC@northwesternmutual.com'
+	objEmail.subject = (Sub1 + " - " + vmName)
+	objEmail.addMimePart(Content,"text/html; charset=UTF-8")
+	objEmail.sendMessage()
+}
+var date = null
+var Content = "Post Patch check failed, Need Manual Check for the server" + server_name
+var vmName = server_name
+var Sub1 = "Need Manual Check for Server - Patching"
+Snap = 'If you would like to rever the server to previous state before patching, please follow the below process'
+S1 = "Login to vRA"
+S2 = "Navigate to Items"
+S3 = 'Select the machine and right side you will see option Revert to Snapshot'
+S4 = "Select that Snapshot, That has Pre Patching in Name, Date Format on name (yyyymmdd-hhmm)"
+S5 = "Please drop an email to dl-sddc@northwesternmutual.com for any information"
+S6 = "Note: "
+S7 = "You will recive an another email from myucp@northwesternmutual.com, which only states that your request from vRA has been successfully addressed, which does not change the patching status of the server in the email"
+
+var Content = "Post Patch check Successful, Server has been patched successfully - " + server_name + '<br />' + '<br />' +Snap + '<br />' + '<br />'+ S1 + '<br />' + '<br />'+ S2 + '<br />' + '<br />'+S3+ '<br />' + '<br />'+ S4+ '<br />' + '<br />'+S5
+var Sub1 = "Server has been patched successfully"
+WF_status = "Passed"
+eMail(Content,server_name, Sub1, bgpdl)]]></script>
+    <in-binding>
+      <bind name="server_name" type="string" export-name="server_name"/>
+      <bind name="bgpdl" type="string" export-name="bgpdl"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="504.5"/>
+  </workflow-item>
+  <workflow-item name="item6" out-name="item3" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[// Patching Failed Email//
+function eMail(Content,vmName,Sub1, bgpdl){
+	var objEmail = new EmailMessage();
+	objEmail.fromAddress = 'ucp-vro@nm.nmfco.com'
+	objEmail.fromName = 'dl-serverpatching@northwesternmutual.com'
+	objEmail.smtpHost = 'hera.nml.com'
+	objEmail.smtpPort = 25
+	objEmail.toAddress = bgpdl
+	objEmail.ccAddress = 'dl-serverpatching@northwesternmutual.com'
+	objEmail.subject = (Sub1 + " - " + vmName)
+	objEmail.addMimePart(Content,"text/html; charset=UTF-8")
+	objEmail.sendMessage()
+}
+var date = null
+//server_name = "ucp00003446"
+var Content = "Post Patch check failed, Need Manual Check for the server" + server_name
+var vmName = server_name
+var Sub1 = "Need Manual Check for Server - Patching"
+Snap = 'If you would like to rever the server to previous state before patching, please follow the below process'
+S1 = "Login to vRA"
+S2 = "Navigate to Items"
+S3 = 'Select the machine and right side you will see option Revert to Snapshot'
+S4 = "Select that Snapshot, That has Pre Patching in Name, Date Format on name (yyyymmdd-hhmm)"
+S5 = "Please drop an email to dl-serverpatching@northwesternmutual.com for any information"
+S6 = 'Note: '
+S7 = "You will recive an another email from myucp@northwesternmutual.com, which only provides the status that your Submitted vRA request, Patching Status of the is what you see in the Email."
+S8 = "Incident has been created for further investigation on the failure, Please refer to INC" + INC_number + " for more details."
+
+var Content = "Post Patch check failed, Need Manual Check for the server " + server_name + ',' +'<br />' + '<br />' + S8 + '<br />' + '<br />' + Snap + '<br />' + '<br />'+ S1 + '<br />' + '<br />'+ S2 + '<br />' + '<br />'+S3+ '<br />' + '<br />'+ S4+ '<br />' + '<br />'+S5 + '<br />' + '<br />' + S6 + '<br />' + '<br />' + S7
+var Sub1 = "Need Manual Check for Server - Patching"
+WF_status = "Failed"
+eMail(Content,vmName, Sub1, bgpdl)]]></script>
+    <in-binding>
+      <bind name="server_name" type="string" export-name="server_name"/>
+      <bind name="bgpdl" type="string" export-name="bgpdl"/>
+      <bind name="INC_number" type="string" export-name="INC_number"/>
+    </in-binding>
+    <out-binding/>
+    <position y="191.77272727272725" x="345.0"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item6" type="link" linked-workflow-id="d6c24c9c-4398-42c0-abaf-c9fbbbf31ca0">
+    <display-name><![CDATA[Create Incident]]></display-name>
+    <in-binding>
+      <bind name="RequestedBy" type="string" export-name="RequestedBy"/>
+      <bind name="Source" type="string" export-name="Source"/>
+      <bind name="ShortDescription" type="string" export-name="ShortDescription"/>
+      <bind name="Description" type="string" export-name="Description"/>
+      <bind name="Service" type="string" export-name="Service"/>
+      <bind name="Category" type="string" export-name="Category"/>
+      <bind name="Subcategory" type="string" export-name="Subcategory"/>
+      <bind name="Impact" type="string" export-name="Impact"/>
+      <bind name="Urgency" type="string" export-name="Urgency"/>
+      <bind name="Priority" type="string" export-name="Priority"/>
+      <bind name="OwnedByTeam" type="string" export-name="OwnedByTeam"/>
+      <bind name="CustomerDisplayName" type="string" export-name="CustomerDisplayName"/>
+      <bind name="ConfigItemDisplayName" type="string" export-name="ConfigItemDisplayName"/>
+      <bind name="Server_Name" type="string" export-name="server_name"/>
+      <bind name="etcd_key" type="string" export-name="etcd_key"/>
+    </in-binding>
+    <out-binding>
+      <bind name="var" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)"/>
+      <bind name="Created_incident" type="string" export-name="INC_number"/>
+    </out-binding>
+    <position y="128.13636363636363" x="345.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="server_name">
+      <desc><![CDATA[server_name]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

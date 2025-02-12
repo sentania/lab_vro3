@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getAdGroupByName" result-type="AD:UserGroup" api-version="6.0.0" id="16a40ba5-94d0-42f6-9f86-72dbf3b11d3c" version="1.0.0" allowed-operations="evf" category-name="com.thinkahead.activedirectory">
+  <description><![CDATA[Returns an AD:UserGroup object for the specified group name.
+
+Be sure you've run the "Configure Active Directory plug-in options" workflow and set a default AD Server.]]></description>
+  <param n="groupName" t="string"><![CDATA[The name of the group to find in AD]]></param>
+  <script encoded="false"><![CDATA[//Search AD for all groups with the specified name (max 20 results)
+var groupList = ActiveDirectory.searchExactMatch("UserGroup", groupName, 20);
+if (!groupList || groupList.length == 0) { throw "AD plug-in did not find any groups named '" + groupName + "'."; }
+
+//Check for multiple groups returned; if so, throw error
+if (groupList.length != 1) {
+	var message = "Error: AD plug-in returned multiple groups with the name '" + groupName + "':";
+	for each (var i in groupList){
+		message += "\n" + i.distinguishedName;
+	}
+	throw message;
+}
+
+//log success
+System.debug("Retrieved AD Group object for '" + groupName + "'");
+
+//Return the group object
+return groupList[0];]]></script>
+</dunes-script-module>

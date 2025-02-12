@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_newMachineQuotaDefinition" result-type="Properties" api-version="6.0.0" id="2e567405-f525-459c-84da-39e9441adf46" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="machineQuota" t="number"/>
+  <script encoded="false"><![CDATA[var machineQuotaDefinition = new Properties();
+
+machineQuotaDefinition.key = "machineQuota";
+var valueObject = new Properties();
+valueObject.type = "integer";
+valueObject.value = machineQuota;
+machineQuotaDefinition.value = valueObject;
+
+return machineQuotaDefinition;]]></script>
+</dunes-script-module>

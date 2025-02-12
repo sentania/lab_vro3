@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_getReservationPolicyByName" result-type="Properties" api-version="6.0.0" id="58e35d5f-f9f6-4b92-b93d-5a5dbe28874a" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="cafeHost" t="vCACCAFE:VCACHost"/>
+  <param n="reservationPolicyName" t="string"/>
+  <script encoded="false"><![CDATA[// Variables
+var endpoint = "com.vmware.vcac.core.cafe.reservation.api";
+var resourceUrl = "reservations/policies";
+
+// Rest Client
+var restClient = cafeHost.createRestClient(endpoint);
+
+// Execute
+var response = restClient.get(resourceUrl)
+
+// Get Response Body
+var responseBodyObject = response.getBodyAsJson()
+
+var reservationPolicies = responseBodyObject.content
+
+var matchingReservationPolicies = reservationPolicies.filter(function (aReservationPolicy) {return aReservationPolicy.name.toUpperCase() == reservationPolicyName.toUpperCase();});
+
+if (matchingReservationPolicies.length > 1){
+	throw new Error("Multiple Reservation Policies found with the same name: " + reservationPolicyName)
+}
+
+if (matchingReservationPolicies.length == 0){
+	throw new Error("No Reservation Policy found with the name: " + reservationPolicyName)
+}
+
+return matchingReservationPolicies[0];]]></script>
+</dunes-script-module>

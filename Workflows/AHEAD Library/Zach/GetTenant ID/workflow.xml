@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="b4fa2b54-8534-4112-8d6d-c23b340e4bbe" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[GetTenant ID]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <attrib name="bg" type="vCACCAFE:BusinessGroup" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='bd23869b-b58a-43ca-b0b2-b08857c76199/d2a8d581-3b1c-43c3-8f5e-63c9de14483c'&dunesName='vCACCAFE:BusinessGroup']]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[System.log(bg.getTenantId());
+
+var tenant = "vsphere.local";
+var bizGroup;
+
+
+var host = vCACCAFEHostManager.getDefaultHostForTenant(tenant , true);
+System.log(host);]]></script>
+    <in-binding>
+      <bind name="bg" type="vCACCAFE:BusinessGroup" export-name="bg"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

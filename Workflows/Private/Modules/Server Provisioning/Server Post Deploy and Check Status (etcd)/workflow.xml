@@ -1,0 +1,263 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item3" object-name="workflow:name=generic" id="558c7db8-6dd1-4af0-b446-b2eab044e733" version="0.0.21" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Server Post Deploy and Check Status (etcd)]]></display-name>
+  <position y="45.90909090909091" x="285.0"/>
+  <input>
+    <param name="serverName" type="string"/>
+  </input>
+  <attrib name="deployContentLength" type="Number" read-only="false">
+    <description><![CDATA[Response content length]]></description>
+  </attrib>
+  <attrib name="deployHeaders" type="Properties" read-only="false">
+    <description><![CDATA[Response headers]]></description>
+  </attrib>
+  <attrib name="deployContentAsString" type="String" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Response content as string]]></description>
+  </attrib>
+  <attrib name="statusCode" type="Number" read-only="false">
+    <description><![CDATA[Response status code]]></description>
+  </attrib>
+  <attrib name="currentStatus" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Current status of job ]]></description>
+  </attrib>
+  <attrib name="sleepTime" type="number" read-only="false">
+    <value encoded="n"><![CDATA[60.0]]></value>
+    <description><![CDATA[Time to sleep in seconds]]></description>
+  </attrib>
+  <attrib name="counter" type="number" read-only="false">
+    <value encoded="n"><![CDATA[0.0]]></value>
+    <description><![CDATA[counter to increment]]></description>
+  </attrib>
+  <attrib name="etcd_status_url" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="etcd_keys" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="etcd_values" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="slackContent" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-note x="677.0" y="41.45454545454545" w="406.0" h="129.0" color="a1d7d7ff">
+    <description><![CDATA[Check status of Job]]></description>
+  </workflow-note>
+  <workflow-item name="item4" out-name="item5" type="task">
+    <display-name><![CDATA[Get Status]]></display-name>
+    <script encoded="false"><![CDATA[var obj = JSON.parse(statusContentAsString);
+
+var currentStatus = obj.node.value;
+]]></script>
+    <in-binding>
+      <bind name="statusContentAsString" type="String" export-name="deployContentAsString"/>
+    </in-binding>
+    <out-binding>
+      <bind name="currentStatus" type="string" export-name="currentStatus"/>
+    </out-binding>
+    <position y="55.40909090909091" x="804.5"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item6" type="custom-condition" alt-out-name="item10">
+    <display-name><![CDATA[Running?]]></display-name>
+    <script encoded="false"><![CDATA[if(currentStatus == "needsProvisioning") {
+	return true;
+} else { 
+	return false;
+}]]></script>
+    <in-binding>
+      <bind name="currentStatus" type="string" export-name="currentStatus"/>
+    </in-binding>
+    <position y="45.40909090909091" x="944.5"/>
+  </workflow-item>
+  <workflow-item name="item0" prototype-id="sleep" out-name="item1" content-mode="x" type="task">
+    <display-name><![CDATA[Sleep]]></display-name>
+    <script encoded="false"><![CDATA[//Auto-generated script
+if ( sleepTime != null )  {
+	System.sleep(sleepTime*1000);
+}
+else  {
+	throw "'sleepTime' is NULL";
+}
+]]></script>
+    <in-binding>
+      <bind name="sleepTime" type="number" export-name="sleepTime">
+        <description><![CDATA[Time to sleep in seconds]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Sleep a given number of seconds]]></description>
+    <position y="119.04545454545453" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item6" prototype-id="increase-counter" out-name="item7" content-mode="x" type="task">
+    <display-name><![CDATA[Increase counter]]></display-name>
+    <script encoded="false"><![CDATA[//Auto-generated script
+counter = counter+1;]]></script>
+    <in-binding>
+      <bind name="counter" type="number" export-name="counter">
+        <description><![CDATA[counter to increment]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="counter" type="number" export-name="counter">
+        <description><![CDATA[counter incremented]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Increment a counter by one]]></description>
+    <position y="119.04545454545453" x="944.5"/>
+  </workflow-item>
+  <workflow-item name="item7" out-name="item0" type="custom-condition" alt-out-name="item9">
+    <display-name><![CDATA[Threshold Met?]]></display-name>
+    <script encoded="false"><![CDATA[if(counter < 120) {
+	return true;
+} else {
+	return false;
+}]]></script>
+    <in-binding>
+      <bind name="counter" type="number" export-name="counter"/>
+    </in-binding>
+    <position y="109.04545454545453" x="804.5"/>
+  </workflow-item>
+  <workflow-item name="item9" out-name="item8" type="task">
+    <display-name><![CDATA[Update Variables]]></display-name>
+    <script encoded="false"><![CDATA[//We take all of the variables and work above and generate our etcd keys and values arrays.
+var baseURL = 'unifiedcompute/servers/';  //the base URL for all UCP records in etcd
+var serverURL = baseURL + serverName + '/';
+var etcd_keys = "";
+var etcd_values = "";
+//all keys should should be in the form serverURL + key
+//set all values immediately after
+//this ensures their positions in the array match, which is how the add keys workflow expects it to be
+//things will go royally sideways if you don't respect this
+
+etcd_keys = serverURL + 'state';
+etcd_values = 'failedProvisioning';
+
+slackContent = ':no_entry: ' + serverName + ' failed the provisioning job';]]></script>
+    <in-binding>
+      <bind name="serverName" type="string" export-name="serverName"/>
+    </in-binding>
+    <out-binding>
+      <bind name="etcd_keys" type="string" export-name="etcd_keys"/>
+      <bind name="etcd_values" type="string" export-name="etcd_values"/>
+      <bind name="slackContent" type="string" export-name="slackContent"/>
+    </out-binding>
+    <position y="182.68181818181816" x="1084.5"/>
+  </workflow-item>
+  <workflow-item name="item10" out-name="item11" type="custom-condition" alt-out-name="item9">
+    <display-name><![CDATA[Success?]]></display-name>
+    <script encoded="false"><![CDATA[if(currentStatus == "active") {
+	return true;
+} else {
+	return false;
+}]]></script>
+    <in-binding>
+      <bind name="currentStatus" type="string" export-name="currentStatus"/>
+    </in-binding>
+    <position y="45.40909090909091" x="1084.5"/>
+  </workflow-item>
+  <workflow-item name="item11" type="end" end-mode="0">
+    <position y="45.40909090909091" x="1264.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item4" type="link" linked-workflow-id="79e07ff4-9696-4bba-9c2b-9845f5698131">
+    <display-name><![CDATA[etcd - Get Key]]></display-name>
+    <in-binding>
+      <bind name="key" type="string" export-name="etcd_status_url">
+        <description><![CDATA[etcd key to update]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="statusCode" type="Number" export-name="statusCode">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="contentLength" type="Number" export-name="deployContentLength">
+        <description><![CDATA[Response content length]]></description>
+      </bind>
+      <bind name="headers" type="Properties" export-name="deployHeaders">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+      <bind name="contentAsString" type="String" export-name="deployContentAsString">
+        <description><![CDATA[Response content as string]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Autogenerated workflow.]]></description>
+    <position y="55.40909090909091" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item1" type="task">
+    <display-name><![CDATA[Generate status URL]]></display-name>
+    <script encoded="false"><![CDATA[//We take all of the variables and work above and generate our etcd keys and values arrays.
+var baseURL = 'unifiedcompute/servers/';  //the base URL for all UCP records in etcd
+var serverURL = baseURL + serverName + '/';
+var etcd_status_url = serverURL + 'state'
+
+]]></script>
+    <in-binding>
+      <bind name="serverName" type="string" export-name="serverName">
+        <description><![CDATA[Server name to apply the post deploy configuration]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="etcd_status_url" type="string" export-name="etcd_status_url"/>
+    </out-binding>
+    <position y="55.40909090909091" x="464.5"/>
+  </workflow-item>
+  <workflow-item name="item2" type="end" end-mode="0">
+    <position y="172.68181818181816" x="1584.5"/>
+  </workflow-item>
+  <workflow-item name="item8" out-name="item12" type="link" linked-workflow-id="1fa52ce3-f6c0-43f8-a28f-6790c2e93f13">
+    <display-name><![CDATA[etcd - Add Key]]></display-name>
+    <in-binding>
+      <bind name="key" type="string" export-name="etcd_keys">
+        <description><![CDATA[etcd key to update]]></description>
+      </bind>
+      <bind name="value" type="string" export-name="etcd_values">
+        <description><![CDATA[value of the key]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="statusCode" type="Number" export-name="statusCode">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="contentLength" type="Number" export-name="deployContentLength">
+        <description><![CDATA[Response content length]]></description>
+      </bind>
+      <bind name="headers" type="Properties" export-name="deployHeaders">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+      <bind name="contentAsString" type="String" export-name="deployContentAsString">
+        <description><![CDATA[Response content as string]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Autogenerated workflow.]]></description>
+    <position y="182.68181818181816" x="1245.0"/>
+  </workflow-item>
+  <workflow-item name="item12" out-name="item2" type="link" linked-workflow-id="6d37a10d-2618-47ee-ace9-ddc058654977">
+    <display-name><![CDATA[Send Message to UCP Alerts - Slack]]></display-name>
+    <in-binding>
+      <bind name="content" type="string" export-name="slackContent">
+        <description><![CDATA[Input for REST Slack call]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="statusCode" type="Number" export-name="statusCode">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="contentLength" type="Number" export-name="deployContentLength">
+        <description><![CDATA[Response content length]]></description>
+      </bind>
+      <bind name="headers" type="Properties" export-name="deployHeaders">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+      <bind name="contentAsString" type="string" export-name="deployContentAsString">
+        <description><![CDATA[Response content as string]]></description>
+      </bind>
+    </out-binding>
+    <position y="183.18181818181816" x="1405.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="serverName">
+      <desc><![CDATA[serverName]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

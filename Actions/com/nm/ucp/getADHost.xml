@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getADHost" result-type="AD:AdHost" api-version="6.0.0" id="52821e40-5bf2-48b0-b652-06194294da99" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="adHostString" t="string"><![CDATA[AD:Host Name]]></param>
+  <script encoded="false"><![CDATA[// 2. Find ADHost from Config Element
+// 2. Get OUs from Configuration Elements
+// 2.1 Get ConfigElement values
+var adElement = [];
+var ConfigElCategory = Server.getConfigurationElementCategoryWithPath("UCP");
+System.log(ConfigElCategory.name);
+var configEls = ConfigElCategory.allConfigurationElements;
+for(element in configEls) {
+	if(configEls[element].name == "ActiveDirectory") {
+	adElement = configEls[element];
+	System.log("AD Elements: "+adElement.name);
+	}
+}
+
+// 2.1.2 Get AD Host
+var adHost;
+if(adElement.getAttributeWithKey(adHostString) != null) {
+	attribute = adElement.getAttributeWithKey(adHostString);
+	adHost = attribute.value;
+	System.log(adHost.name);
+}
+return adHost]]></script>
+</dunes-script-module>

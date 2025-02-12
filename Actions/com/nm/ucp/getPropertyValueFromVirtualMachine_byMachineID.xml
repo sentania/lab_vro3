@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getPropertyValueFromVirtualMachine_byMachineID" result-type="string" api-version="6.0.0" id="b4ec5a77-f971-4bd6-804e-6df708d185bb" version="0.0.1" allowed-operations="evf" category-name="com.nm.ucp">
+  <description><![CDATA[Gets a property from a virtual machine by machineID and returns the value of it.]]></description>
+  <param n="virtualMachineID" t="string"><![CDATA[Virtual machine to get properties from]]></param>
+  <param n="propertyNameSearch" t="string"><![CDATA[property to return]]></param>
+  <script encoded="false"><![CDATA[var host = Server.findAllForType("vCAC:VCACHost")[1]; 
+var properties = new Properties();
+properties.put("VirtualMachineID", virtualMachineID);
+
+
+var virtualMachineEntity = vCACEntityManager.readModelEntity(host.id, "ManagementModelEntities.svc", "VirtualMachines", properties, null);
+var vmProperties = new Properties();
+
+var virtualMachinePropertiesEntities = virtualMachineEntity.getLink(host, "VirtualMachineProperties");
+for each (var virtualMachinePropertiesEntity in virtualMachinePropertiesEntities) {
+	var propertyName = virtualMachinePropertiesEntity.getProperty("PropertyName");
+	if (propertyNameSearch == propertyName)
+	{
+		var propertyValue = virtualMachinePropertiesEntity.getProperty("PropertyValue");
+		System.log("Found property " + propertyNameSearch + " = " + propertyValue);
+	}
+}
+return propertyValue;]]></script>
+</dunes-script-module>

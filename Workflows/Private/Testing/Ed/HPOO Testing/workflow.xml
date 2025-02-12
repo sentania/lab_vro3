@@ -1,0 +1,192 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="ec539711-a6a6-40f2-9f8e-d5fdca4b14c8" version="0.0.12" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[HPOO Testing]]></display-name>
+  <position y="73.18181818181817" x="165.0"/>
+  <attrib name="hostName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[ucpadmin01223.nm.nmfco.com]]></value>
+  </attrib>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="jobStatus" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="jobID" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="hpooHost" type="REST:RESTHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='18a99954-13c7-495f-8ab6-8ae3330aaf06'&dunesName='REST:RESTHost']]></value>
+  </attrib>
+  <attrib name="sleepTime" type="number" read-only="false">
+    <value encoded="n"><![CDATA[5.0]]></value>
+    <description><![CDATA[Time to sleep in seconds]]></description>
+  </attrib>
+  <attrib name="customProperties" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item1" out-name="item7" catch-name="item2" throw-bind-name="errorCode" type="task">
+    <display-name><![CDATA[Create HPOO Job]]></display-name>
+    <script encoded="false"><![CDATA[// Lookup variables
+//var contactPDL = customProperties.get("nm.ucp.BusinessGroupPDL");
+
+contactPDL = "edhunter@northwesternmutual.com";
+
+// Json Data
+var jsonData = '{"flowUuid": "0b373ebc-f2be-40c4-b417-0bdb13c3ca14",'+
+    '"runName": "ucp_maintenanceMode",'+
+    '"logLevel": "STANDARD",'+
+    '"inputs": {'+
+        '"Nodelist": "'+hostName+'",'+
+        '"MaintenanceMode": "on",'+
+        '"IM_CM_Entry": "UCP:server deletion",'+
+        '"SuccessEmailTo": "'+contactPDL+'",'+
+        '"FailureEmailTo": "'+contactPDL+'"'+
+    '}'+
+'}';
+
+var url = "https://ootest.nml.com:8443/oo/rest/v2/executions";
+
+System.log("Creating HPOO Request");
+var request = hpooHost.createRequest("POST", url, jsonData);
+request.contentType="application\/json";
+
+System.log("	Request: "+request);
+System.log("	Request URL: "+request.fullUrl);
+
+var response = request.execute();
+System.log("	Response: "+response.contentAsString);
+var statusCode = response.statusCode;
+System.log("	Response Code: "+statusCode);
+
+errorCode = statusCode;
+if (errorCode == 201) {
+	System.log("	HPOO Job Created");
+	System.log("	Job ID: "+response.contentAsString);
+	jobID = response.contentAsString;
+}
+else if (errorCode == 400) {
+	System.log("	Server not found, continuing with server deletion");
+}
+else if (errorCode == 403) {
+	errorCode=statusCode;
+	throw ("	Access Denied!");
+}
+else {
+	errorCode=responseCode;
+	throw ("	Response Code undefined: "+errorCode);
+}
+
+]]></script>
+    <in-binding>
+      <bind name="hostName" type="string" export-name="hostName"/>
+      <bind name="hpooHost" type="REST:RESTHost" export-name="hpooHost"/>
+      <bind name="customProperties" type="string" export-name="customProperties"/>
+    </in-binding>
+    <out-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+      <bind name="jobID" type="string" export-name="jobID"/>
+    </out-binding>
+    <position y="82.68181818181817" x="224.5"/>
+  </workflow-item>
+  <workflow-item name="item2" throw-bind-name="errorCode" type="end" end-mode="1">
+    <position y="127.22727272727272" x="504.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item0" catch-name="item2" throw-bind-name="errorCode" type="task">
+    <display-name><![CDATA[Check Job Status]]></display-name>
+    <script encoded="false"><![CDATA[var url = "https://ootest.nml.com:8443/oo/rest/v2/executions/"+jobID+"/summary";
+var content = "";
+request = hpooHost.createRequest("GET", url, content);
+request.contentType="application\/json";
+
+System.log("Checking Job Status");
+System.log("	Request: "+request);
+System.log("	Request URL: "+request.fullUrl);
+
+var response = request.execute();
+var responseString = response.contentAsString;
+System.log("	Response: "+responseString);
+var statusCode = response.statusCode;
+System.log("	Response Code: "+statusCode);
+
+var jsonData = JSON.parse(responseString);
+var jobStatus = jsonData['0']['status'];
+System.log("	Status: "+jobStatus);
+]]></script>
+    <in-binding>
+      <bind name="jobID" type="string" export-name="jobID"/>
+      <bind name="hpooHost" type="REST:RESTHost" export-name="hpooHost"/>
+    </in-binding>
+    <out-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+      <bind name="jobStatus" type="string" export-name="jobStatus"/>
+    </out-binding>
+    <position y="82.68181818181817" x="644.5"/>
+  </workflow-item>
+  <workflow-item name="item4" prototype-id="sleep" out-name="item3" catch-name="item2" content-mode="x" throw-bind-name="errorCode" type="task">
+    <display-name><![CDATA[Sleep]]></display-name>
+    <script encoded="false"><![CDATA[//Auto-generated script
+if ( sleepTime != null )  {
+	System.sleep(sleepTime*1000);
+}
+else  {
+	throw "'sleepTime' is NULL";
+}
+]]></script>
+    <in-binding>
+      <bind name="sleepTime" type="number" export-name="sleepTime">
+        <description><![CDATA[Time to sleep in seconds]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+    </out-binding>
+    <description><![CDATA[Sleep a given number of seconds]]></description>
+    <position y="82.68181818181817" x="504.5"/>
+  </workflow-item>
+  <workflow-item name="item5" type="end" end-mode="0">
+    <position y="72.68181818181817" x="964.5"/>
+  </workflow-item>
+  <workflow-item name="item0" out-name="item5" type="custom-condition" alt-out-name="item6">
+    <display-name><![CDATA[Complete?]]></display-name>
+    <script encoded="false"><![CDATA[if (jobStatus == "COMPLETED"){
+	System.log("Job Completed");
+	return true;
+}
+else {
+	return false;
+}]]></script>
+    <in-binding>
+      <bind name="jobStatus" type="string" export-name="jobStatus"/>
+    </in-binding>
+    <position y="72.68181818181817" x="784.5"/>
+  </workflow-item>
+  <workflow-item name="item6" out-name="item4" type="custom-condition" alt-out-name="item2">
+    <display-name><![CDATA[Running]]></display-name>
+    <script encoded="false"><![CDATA[if (jobStatus == "RUNNING"){
+	System.log("Job Still Running. Waithing 5 seconds, and checking again");
+	return true;
+}
+else {
+	System.log("Status is not Completed or Running, please investigate");
+	return false;
+}]]></script>
+    <in-binding>
+      <bind name="jobStatus" type="string" export-name="jobStatus"/>
+    </in-binding>
+    <position y="136.3181818181818" x="784.5"/>
+  </workflow-item>
+  <workflow-item name="item7" out-name="item4" type="custom-condition" alt-out-name="item8">
+    <display-name><![CDATA[Server found?]]></display-name>
+    <script encoded="false"><![CDATA[if (errorCode == 400) {
+	throw("Server Not found exiting");
+}]]></script>
+    <in-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+    </in-binding>
+    <position y="72.68181818181817" x="364.5"/>
+  </workflow-item>
+  <workflow-item name="item8" type="end" end-mode="0">
+    <position y="18.136363636363633" x="404.5"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

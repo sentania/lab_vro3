@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="7c2d940e-1560-4379-be34-5eecd63a6859" version="1.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Create a Computer in an AD OU (by DN)]]></display-name>
+  <description><![CDATA[Creates a new Computer object in the specified OU.
+
+Prerequisite: vRO's AD plug-in must be configured with a Default server (AD:AdHost) by running the 'Configure Active Directory plug-in options' workflow.]]></description>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="computerName" type="string">
+      <description><![CDATA[Name for the new computer]]></description>
+    </param>
+    <param name="ouDistinguishedName" type="string">
+      <description><![CDATA[The Distinguished Name (path) of the OU]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="newComputer" type="AD:ComputerAD">
+      <description><![CDATA[The new Computer object in AD]]></description>
+    </param>
+  </output>
+  <attrib name="ou" type="AD:OrganizationalUnit" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[OU object for the specified DN]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item3" type="link" linked-workflow-id="958080808080808080808080808080804C81808001175609873343b6bbd2e3eea">
+    <display-name><![CDATA[Create a computer in an organizational unit]]></display-name>
+    <in-binding>
+      <bind name="ou" type="AD:OrganizationalUnit" export-name="ou">
+        <description><![CDATA[Parent organizational unit for the new computer]]></description>
+      </bind>
+      <bind name="computerName" type="string" export-name="computerName">
+        <description><![CDATA[Name for the new computer]]></description>
+      </bind>
+      <bind name="domainName" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Domain name in form: company.sample (optional)]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="newComputer" type="AD:ComputerAD" export-name="newComputer"/>
+    </out-binding>
+    <description><![CDATA[Creates an Active Directory computer in an organizational unit.]]></description>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item3" prototype-id="system-log" out-name="item0" type="task" interaction="l">
+    <display-name><![CDATA[Log success]]></display-name>
+    <script encoded="false"><![CDATA[System.log("Successfully created AD Computer object for '" + computerName + "'");
+]]></script>
+    <in-binding>
+      <bind name="computerName" type="string" export-name="computerName">
+        <description><![CDATA[Name for the new computer]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Log the input text to the console log with level 'log']]></description>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="task" script-module="com.thinkahead.activedirectory/getAdOuByDn">
+    <display-name><![CDATA[getAdOuByDn]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.thinkahead.activedirectory").getAdOuByDn(ouDistinguishedName) ;]]></script>
+    <in-binding>
+      <bind name="ouDistinguishedName" type="string" export-name="ouDistinguishedName">
+        <description><![CDATA[The Distinguished Name (path) of the OU]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="AD:OrganizationalUnit" export-name="ou"/>
+    </out-binding>
+    <description><![CDATA[Returns the AD:OrganizationalUnit object for the OU specified by its distinguished name (DN)]]></description>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="computerName">
+      <desc><![CDATA[Name for the new computer]]></desc>
+    </p-param>
+    <p-param name="ouDistinguishedName">
+      <desc><![CDATA[The Distinguished Name (path) of the OU]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="a828c68c-b2cd-4e54-8456-121a2053f9f2" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[MultiLine String]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <attrib name="interfaceName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[frk-ucp-test]]></value>
+  </attrib>
+  <attrib name="gw" type="string" read-only="false">
+    <value encoded="n"><![CDATA[10.38.3.17]]></value>
+  </attrib>
+  <attrib name="subMask" type="string" read-only="false">
+    <value encoded="n"><![CDATA[255.255.255.224]]></value>
+  </attrib>
+  <attrib name="cidr" type="string" read-only="false">
+    <value encoded="n"><![CDATA[27]]></value>
+  </attrib>
+  <attrib name="switchId" type="string" read-only="false">
+    <value encoded="n"><![CDATA[frk-ucp-test]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var content = "<interfaces> \
+<interface> \
+<name>"+interfaceName+"</name> \
+<addressGroups> \
+<addressGroup> \
+<primaryAddress>"+gw+"</primaryAddress> \
+<subnetMask>"+subMask+"</subnetMask> \
+<subnetPrefixLength>"+cidr+"</subnetPrefixLength> \
+</addressGroup> \
+</addressGroups> \
+<mtu>1500</mtu> \
+<type>internal</type> \
+<isConnected>true</isConnected> \
+<connectedToId>"+switchId+"</connectedToId> \
+</interface> \
+</interfaces>";
+
+System.log("XML Payload: "+content);]]></script>
+    <in-binding>
+      <bind name="interfaceName" type="string" export-name="interfaceName"/>
+      <bind name="gw" type="string" export-name="gw"/>
+      <bind name="subMask" type="string" export-name="subMask"/>
+      <bind name="cidr" type="string" export-name="cidr"/>
+      <bind name="switchId" type="string" export-name="switchId"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

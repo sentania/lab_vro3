@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_newStoragesDefinition" result-type="Properties" api-version="6.0.0" id="268fb934-2f68-4bda-aaff-ef0c92183b7d" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="storageDefinitions" t="Array/Properties"/>
+  <script encoded="false"><![CDATA[
+var storagesDefinition = new Properties();
+
+storagesDefinition.key = "reservationStorages";
+var valueObject = new Properties();
+valueObject.type = "multiple";
+valueObject.elementTypeId = "COMPLEX";
+valueObject.items = storageDefinitions;
+storagesDefinition.value = valueObject;
+
+return storagesDefinition;]]></script>
+</dunes-script-module>

@@ -1,0 +1,153 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="95137ed3-c5e1-44bd-81cd-79e59bb729be" version="0.0.1" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Copy of Change Business Group PDL]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="businessGroup" type="string"/>
+    <param name="newPdl" type="string"/>
+  </input>
+  <output>
+    <param name="var" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)"/>
+  </output>
+  <attrib name="servers" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="etcd_keys" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="etcd_values" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="task">
+    <display-name><![CDATA[Update BG/Get Servers]]></display-name>
+    <script encoded="false"><![CDATA[var vm;
+var servers = [];
+var propertyName = "nm.ucp.BusinessGroupName";
+var host = Server.findAllForType("vCAC:VCACHost")[1];
+var cafeHost = Server.findAllForType("vCACCAFE:VCACHost")[0];
+var contactPDL = "nm.ucp.businessGroupPDL";
+
+//Update Business Group Custom Attribute
+var subTenants =  vCACCAFEEntitiesFinder.getSubtenants(cafeHost);
+for each (var subTenant in subTenants){
+	if (subTenant.name == businessGroup){
+		System.log("Found Subtenant "+ subTenant.name);
+		System.getModule("com.vmware.library.vcaccafe.subtenant").updateCustomProperty(subTenant,contactPDL,contactPDL,newPdl,false,false)
+		
+		//Update Business Group Manager email address
+		var hostEntity = vCACCAFEEntitiesFinder.getHostForEntity(subTenant);
+		var service = hostEntity.createAuthenticationClient().getAuthenticationSubtenantService();
+		vCACCAFESubtenantHelper.setManagerEmails(subTenant,newPdl)
+		service.updateSubtenant(hostEntity.tenant, subTenant);
+	}
+}
+
+
+
+// Define the filter that is used for search for the entities
+var filter = "VirtualMachineProperties/any(p: p/PropertyName eq '" + propertyName + "' and p/PropertyValue eq '" + businessGroup + "')";
+ 
+var machines = vCACEntityManager.readModelEntitiesBySystemQuery(
+    host.id,                        //vCAC IaaS host id
+    "ManagementModelEntities.svc",  //model
+    "VirtualMachines",              //Entity Type in IaaS API
+    filter                          //filter
+    )
+ //converting vcac:entity to vcac:virtualmachine
+var vCACVirtualMachines = machines.map(function(machine) {
+   return machine.getInventoryObject();
+});
+
+machines.forEach(function(machine) {
+	var servername = (machine.getProperty("VirtualMachineName"));
+	servers.push(servername);
+	}
+);
+servers.sort();
+
+//Updating property on each virtual machine
+for each (vm in vCACVirtualMachines){
+	var currentPdl = System.getModule("com.vmware.library.vcac").getPropertyFromVirtualMachine(host,vm,contactPDL);
+	System.log("Current PDL for " + vm.VirtualMachineName + " = " + currentPdl); 
+	if (currentPdl != newPdl || currentPdl == null){
+		System.log("Updating PDL for vm = "+vm.VirtualMachineName + '\n' )
+		System.getModule("com.nm.ucp").addUpdatePropertyFromVirtualMachineEntity(host, contactPDL, newPdl, false, false, false, false, vm) ;
+	}
+	else {System.log("PDL is already set correctly for "+vm.VirtualMachineName + '\n')}
+}
+]]></script>
+    <in-binding>
+      <bind name="businessGroup" type="string" export-name="businessGroup"/>
+      <bind name="newPdl" type="string" export-name="newPdl"/>
+    </in-binding>
+    <out-binding>
+      <bind name="servers" type="Array/string" export-name="servers"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item3" type="task">
+    <display-name><![CDATA[Setup etcd info]]></display-name>
+    <script encoded="false"><![CDATA[var module = System.getModule("com.vmware.library.vcac")//pulling getmodule out of the loop for performance
+var baseURL = 'unifiedcompute/servers/';  //the base URL for all UCP records in etcd
+var etcd_keys = [];
+var etcd_values = [];
+	
+for each (vm in servers) {
+	
+		//Documenting server name and is managed
+		System.log("Setting up etcd for "+ vm);
+		
+		//Setting up etcd config
+		var serverURL = baseURL + vm + '/';
+
+		//Adding contact PDL
+		etcd_keys.push(serverURL + 'contactPDL');
+		etcd_values.push(newPdl);
+}	
+
+
+]]></script>
+    <in-binding>
+      <bind name="servers" type="Array/string" export-name="servers"/>
+      <bind name="newPdl" type="string" export-name="newPdl"/>
+    </in-binding>
+    <out-binding>
+      <bind name="etcd_keys" type="Array/string" export-name="etcd_keys"/>
+      <bind name="etcd_values" type="Array/string" export-name="etcd_values"/>
+    </out-binding>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item0" type="foreach">
+    <display-name><![CDATA[Foreach (etcd - Add Key)]]></display-name>
+    <in-binding>
+      <bind name="key" type="Array/string" export-name="*etcd_keys">
+        <description><![CDATA[etcd key to update]]></description>
+      </bind>
+      <bind name="value" type="Array/string" export-name="*etcd_values">
+        <description><![CDATA[value of the key]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="statusCode" type="Array/Number" export-name="*var.statusCode"/>
+      <bind name="contentLength" type="Array/Number" export-name="*var.contentLength"/>
+      <bind name="headers" type="Array/Properties" export-name="*var.headers"/>
+      <bind name="contentAsString" type="Array/String" export-name="*var.contentAsString"/>
+    </out-binding>
+    <reference type="Workflow" id="1fa52ce3-f6c0-43f8-a28f-6790c2e93f13"/>
+    <description><![CDATA[Autogenerated workflow.]]></description>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="businessGroup">
+      <desc><![CDATA[businessGroup]]></desc>
+    </p-param>
+    <p-param name="newPdl">
+      <desc><![CDATA[newPdl]]></desc>
+      <p-qual kind="static" name="mandatory" type="boolean"><![CDATA[true]]></p-qual>
+      <p-qual kind="static" name="regexp" type="Regexp"><![CDATA[[\w-]+@northwesternmutual.com]]></p-qual>
+    </p-param>
+  </presentation>
+</workflow>

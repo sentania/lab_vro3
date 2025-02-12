@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="c7e501d5-d05b-4e08-852b-d626e1119b83" version="1.1.0" api-version="6.0.0" allowed-operations="vfe" editor-version="2.0" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[AutoScale-In]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="vm" type="VC:VirtualMachine"/>
+  </input>
+  <output>
+    <param name="actionResult" type="string"/>
+  </output>
+  <attrib name="AriaAutoUrl" type="string" read-only="false">
+    <value encoded="n"><![CDATA[https://auto.vcf.sddc.lab]]></value>
+  </attrib>
+  <attrib name="vmname" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <in-binding/>
+    <position y="50.0" x="440.0"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task" script-module="com.broadcom.hol/AutoScale_In_AriaAuto">
+    <display-name><![CDATA[AutoScale_In_AriaAuto]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.broadcom.hol").AutoScale_In_AriaAuto(AriaAutoUrl,vmname);
+]]></script>
+    <in-binding>
+      <bind name="AriaAutoUrl" type="string" export-name="AriaAutoUrl"/>
+      <bind name="vmname" type="string" export-name="vmname"/>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="string" export-name="actionResult"/>
+    </out-binding>
+    <description><![CDATA[Add a note to the workflow schema.]]></description>
+    <position y="60.0" x="300.0"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item1" type="task">
+    <display-name><![CDATA[Get Input Info]]></display-name>
+    <script encoded="false"><![CDATA[System.log("Beginning scale out work flow");
+//Look at the VM object passed in, and extract the name of it.
+
+//we will pass this to the scale action to look up the deployment and perform out logic
+
+var vmname = vm.name;
+
+System.log('Impacted VM name: ' + vmname);
+
+
+
+]]></script>
+    <in-binding>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm"/>
+    </in-binding>
+    <out-binding>
+      <bind name="vmname" type="string" export-name="vmname"/>
+    </out-binding>
+    <description><![CDATA[Simple task with custom script capability.]]></description>
+    <position y="60.0" x="180.0"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

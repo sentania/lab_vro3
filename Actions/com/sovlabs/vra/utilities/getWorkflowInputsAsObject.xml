@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getWorkflowInputsAsObject" result-type="Any" api-version="6.0.0" id="4d7bf7e9-9399-4ecc-b0a5-aa96bbbc0113" version="0.0.3" allowed-operations="evf" category-name="com.sovlabs.vra.utilities">
+  <script encoded="false"><![CDATA[var returnObj = {};
+
+var wfInputs = workflow.getInputParameters();
+for each (var key in wfInputs.keys){
+	if (System.getObjectType(wfInputs[key]) == "Array") {
+		returnObj[key] = ((wfInputs[key]).join(",")).split(",");
+	} else {
+		returnObj[key] = wfInputs[key];
+	}
+	System.debug(key + " = " + returnObj[key]);
+}
+
+var ctxt = System.getContext();
+
+var params = ctxt.parameterNames();
+for each (var param in params) {
+	var p = ctxt.getParameter(param);
+	var key = String(param);
+	
+	if ( p != null ) { 
+		if ( p.match(/^(\d+\.\d+)$/) )  {
+			// Float
+		   returnObj[key] = parseFloat(p);
+		} else if ( p.match(/^\d+$/) ) {
+			// Integer
+		   returnObj[key] = parseInt(p);
+		} else if ( p.match(/^\{.*\}$/) ) { 
+			// JSON Object
+			try { 
+			  returnObj[key] = JSON.parse(p);
+			} catch (e) { 
+			  returnObj[key] = String(p);
+			}
+		} else if ( p.match(/^\[.*\]$/) ) {
+			// JSON Array
+			try { 
+			  returnObj[key] = JSON.parse(p);
+			} catch (e) { 
+			  returnObj[key] = String(p);
+			}
+		} else if ( p == "true" || p == "false") {
+			// Boolean
+			returnObj[key] = eval(p);
+		} else if ( p == "null" ) {
+			//null
+			returnObj[key] = null;
+		} else { 
+			//String
+			returnObj[key] = String(p);
+		}
+	} else { 
+		returnObj[key] = null;
+	}
+
+	System.debug(key + " = " + returnObj[param] );
+}
+
+return returnObj;]]></script>
+</dunes-script-module>

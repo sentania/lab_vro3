@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getVcacCafeHost" result-type="vCACCAFE:VCACHost" api-version="6.0.0" id="f37309a1-db8e-46f7-8510-ae4ad66cda97" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp">
+  <param n="hostString" t="string"><![CDATA[Name of attribute in ConfigElement for vCACCAFE:VCACHost]]></param>
+  <script encoded="false"><![CDATA[// 2. Find vCACCAFE:VCACHost from Config Element
+// 2.1 Get ConfigElement values
+var vraElement = [];
+var ConfigElCategory = Server.getConfigurationElementCategoryWithPath("UCP");
+System.log(ConfigElCategory.name);
+var configEls = ConfigElCategory.allConfigurationElements;
+for(element in configEls) {
+	if(configEls[element].name == "vRA") {
+	vraElement = configEls[element];
+	System.log("vRA Elements: "+vraElement.name);
+	}
+}
+
+// 2.1.2 Get vCACCAFE Host
+var vcacCafeHost;
+if(vraElement.getAttributeWithKey(hostString) != null) {
+	attribute = vraElement.getAttributeWithKey(hostString);
+	vcacCafeHost = attribute.value;
+	System.log(vcacCafeHost.name);
+}
+return vcacCafeHost;]]></script>
+</dunes-script-module>

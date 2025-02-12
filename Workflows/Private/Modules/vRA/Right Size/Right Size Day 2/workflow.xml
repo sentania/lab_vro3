@@ -1,0 +1,131 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="9ccb0d8c-d70d-4a2c-84b0-e3235980685b" version="0.0.1" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Right Size Day 2]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="vm" type="VC:VirtualMachine"/>
+    <param name="rcpu" type="number"/>
+    <param name="rmem" type="number"/>
+    <param name="currentCpu" type="number"/>
+    <param name="currentMem" type="number"/>
+  </input>
+  <attrib name="vcpu" type="number" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[New vCPU number]]></description>
+  </attrib>
+  <attrib name="mem" type="number" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item3" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[//Logging vm name
+System.log("vm = "+vm.name)
+
+//Logging Memory Info and setting new value
+System.log("Current Memory = "+currentMem)
+System.log("Reclaimable Memory = "+rmem)
+mem = currentMem - rmem
+System.log("New Memory value = "+mem)
+System.log("----------------------------------------");
+
+//Logging CPU Info and setting new value 
+System.log("Current CPU = "+currentCpu)
+System.log("Reclaimable CPU = "+rcpu)
+vcpu = currentCpu - rcpu
+System.log("New CPU value = "+vcpu)
+
+//if (currentMem == mem || currentCpu == vcpu){}
+]]></script>
+    <in-binding>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm"/>
+      <bind name="currentMem" type="number" export-name="currentMem"/>
+      <bind name="currentCpu" type="number" export-name="currentCpu"/>
+      <bind name="rmem" type="number" export-name="rmem"/>
+      <bind name="rcpu" type="number" export-name="rcpu"/>
+    </in-binding>
+    <out-binding>
+      <bind name="vcpu" type="number" export-name="vcpu">
+        <description><![CDATA[New vCPU number]]></description>
+      </bind>
+      <bind name="mem" type="number" export-name="mem"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item0" type="link" linked-workflow-id="398117b4-2637-4cdc-9c83-7be24aff9743">
+    <display-name><![CDATA[Rightsize VM]]></display-name>
+    <in-binding>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm">
+        <description><![CDATA[Virtual machine on which to change the CPU number]]></description>
+      </bind>
+      <bind name="vcpu" type="number" export-name="vcpu">
+        <description><![CDATA[New vCPU number]]></description>
+      </bind>
+      <bind name="mem" type="number" export-name="mem"/>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Changes the amount of RAM of a virtual machine.]]></description>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item2" type="custom-condition" alt-out-name="item5">
+    <display-name><![CDATA[Custom decision]]></display-name>
+    <script encoded="false"><![CDATA[var status = true
+//Checking if Reclaimable Memory and CPU is not zero or greater that what is configured
+if (rmem == "0" && rcpu == "0"){
+	status = false
+	return status
+} 
+else if(rmem >= currentMem){
+	status = false
+	return status
+} 
+else if(rcpu >= currentCpu){
+	status = false
+	return status
+}
+]]></script>
+    <in-binding>
+      <bind name="rcpu" type="number" export-name="rcpu"/>
+      <bind name="rmem" type="number" export-name="rmem"/>
+      <bind name="currentCpu" type="number" export-name="currentCpu"/>
+      <bind name="currentMem" type="number" export-name="currentMem"/>
+    </in-binding>
+    <position y="45.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item4" throw-bind-name="errorCode" type="end" end-mode="0">
+    <position y="172.68181818181816" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item4" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[System.log("----------------------------------------");
+System.log("Reclaimable memory = "+rmem+" and Reclaimable cpu = "+rcpu+". Nothing to do, so skipping.")]]></script>
+    <in-binding>
+      <bind name="rcpu" type="number" export-name="rcpu"/>
+      <bind name="rmem" type="number" export-name="rmem"/>
+    </in-binding>
+    <out-binding/>
+    <position y="119.04545454545453" x="345.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="vm">
+      <desc><![CDATA[vm]]></desc>
+    </p-param>
+    <p-param name="rcpu">
+      <desc><![CDATA[rcpu]]></desc>
+    </p-param>
+    <p-param name="rmem">
+      <desc><![CDATA[rmem]]></desc>
+    </p-param>
+    <p-param name="currentCpu">
+      <desc><![CDATA[currentCpu]]></desc>
+    </p-param>
+    <p-param name="currentMem">
+      <desc><![CDATA[currentMem]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

@@ -1,0 +1,319 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="9a378337-1c01-4acc-8053-5321fe2eb0a2" version="1.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Get or Create an AD OU (by DN)]]></display-name>
+  <description><![CDATA[Gets the OU object for the specified DN.  If the OU does not exist, it will be created along with any other missing OUs in the DN.
+
+Requirements:
+1) Base OU (the one right after the Domain) must already exist.
+2) vRO must already have a default AD Server (run the "Configure Active Directory plug-in options" workflow).
+
+Development Notes: 
+I had originally written the main loop as one script, but the call to create a new OU didn't return the OU object it just
+created, nor was I able to retrieve the new object from the parent OU (parent OU object had gone stale and didn't see its 
+new child).  I used a graphical loop instead of the script so that I could call the getAdOuByDn action, which searches
+AD for the new OU object (calling actions from a script is not a best practice).]]></description>
+  <position y="45.40909090909091" x="4.5"/>
+  <input>
+    <param name="ouDistinguishedName" type="string">
+      <description><![CDATA[The Distinguished Name (path) of the OU]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="adOu" type="AD:OrganizationalUnit">
+      <description><![CDATA[The specified AD Organizational Unit object]]></description>
+    </param>
+  </output>
+  <attrib name="ouHirearchyToProcess" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[element 0 is the base OU (first to get/create), last element is the final OU in the hierarchy to create]]></description>
+  </attrib>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[default exception variable]]></description>
+  </attrib>
+  <attrib name="loopCurrentOuDn" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Loop variable: AD DN of the current OU to get or create]]></description>
+  </attrib>
+  <attrib name="loopCurrentOu" type="AD:OrganizationalUnit" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Loop variable: AD object of the current OU to get or create]]></description>
+  </attrib>
+  <attrib name="loopParentOu" type="AD:OrganizationalUnit" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Loop variable: Parent OU, used to retrieve the object of the current OU]]></description>
+  </attrib>
+  <attrib name="i" type="number" read-only="false">
+    <value encoded="n"><![CDATA[0.0]]></value>
+    <description><![CDATA[Loop counter]]></description>
+  </attrib>
+  <attrib name="loopCurrentOuName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Loop variable: Short name of the current OU]]></description>
+  </attrib>
+  <workflow-note x="78.0" y="34.36363636363636" w="264.0" h="59.0">
+    <description><![CDATA[Get the OU if it already exists]]></description>
+  </workflow-note>
+  <workflow-note x="360.0" y="154.5454545454545" w="420.0" h="172.72727272727272">
+    <description><![CDATA[Loop through the OU hierarchy of the specified OU DN, and create any missing OUs.]]></description>
+  </workflow-note>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="404.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item6" catch-name="item3" throw-bind-name="errorCode" type="task" script-module="com.thinkahead.activedirectory/getAdOuByDn">
+    <display-name><![CDATA[getAdOuByDn]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.thinkahead.activedirectory").getAdOuByDn(ouDistinguishedName) ;]]></script>
+    <in-binding>
+      <bind name="ouDistinguishedName" type="string" export-name="ouDistinguishedName">
+        <description><![CDATA[The Distinguished Name (path) of the OU]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="AD:OrganizationalUnit" export-name="adOu"/>
+    </out-binding>
+    <description><![CDATA[Returns the AD:OrganizationalUnit object for the OU specified by its distinguished name (DN).
+
+Be sure you've run the "Configure Active Directory plug-in options" workflow and set a default AD Server.]]></description>
+    <position y="55.40909090909091" x="84.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item4" type="task">
+    <display-name><![CDATA[Get OU hirearchy]]></display-name>
+    <script encoded="false"><![CDATA[//Initialize outputs
+var dnAccumulation = "";	//Stores the DN for each level of the OU hierarchy, as we loop through them
+ouHirearchyToProcess = [];  //Output array
+
+//Create an array which represents the OU hierarchy
+//Loop through DN path in reverse, and store individual DN's for each level of the OU hierarchy
+var dnComponents = ouDistinguishedName.split(",");
+for (var i = dnComponents.length-1; i>=0; i--) {
+	System.debug("Get OU hirearchy: Pre-processing DN path component '" + dnComponents[i] + "'");
+	
+	//Condition to prevent a trailing comma at the end of the DNs
+	var lastComponentPos = dnComponents.length-1;
+	if (i == lastComponentPos) dnAccumulation = dnComponents[i];
+	else dnAccumulation = dnComponents[i] + "," + dnAccumulation;
+	
+	//Don't store DNs for the domain components (we only want the OU's)
+	// make sure this component doesn't start with "dc="
+	if (dnComponents[i].toLowerCase().indexOf("dc=") !== 0) {
+		//Output array, which contains individual OU DNs for each level of the OU path
+		ouHirearchyToProcess.push(dnAccumulation);
+	}
+}
+
+]]></script>
+    <in-binding>
+      <bind name="ouDistinguishedName" type="string" export-name="ouDistinguishedName">
+        <description><![CDATA[The Distinguished Name (path) of the OU]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="ouHirearchyToProcess" type="Array/string" export-name="ouHirearchyToProcess">
+        <description><![CDATA[element 0 is the base OU (first to get/create), last element is the final OU in the hierarchy to create]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Create an array which represents the OU hierarchy.  
+The array contains individual DN's for each level of the OU hierarchy.]]></description>
+    <position y="173.59090909090907" x="224.5"/>
+  </workflow-item>
+  <workflow-item name="item3" prototype-id="system-warning" out-name="item2" type="task" interaction="l">
+    <display-name><![CDATA[System warning]]></display-name>
+    <script encoded="false"><![CDATA[//Auto-generated script
+System.warn(text);
+]]></script>
+    <in-binding>
+      <bind name="text" type="String" export-name="errorCode">
+        <description><![CDATA[The text to log]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Log the input text to the console log with level 'warn']]></description>
+    <position y="173.59090909090907" x="84.5"/>
+  </workflow-item>
+  <workflow-item name="item6" prototype-id="system-log" out-name="item0" type="task" interaction="l">
+    <display-name><![CDATA[System log]]></display-name>
+    <script encoded="false"><![CDATA[System.log("Found existing OU '" + ouDistinguishedName + "'.");
+]]></script>
+    <in-binding>
+      <bind name="ouDistinguishedName" type="string" export-name="ouDistinguishedName">
+        <description><![CDATA[The Distinguished Name (path) of the OU]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Log the input text to the console log with level 'log']]></description>
+    <position y="55.40909090909091" x="224.5"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item9" type="custom-condition" alt-out-name="item13">
+    <display-name><![CDATA[Loop Control]]></display-name>
+    <script encoded="false"><![CDATA[//for (var i = 0; i < ouHirearchyToProcess.length; i++) 
+//Success path = for loop still iterating
+//Failure path = for loop complete
+
+return (i < ouHirearchyToProcess.length);]]></script>
+    <in-binding>
+      <bind name="i" type="number" export-name="i"/>
+      <bind name="ouHirearchyToProcess" type="Array/string" export-name="ouHirearchyToProcess"/>
+    </in-binding>
+    <description><![CDATA[for (var i = 0; i < ouHirearchyToProcess.length; i++) ]]></description>
+    <position y="163.59090909090907" x="364.5"/>
+  </workflow-item>
+  <workflow-item name="item5" prototype-id="increase-counter" out-name="item4" content-mode="x" type="task">
+    <display-name><![CDATA[Increase counter]]></display-name>
+    <script encoded="false"><![CDATA[//Auto-generated script
+counter = counter+1;]]></script>
+    <in-binding>
+      <bind name="counter" type="number" export-name="i">
+        <description><![CDATA[counter to increment]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="counter" type="number" export-name="i">
+        <description><![CDATA[counter incremented]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Increment a counter by one]]></description>
+    <position y="228.13636363636363" x="364.5"/>
+  </workflow-item>
+  <workflow-item name="item8" out-name="item12" catch-name="item11" throw-bind-name="errorCode" type="task" script-module="com.thinkahead.activedirectory/getAdOuByDn">
+    <display-name><![CDATA[Get next OU obj]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.thinkahead.activedirectory").getAdOuByDn(ouDistinguishedName) ;]]></script>
+    <in-binding>
+      <bind name="ouDistinguishedName" type="string" export-name="loopCurrentOuDn">
+        <description><![CDATA[The Distinguished Name (path) of the OU]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="AD:OrganizationalUnit" export-name="loopCurrentOu"/>
+    </out-binding>
+    <description><![CDATA[Returns the AD:OrganizationalUnit object for the OU specified by its distinguished name (DN).
+
+Be sure you've run the "Configure Active Directory plug-in options" workflow and set a default AD Server.]]></description>
+    <position y="173.59090909090907" x="644.5"/>
+  </workflow-item>
+  <workflow-item name="item9" out-name="item8" type="task">
+    <display-name><![CDATA[Get next OU DN]]></display-name>
+    <script encoded="false"><![CDATA[//Get the next OU DN for this iteration of the loop
+loopCurrentOuDn = ouHirearchyToProcess[i];
+System.debug("Processing OU '" + loopCurrentOuDn + "'");
+
+//Get the short name of the OU
+var rdn = loopCurrentOuDn.split(",")[0];	//Get the last relative distinnguished name component
+loopCurrentOuName = rdn.slice(3);			//skip the leading "ou=" chars
+]]></script>
+    <in-binding>
+      <bind name="ouHirearchyToProcess" type="Array/string" export-name="ouHirearchyToProcess">
+        <description><![CDATA[element 0 is the base OU (first to get/create), last element is the final OU in the hierarchy to create]]></description>
+      </bind>
+      <bind name="i" type="number" export-name="i">
+        <description><![CDATA[Loop counter]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="loopCurrentOuDn" type="string" export-name="loopCurrentOuDn"/>
+      <bind name="loopCurrentOuName" type="string" export-name="loopCurrentOuName">
+        <description><![CDATA[Short name of the current OU]]></description>
+      </bind>
+    </out-binding>
+    <position y="173.59090909090907" x="504.5"/>
+  </workflow-item>
+  <workflow-item name="item10" out-name="item12" type="task" script-module="com.thinkahead.activedirectory/getAdOuByDn">
+    <display-name><![CDATA[Get new OU obj]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.thinkahead.activedirectory").getAdOuByDn(ouDistinguishedName) ;]]></script>
+    <in-binding>
+      <bind name="ouDistinguishedName" type="string" export-name="loopCurrentOuDn">
+        <description><![CDATA[The Distinguished Name (path) of the OU]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="AD:OrganizationalUnit" export-name="loopCurrentOu"/>
+    </out-binding>
+    <description><![CDATA[Returns the AD:OrganizationalUnit object for the OU specified by its distinguished name (DN).
+
+Be sure you've run the "Configure Active Directory plug-in options" workflow and set a default AD Server.]]></description>
+    <position y="282.68181818181813" x="504.5"/>
+  </workflow-item>
+  <workflow-item name="item11" out-name="item14" type="task">
+    <display-name><![CDATA[Handle errors]]></display-name>
+    <script encoded="false"><![CDATA[//Stop the workflow if this is the Base OU (this workflow does not create a missing base OU)
+if (i === 0) throw "Base OU must already exist: '" + ouHirearchyToProcess[i];
+
+//This path expects the Get OU to have failed, so just log the error message for debugging
+System.debug(errorCode);]]></script>
+    <in-binding>
+      <bind name="i" type="number" export-name="i">
+        <description><![CDATA[Loop counter]]></description>
+      </bind>
+      <bind name="ouHirearchyToProcess" type="Array/string" export-name="ouHirearchyToProcess"/>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+    </in-binding>
+    <out-binding/>
+    <position y="228.13636363636363" x="645.0"/>
+  </workflow-item>
+  <workflow-item name="item12" out-name="item5" type="task">
+    <display-name><![CDATA[Set Parent OU]]></display-name>
+    <script encoded="false"><![CDATA[loopParentOu = loopCurrentOu;
+]]></script>
+    <in-binding>
+      <bind name="loopCurrentOu" type="AD:OrganizationalUnit" export-name="loopCurrentOu">
+        <description><![CDATA[Loop variable: AD object of the current OU to get or create]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="loopParentOu" type="AD:OrganizationalUnit" export-name="loopParentOu">
+        <description><![CDATA[Loop variable: Parent OU, used to retrieve the object of the current OU]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[The current OU from this iteration becomes the parent OU for the next iteration.
+The parent OU is used if/when the next iteration needs to create a new child OU within the parent OU.]]></description>
+    <position y="282.68181818181813" x="364.5"/>
+  </workflow-item>
+  <workflow-item name="item13" out-name="item0" type="task">
+    <display-name><![CDATA[Set Output + log]]></display-name>
+    <script encoded="false"><![CDATA[adOu = loopCurrentOu;
+
+System.log("Finished creating OU path '" + adOu.distinguishedName + "'.");]]></script>
+    <in-binding>
+      <bind name="loopCurrentOu" type="AD:OrganizationalUnit" export-name="loopCurrentOu">
+        <description><![CDATA[Loop variable: AD object of the current OU to get or create]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="adOu" type="AD:OrganizationalUnit" export-name="adOu">
+        <description><![CDATA[The specified AD Organizational Unit object]]></description>
+      </bind>
+    </out-binding>
+    <position y="109.95454545454544" x="364.5"/>
+  </workflow-item>
+  <workflow-item name="item14" out-name="item10" type="task">
+    <display-name><![CDATA[Create Missing OU]]></display-name>
+    <script encoded="false"><![CDATA[//This script matches the following Action, with the addition of some extra logging:
+//System.getModule("com.vmware.library.microsoft.activeDirectory").createOrganizationalUnit(ouName,container) ;
+
+System.warn("Creating OU '" + loopCurrentOuDn + "'...");
+
+loopParentOu.createOrganizationalUnit(loopCurrentOuName);
+
+System.log("OU created.");]]></script>
+    <in-binding>
+      <bind name="loopParentOu" type="AD:OrganizationalUnit" export-name="loopParentOu">
+        <description><![CDATA[Loop variable: Parent OU, used to retrieve the object of the current OU]]></description>
+      </bind>
+      <bind name="loopCurrentOuName" type="string" export-name="loopCurrentOuName">
+        <description><![CDATA[Loop variable: Short name of the current OU]]></description>
+      </bind>
+      <bind name="loopCurrentOuDn" type="string" export-name="loopCurrentOuDn">
+        <description><![CDATA[Loop variable: AD DN of the current OU to get or create]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <position y="282.68181818181813" x="644.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="ouDistinguishedName">
+      <desc><![CDATA[The Distinguished Name (path) of the OU]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

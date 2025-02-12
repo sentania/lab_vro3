@@ -1,0 +1,91 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getReclaimableCpu" result-type="number" api-version="6.0.0" id="a6c566ed-8631-49a0-b0c4-fb204ab813aa" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp">
+  <param n="server" t="string"/>
+  <script encoded="false"><![CDATA[//Getting vrops Rest Host
+var getHosts = Server.findAllForType("REST:RESTHost")
+for(var i =0; i < getHosts.length ; i++){
+	if(getHosts[i].name == "vROPs"){
+		var R = getHosts[i]
+			System.log("Rest Host Name - " + R.name)
+		}
+}
+
+//Getting vrops username/password from configuration element
+var vropsElement = [];
+var ConfigElCategory = Server.getConfigurationElementCategoryWithPath("UCP");
+var configEls = ConfigElCategory.allConfigurationElements;
+	for(element in configEls) {
+		if(configEls[element].name == "vROPs") {
+			vropsElement = configEls[element];
+		}
+	}
+if(vropsElement.getAttributeWithKey("vropsUser") != null) {
+	var userName = vropsElement.getAttributeWithKey("vropsUser");
+	var userPass = vropsElement.getAttributeWithKey("vropsPass");
+}
+
+// variable that contains JSON string required for Token Request
+var tokenJSON = "{\"username\":\""+userName.value+"\",\"password\":\""+userPass.value+"\",\"others\":[],\"otherAttributes\":{}}"
+
+//variable required for post Function
+var content = tokenJSON
+var url = "suite-api/api/auth/token/acquire";
+
+//Token Request
+var output = postNoToken(url,content);
+var outputJSON = JSON.parse(output);
+var vropsToken = outputJSON.token;
+System.log("The vROps Token is: " +vropsToken);
+
+//Get ID
+url = "suite-api/api/resources?name="+server+"&resourceKind=virtualmachine"
+var output = get(url,server);
+var outputJSON = JSON.parse(output);
+var vmid = outputJSON.resourceList[0].identifier
+System.log("ID = "+ vmid)
+
+//Get Recommended vcpu
+url = encodeURI("suite-api/api/resources/stats/latest?resourceId="+vmid+"&statKey=summary|oversized|vcpus")
+var output = get(url,server);
+var outputJSON = JSON.parse(output);
+var rcpu = outputJSON.values[0]["stat-list"].stat[0].data[0]
+System.log("Reclaimable cpu = "+ rcpu)
+return rcpu
+
+//		*****FUNCTIONS*****
+function post (link,content) {
+  var request = R.createRequest("POST",link,content);
+  request.setHeader("accept","application/JSON");
+  request.setHeader("Authorization", "vRealizeOpsToken " +vropsToken);  
+  request.setHeader("Content-Type","application/JSON");
+
+  var response = request.execute();
+  statusCode = response.statusCode;
+
+  return response.contentAsString;
+}
+
+function postNoToken (link,content) {
+  var request = R.createRequest("POST",link,content);
+  request.setHeader("accept","application/JSON"); 
+  request.setHeader("Content-Type","application/JSON");
+
+  var response = request.execute();
+  statusCode = response.statusCode;
+	//System.log(response.contentAsString);
+  return response.contentAsString;
+}
+
+function get (link,content) {
+  var request = R.createRequest("GET",link,content);
+  request.setHeader("accept","application/JSON");
+  request.setHeader("Authorization", "vRealizeOpsToken " +vropsToken);  
+  request.setHeader("Content-Type","application/JSON");
+
+  var response = request.execute();
+  statusCode = response.statusCode;
+
+  return response.contentAsString;
+}
+]]></script>
+</dunes-script-module>

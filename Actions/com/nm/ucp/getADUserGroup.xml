@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getADUserGroup" result-type="AD:UserGroup" api-version="6.0.0" id="c2497b61-90f0-433d-a238-49c164d0be81" version="1.0.0" allowed-operations="evf" category-name="com.nm.ucp">
+  <description><![CDATA[Returns an AD:UserGroup object for the specified group name.
+
+Be sure you've run the "Configure Active Directory plug-in options" workflow and set a default AD Server.]]></description>
+  <param n="groupName" t="string"><![CDATA[The name of the group to find in AD]]></param>
+  <param n="adHostString" t="string"/>
+  <script encoded="false"><![CDATA[//Search AD for all groups with the specified name (max 20 results)
+
+// 2. Find ADHost from Config Element
+	// 2. Get OUs from Configuration Elements
+	// 2.1 Get ConfigElement values
+	var adElement = [];
+	var ConfigElCategory = Server.getConfigurationElementCategoryWithPath("UCP");
+	System.log(ConfigElCategory.name);
+	var configEls = ConfigElCategory.allConfigurationElements;
+	for(element in configEls) {
+		if(configEls[element].name == "ActiveDirectory") {
+		adElement = configEls[element];
+		System.log("AD Elements: "+adElement.name);
+		}
+	}
+
+	// 2.1.2 Get AD Host
+	var adHost;
+	if(adElement.getAttributeWithKey(adHostString) != null) {
+		attribute = adElement.getAttributeWithKey(adHostString);
+		adHost = attribute.value;
+		System.log(adHost.name);
+	}
+	
+var groupList = ActiveDirectory.search("UserGroup",groupName,adHost);
+if (!groupList || groupList.length == 0) { throw "AD plug-in did not find any groups named '" + groupName + "'."; }
+
+//Check for multiple groups returned; if so, throw error
+if (groupList.length != 1) {
+	var message = "Error: AD plug-in returned multiple groups with the name '" + groupName + "':";
+	for each (var i in groupList){
+		message += "\n" + i.distinguishedName;
+	}
+	throw message;
+}
+
+//log success
+System.debug("Retrieved AD Group object for '" + groupName + "'");
+
+//Return the group object
+return groupList[0];]]></script>
+</dunes-script-module>

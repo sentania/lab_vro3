@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="Latest_Published_Patch" result-type="string" api-version="6.0.0" id="99649bcb-413b-42ad-b8ca-98d23ca690be" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <script encoded="false"><![CDATA[var PublishDate = new Array();
+var PublistWave = new Array();
+var getHosts = Server.findAllForType("REST:RESTOperation")
+for(var i =0; i < getHosts.length ; i++){
+	if(getHosts[i].name == "Unified Compute etcd GET"){
+		var R = getHosts[i]
+			System.log("name - " + R.name)
+		}
+
+}
+content = "unifiedcompute/patchingSchedule/patchWave?recursive=true"
+var inParamtersValues = [content];
+EtcdRestOperation = R
+var request = EtcdRestOperation.createRequest(inParamtersValues);
+//set the request content type
+request.contentType = "application\/json";
+System.log("Request: " + request);
+System.log("Request URL: " + request.fullUrl);
+
+//Customize the request here
+//request.setHeader("headerName", "headerValue");
+
+//execute request
+//Do not edit 
+var response = request.execute();
+//prepare output parameters
+System.log("Response: " + response);
+statusCode = response.statusCode;
+statusCodeAttribute = statusCode;
+System.log("Status code: " + statusCode);
+contentLength = response.contentLength;
+headers = response.getAllHeaders();
+contentAsString = response.contentAsString;
+System.log("Content as string: " + contentAsString);
+var currentStatus = JSON.parse(contentAsString)
+
+function convertdate(dateString) {
+	var year        = dateString.substring(0,4);
+	var month       = dateString.substring(4,6);
+	var day         = dateString.substring(6,8);
+	var date        = month + '-'+ day + '-'+ year
+	return date
+}
+var today = new Date();
+for each(Ndata in currentStatus.node.nodes){
+	for each(Data in Ndata.nodes){
+	//System.log("Delata  -- " + (Data.key).replace(new RegExp("[^0-9-]", "gi"), ""))
+	if(Data.key.match("Patchpublishdate")){
+			pWave = (Data.key).replace(new RegExp("[^0-9-]", "gi"), "")
+			Y = (Data.value).split("-")[0]
+			Publistdate = convertdate(Y)
+			tx = new Date();
+			sub  = Publistdate.substring(0,2)
+			sub = sub -1
+			tx.setDate(Publistdate.substring(3,5));
+			tx.setMonth(sub)
+			tx.setYear(Publistdate.substring(6,10))
+			System.log(tx + '- Tx time to check')
+			var unixtime1 = Date.parse(tx)
+			System.log(unixtime1  + ' - unixtime1')
+			var today1 = Date.parse(today)
+			System.log(today1 + ' -  today1')
+			if(unixtime1 < today1 || unixtime1 == today1 ){
+			System.log(Publistdate + ' - Date to be added to Array')
+		    	PublishDate.push(tx )
+				PublistWave.push(pWave)
+		    }
+		}
+	}
+}
+i = 0
+tvar = PublishDate[i]
+System.log(PublishDate + " -  PublishDate")
+for each(lop in PublishDate){
+	System.log(lop + ' >=' + tvar)
+		if(lop >= tvar){
+			par = lop
+			System.log(par  + '  -- par')
+			tvar = par
+			J = i
+		}
+i = i +1 	
+}
+System.log("Value of I -- " +  i)
+Par1  = System.formatDate(par, "MM-dd-YYYY")
+System.log(PublistWave[J])
+FinalDate = Par1 + '-' + PublistWave[J]
+System.log(FinalDate)
+return FinalDate
+]]></script>
+</dunes-script-module>

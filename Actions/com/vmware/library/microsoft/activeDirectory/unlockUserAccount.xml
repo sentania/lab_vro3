@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="unlockUserAccount" result-type="AD:User" api-version="6.0.0" id="961b2fd7-080d-4acc-aed4-4ee22e392e02" version="0.0.0" category-name="com.vmware.library.microsoft.activeDirectory">
+  <param n="user" t="AD:User"/>
+  <script encoded="false"><![CDATA[// Input AD:User
+user.setAttribute('lockoutTime','0');
+return user;]]></script>
+</dunes-script-module>

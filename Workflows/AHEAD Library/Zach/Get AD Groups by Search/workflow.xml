@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="53c37790-b2ab-4ac6-bd32-a0cc74c7fdba" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Get AD Groups by Search]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="groupName" type="string">
+      <description><![CDATA[The name of the group to find in AD]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="groups" type="Array/string"/>
+  </output>
+  <attrib name="os" type="string" read-only="false">
+    <value encoded="n"><![CDATA[RHEL7]]></value>
+    <description><![CDATA[Operating System]]></description>
+  </attrib>
+  <attrib name="environment" type="string" read-only="false">
+    <value encoded="n"><![CDATA[Production]]></value>
+    <description><![CDATA[Environment]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task" script-module="com.nm.ucp/getAdGroupByName_bySearch">
+    <display-name><![CDATA[getAdGroupByName_bySearch]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.nm.ucp").getAdGroupByName_bySearch(groupName,os,environment) ;]]></script>
+    <in-binding>
+      <bind name="groupName" type="string" export-name="groupName">
+        <description><![CDATA[The name of the group to find in AD]]></description>
+      </bind>
+      <bind name="os" type="string" export-name="os">
+        <description><![CDATA[Operating System]]></description>
+      </bind>
+      <bind name="environment" type="string" export-name="environment">
+        <description><![CDATA[Environment]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="Array/string" export-name="groups"/>
+    </out-binding>
+    <description><![CDATA[Returns an AD:UserGroup object for the specified group name.
+
+Be sure you've run the "Configure Active Directory plug-in options" workflow and set a default AD Server.]]></description>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="groupName">
+      <desc><![CDATA[The name of the group to find in AD]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

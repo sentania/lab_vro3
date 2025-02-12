@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getsudoSpecDescription" result-type="string" api-version="6.0.0" id="dc9167d3-3cdc-4f82-a1a8-369ae7260a72" version="0.0.1" allowed-operations="evf" category-name="com.nm.ucp.sudo">
+  <param n="sudoSpecName" t="string"/>
+  <script encoded="false"><![CDATA[// Returns a collection of REST:RESTHost object types from the inventory service plugin
+var restHost = RESTHostManager.getHost('70e161fb-50fe-4860-a709-7904ba88f2ad')
+var restOperation = restHost.getOperation('70e161fb-50fe-4860-a709-7904ba88f2ad:f73443c9-66e2-4517-8df1-b6c172ba1d6e')
+
+
+var baseURL = 'unifiedcompute/configurationStandards/linux/sudo/sudoSpecs?recursive=true';  //the base URL for all UCP records in etcd
+var inParamtersValues = [baseURL];
+var content ="";
+var defaultContentType = "application/json";
+var request = restOperation.createRequest(inParamtersValues, content);
+
+var response = request.execute();
+//prepare output parameters
+
+request.contentType = defaultContentType;
+System.log("Request: " + request);
+System.log("Request URL: " + request.fullUrl);
+var response = request.execute();
+System.log("Response: " + response);
+var statusCode = response.statusCode;
+var statusCodeAttribute = statusCode;
+System.log("Status code: " + statusCode);
+var contentLength = response.contentLength;
+var headers = response.getAllHeaders();
+var contentAsString = response.contentAsString;
+System.log("Content as string: " + contentAsString);
+System.log("****Headers****");
+for each (var header in headers){
+	System.log(header.toString());
+}
+
+
+System.log(contentAsString);
+
+var obj = JSON.parse(contentAsString);
+var sudoSpecsDir = obj.node.nodes;
+
+for(var i = 0; i < sudoSpecsDir.length; i++){
+	var sudoSpecDir = sudoSpecsDir[i];
+	System.log("Spec Dir Key: " + sudoSpecDir.key);
+	System.log("SpecName: " + sudoSpecName);
+	if (sudoSpecDir.key.search(sudoSpecName) != -1)
+	{
+		for (j in sudoSpecDir.nodes)
+		{
+			var tmpString = sudoSpecDir.nodes[j].key
+			if (tmpString.search('formData') != -1)
+			{
+				var formData = sudoSpecDir.nodes[j].value
+			}
+		}
+
+		System.log("spec Description Name (grant): " + formData);
+			var sudoSpecDescription = formData;
+			
+	
+	}
+}
+return sudoSpecDescription;
+]]></script>
+</dunes-script-module>

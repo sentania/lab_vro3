@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="AutoScale_In_AriaAuto" result-type="string" api-version="6.0.0" id="1bccff77-b84b-40a1-b5e9-06f899c8549d" version="0.1.0" allowed-operations="vfe" category-name="com.broadcom.hol">
+  <runtime><![CDATA[powercli:12-powershell-7.4]]></runtime>
+  <param n="AriaAutoUrl" t="string"/>
+  <param n="vmname" t="string"/>
+  <script encoded="false"><![CDATA[function Handler($context, $inputs) {
+ 
+  $token = $context.GetToken()
+ 
+  $AriaAutoUrl = $inputs.AriaAutoUrl
+  $vmname = $inputs.vmname
+  ####perform the scale out
+Write-host "Aria Automation URL is: $AriaAutoUrl"
+Write-host "Alerted VM is: $vmname"
+Write-host "Get a list of virtual machines deployed by Aria Automation to find the deployment..."
+$getMachineListURL = "$AriaAutoUrl/iaas/api/machines/"
+$machineListResult = Invoke-RestMethod -Method GET -uri $getMachineListURL -Headers @{'Authorization' = "Bearer $token"} -skipcertificatecheck
+$machineID = ($machineListResult.content | ?{$_.name -match $vmname}).id
+#get the VM
+$machineURL = $getMachineListURL +$machineID +"/"
+$machineresult = Invoke-RestMethod -Method GET -uri $machineURL -Headers @{'Authorization' = "Bearer $token"} -skipcertificatecheck
+$deploymentID =  $machineresult.deploymentId
+#get the Deployment
+$deploymentURL = "$AriaAutoUrl/deployment/api/deployments/$deploymentID/"
+$deploymentResult = Invoke-RestMethod -Method GET -uri $deploymentURL -Headers @{'Authorization' = "Bearer $token"} -skipcertificatecheck
+$deploymentInputobj = $deploymentResult.inputs
+Write-host "The current VM size is: " $deploymentInputobj.vmSize
+switch ($deploymentInputobj.vmSize)
+{
+    large {$deploymentInputobj.vmSize = "medium"}    
+    default { Write-Host "VM is already at minimum allowed size, no scale in action executed" 
+        break;}
+}
+Write-host "The new VM size VM is is: " $deploymentInputobj.vmSize
+    $body = [pscustomobject]@{
+                    
+    "actionId"="Deployment.Update"
+    "inputs"=$deploymentInputobj
+    "reason"="CPU demand increased"
+                    
+    }
+$jsonBody = $body| ConvertTo-Json
+$updaterequestURL = $deploymentURL + "requests"
+#Patch the deployment with the new parameter set
+                    $header = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+                    $accept = "application/json"
+                    $contentType = "application/json"
+                    $header.add("Accept", $accept)
+                    $header.add("Content-Type", $contentType)
+                    $header.Add('Authorization', "Bearer $token")
+$updateRequestResult = Invoke-RestMethod -Method POST -uri $updaterequestURL -Headers $header -Body $jsonBody -skipcertificatecheck
+}]]></script>
+</dunes-script-module>

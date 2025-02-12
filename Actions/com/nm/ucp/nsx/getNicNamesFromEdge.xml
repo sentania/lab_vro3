@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getNicNamesFromEdge" result-type="Array/string" api-version="6.0.0" id="374aa4e8-1ad1-4508-b950-d7b9d8089d19" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.nsx">
+  <description><![CDATA[Takes an NSX Edge and outputs an array of NSX Nics (interfaces) that reside under the edge.]]></description>
+  <param n="edge" t="NSX:Edge"><![CDATA[NSX Edge]]></param>
+  <script encoded="false"><![CDATA[// Get NICs from Edge
+var NICs = edge.nics;
+var arrayNICs = NICs.nics;
+System.log("Found "+arrayNICs.length+" NICs on the '"+edge.name+"' edge.");
+
+// now get names of the NICs and retun in an array
+var nicNames = [];
+for(n in arrayNICs) {
+	var name = arrayNICs[n].name;
+	nicNames.push(name);
+}
+return nicNames;]]></script>
+</dunes-script-module>

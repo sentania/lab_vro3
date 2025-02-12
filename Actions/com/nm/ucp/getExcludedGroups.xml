@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getExcludedGroups" result-type="Array/string" api-version="6.0.0" id="d98415b4-70e9-41bb-88ef-64348c4a8a7f" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="vmInstanceID" t="string"><![CDATA[FQDN of server machine]]></param>
+  <script encoded="false"><![CDATA[var vmProps = new Properties;
+var vcacVM = System.getModule("com.nm.ucp").getVcacVmFromInstanceID(vmInstanceID);
+var host = System.getModule("com.nm.ucp").getVcacHost("vcacHost");
+vmProps = System.getModule("com.vmware.library.vcac").getPropertiesFromVirtualMachine(host, vcacVM);
+
+var environment = vmProps.get("ucp.tag.environment");
+var adHostString;
+var adGroupString;
+
+//Define ADHostString
+if(environment == "Production") {
+	adHostString = "adProd";
+	adGroupString = "adProdExcludeOU";
+} else if(environment == "Non-Production") {
+	adHostString = "adNonProd";
+	adGroupString = "adTestExcludeOU";
+} else {
+	adHostString = "adDev";
+	adGroupString = "adDevExcludeOU";
+}
+
+//Get ADHost
+var adHost = System.getModule("com.nm.ucp").getADHost(adHostString);
+System.log("adHost: "+adHost.name);
+// Get AD OU
+var adOU = System.getModule("com.nm.ucp").getADOUs(adGroupString);
+System.log("adOU: "+adOU.name);
+// Group Search String
+var groupNameSearch = "CG-WINSERV-"
+
+//Get all UserGroups from OU
+var adGroups = [];
+adGroups = System.getModule("com.nm.ucp").getUsergroupsFromContainer(adOU, groupNameSearch);
+
+// Get names from adGroups and return
+var sGroup = [];
+for(g in adGroups) {
+	var groupName = adGroups[g].name;
+	sGroup.push(groupName);
+}
+return sGroup;]]></script>
+</dunes-script-module>

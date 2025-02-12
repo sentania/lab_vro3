@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_newNetworkDefinition_2" result-type="Properties" api-version="6.0.0" id="95886a48-e883-436e-9685-44a814797fc2" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="computeResourceNetwork" t="Properties"/>
+  <param n="networkProfileName" t="string"/>
+  <script encoded="false"><![CDATA[var iaasHost = Server.findAllForType("vCAC:VCACHost")[0];
+var cafeHost = Server.findAllForType("vCACCAFE:VCACHost")[0];
+
+var computeResourceNetworkEntries = computeResourceNetwork.underlyingValue.values.entries;
+
+var networkPathObject = computeResourceNetworkEntries.filter(function (entry) {return entry.key == "networkPath";})[0]
+
+var networkDefinition = new Properties();
+
+networkDefinition.type = "complex";
+networkDefinition.componentTypeId = "com.vmware.csp.iaas.blueprint.service";
+networkDefinition.componentId = null;
+networkDefinition.classId = "Infrastructure.Reservation.Network";
+networkDefinition.typeFilter = null;
+
+var valuesObject = new Properties();
+var entriesArray = new Array();
+entriesArray.push(networkPathObject);
+
+var networkProfile = true;
+if (networkProfile){
+	var networkProfileId = getNetworkProfileIdByLabel(iaasHost, networkProfileName)
+	System.log("Network Profile ID: "+networkProfileId);
+	var networkProfileObject = new Properties();
+	networkProfileObject.key = "networkProfile",
+	networkProfileValueObject = new Properties();
+	networkProfileValueObject.type = "entityRef";
+	networkProfileValueObject.componentId = null;
+	networkProfileValueObject.classId = "NetworkProfile";
+	networkProfileValueObject.id = networkProfileId; // ###### Something missing here ######
+	networkProfileValueObject.label = networkProfileName; // ###### Something missing here ######
+	networkProfileObject.value = networkProfileValueObject;
+	System.log("Network Profile Object: "+networkProfileObject);
+	entriesArray.push(networkProfileObject)
+}
+
+valuesObject.entries = entriesArray;
+networkDefinition.values = valuesObject;
+
+return networkDefinition;
+
+function getNetworkProfileIdByLabel(vcacHost, netProfileLabel){
+	var networkProfile = getInfrastructureManagementModelEntityByProperty(vcacHost, "StaticIPv4NetworkProfiles", "StaticIPv4NetworkProfileName", netProfileLabel);
+	var id = null;
+	if(networkProfile != null){
+		System.log("Network profile with name " + netProfileLabel + " found.");
+		id = networkProfile.getProperty("ID");
+	}else{
+		System.log("Network profile with name " + netProfileLabel + " not found.");
+	}
+	return id;
+}
+
+function getInfrastructureManagementModelEntityByProperty(vcacHost, entityType, propertyName, propertyValue){
+	var modelName = 'ManagementModelEntities.svc';
+	var entitySetName = entityType;
+	var inputProperties = new Properties();
+	inputProperties.put(propertyName, propertyValue);
+	return getInfrastructureManagementModelEntitiesByProperty(vcacHost, entityType, propertyName, propertyValue)[0];
+}
+
+function getInfrastructureManagementModelEntitiesByProperty(vcacHost, entityType, propertyName, propertyValue){
+	var modelName = 'ManagementModelEntities.svc';
+	var entitySetName = entityType;
+	var inputProperties = new Properties();
+	inputProperties.put(propertyName, propertyValue );
+	return vCACEntityManager.readModelEntitiesByCustomFilter(vcacHost.id, modelName, entitySetName, inputProperties, null);
+}]]></script>
+</dunes-script-module>

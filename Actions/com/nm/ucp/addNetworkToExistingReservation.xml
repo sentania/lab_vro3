@@ -1,0 +1,186 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="addNetworkToExistingReservation" result-type="void" api-version="6.0.0" id="2d9f8fc5-c372-4b0c-8886-08a44f7c8ffb" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="businessGroupName" t="string"><![CDATA[Name of Business Group]]></param>
+  <param n="networkName" t="string"><![CDATA[Full Name of virtual wire and network name]]></param>
+  <param n="networkProfileMKE" t="string"><![CDATA[Network Profile Name]]></param>
+  <script encoded="false"><![CDATA[/*var businessGroupName = "bk test group";
+var networkName = "vxw-dvs-269-virtualwire-182-sid-5084-bk test group-mke";
+var networkProfileMKE = "bk test group mke";*/
+
+var reservations = new Array();
+var iaasHost = Server.findAllForType("vCAC:VCACHost")[0];
+var cafeHost = Server.findAllForType("vCACCAFE:VCACHost")[0];
+
+var tenantName = cafeHost.tenant;
+//var allReservations = vCACCAFEEntitiesFinder.getReservations(cafeHost) ;
+var allReservations = getAllReservations(cafeHost);
+
+//Get applicable  Reservations details
+for each (cafeReservation in allReservations){
+	System.log("Reservation Name: "+cafeReservation.name);
+	
+	if((cafeReservation.name.indexOf(businessGroupName) != -1) && (cafeReservation.name.indexOf("ReservationName") != -1)){
+		System.log("Reservation Name: "+cafeReservation.name+"\n");
+		reservations.push(cafeReservation);
+		
+	}else if(String(businessGroupName) == String(cafeReservation.name)){
+		System.log("Found Reservation: "+cafeReservation.name+"\n");
+		reservations.push(cafeReservation);
+		break;
+	}
+}
+for each (cafeReservation in reservations){
+	var computeResource = getComputeResourceOfRes(cafeReservation); // compute resource name
+	System.log("************ START FOR "+cafeReservation.name+" ************");
+	System.debug("\n\n---------------------- computeResource ------------------------------");
+	System.warn("\n computeResource is: \n"+computeResource);
+	System.warn("\n computeResource is: \n"+computeResource.split("(")[0].replace(' ',''));
+	System.debug("\n\n----------------------------------------------------");
+	computeResource = computeResource.split("(")[0].replace(' ','');
+	var newNetworkLiteralArr = new Array();
+	System.log("Compute Resource = "+ computeResource);
+	System.debug("\n \n [computeResource]:\t "+ computeResource);
+	
+	//for each (var networkName in portGroupName) {
+	var networkProfileName = networkProfileMKE;
+	var newNetworkLiteral = buildComplexNetworkLiteral(iaasHost, computeResource, networkName, networkProfileMKE);
+	//var newNetworkLiteral = buildComplexNetworkLiteral(iaasHost, computeResource, networkName, networkProfileMKE);
+	newNetworkLiteralArr.push(newNetworkLiteral);
+	System.warn("computeResource: "+computeResource+" networkName: "+networkName.replace(' ','')+" networkProfileName: "+networkProfileName);
+	System.debug("computeResource: "+computeResource+" networkName: "+networkName.replace(' ','')+" networkProfileName: "+networkProfileName);
+	System.debug("\n Network Literal:" +newNetworkLiteral);
+	}
+//}
+updateReservation(cafeHost, cafeReservation, newNetworkLiteralArr);
+System.log("*********** Updated networkName: "+networkName)
+System.log("*********** END reservation: "+cafeReservation.name);
+
+//Functions
+function updateReservation(tenantCafeHost, cafeReservation, newNetworkLiteralArr){
+	var networksLiteralArray = new Array();
+	var reservationClient = tenantCafeHost.createReservationClient();
+	var reservationService = reservationClient.getReservationReservationService();
+	var extData = cafeReservation.getExtensionData();
+	//System.log("extData before: "+extData.get("reservationNetworks"));
+	
+	if(newNetworkLiteralArr != null){
+		System.log("newNetworkLiteral != null");
+		var reservationNetworksMultiLiteral = extData.get("reservationNetworks");
+		var networksLiteralArray = reservationNetworksMultiLiteral.getValue();
+		for each(n in newNetworkLiteralArr)
+			networksLiteralArray.push(n);
+			//System.log("New Networks in Reservation: "+networksLiteralArray);
+			var typeID = reservationNetworksMultiLiteral.getTypeId();
+			var newReservationNetworkMultiLiteral = new vCACCAFEMultipleLiteral(networksLiteralArray, typeID);
+			extData.put("reservationNetworks", newReservationNetworkMultiLiteral);
+			//System.log("extData after: "+extData);
+	}	
+	
+cafeReservation.setExtensionData(extData);
+reservationService.updateReservation(cafeReservation);
+}
+
+
+function buildComplexNetworkLiteral(vcacHost, computeResourceHostName, netLabel, netProfileLabel){
+	var literalMap =  new vCACCAFELiteralMap();
+	literalMap.put("networkPath", getNetworkPathEntityReference(vcacHost, computeResourceHostName, netLabel));
+	literalMap.put("networkProfile", getNetworkProfileEntityReference(vcacHost, netProfileLabel));
+	var componentTypeId = "com.vmware.csp.iaas.blueprint.service";
+	var componentId = null;
+	var classId = "Infrastructure.Reservation.Network";
+	var typeFilter = null;
+	return new vCACCAFEComplexLiteral(componentTypeId, componentId, classId, typeFilter, literalMap);
+}
+
+function getNetworkPathEntityReference(vcacHost, computeResourceHostName, netLabel){
+	var id = getNetworkId(vcacHost, netLabel, computeResourceHostName);
+	//System.log("Network ["+netLabel+"] id = " + id);
+	var componentId = null;
+	var classId = "Network";
+	var entityReference = new vCACCAFEEntityReference(componentId, classId, id, netLabel);
+	return entityReference;
+}
+
+function getNetworkId(vcacHost, netLabel, computeResourceHostName){
+	//System.log("********************* inside getNetworkId");
+	var networks = getInfrastructureManagementModelEntitiesByProperty(vcacHost, "HostNics", "HostNicName", netLabel);
+	//System.log("******* networks: "+networks);
+	var resultNetwork = null;
+	for each(var network in networks){
+		var host = network.getLink(vcacHost, "Host")[0];
+		var hostName = host.getProperty("HostName");
+		//System.log("hostname: "+hostName);
+		//System.log("computeResourceHostName: "+computeResourceHostName);
+		if(hostName.toLowerCase() == computeResourceHostName.toLowerCase()){
+			resultNetwork = network;
+			break;
+		}
+	}
+	if(resultNetwork == null){
+		throw("No network with name [" + netLabel + "] was found for compute resource [" + computeResourceHostName +"]");
+	}
+	return resultNetwork.getProperty("HostNicID");
+}
+
+function getNetworkProfileEntityReference(vcacHost, netProfileLabel){
+	var id = getNetworkProfileIdByLabel(vcacHost, netProfileLabel);
+	var entityReference =null;
+	if(id){
+		var componentId = null;
+		var classId = "NetworkProfile";
+		entityReference = new vCACCAFEEntityReference(componentId, classId, id, netProfileLabel);
+	}
+	return entityReference;
+}
+
+function getNetworkProfileIdByLabel(vcacHost, netProfileLabel){
+	var networkProfile = getInfrastructureManagementModelEntityByProperty(vcacHost, "StaticIPv4NetworkProfiles", "StaticIPv4NetworkProfileName", netProfileLabel);
+	var id = null;
+	if(networkProfile != null){
+		System.log("Network profile with name " + netProfileLabel + " found.");
+		id = networkProfile.getProperty("ID");
+	}else{
+		System.log("Network profile with name " + netProfileLabel + " not found.");
+	}
+	return id;
+}
+
+function getInfrastructureManagementModelEntityByProperty(vcacHost, entityType, propertyName, propertyValue){
+	var modelName = 'ManagementModelEntities.svc';
+	var entitySetName = entityType;
+	var inputProperties = new Properties();
+	inputProperties.put(propertyName, propertyValue);
+	return getInfrastructureManagementModelEntitiesByProperty(vcacHost, entityType, propertyName, propertyValue)[0];
+}
+
+function getInfrastructureManagementModelEntitiesByProperty(vcacHost, entityType, propertyName, propertyValue){
+	var modelName = 'ManagementModelEntities.svc';
+	var entitySetName = entityType;
+	var inputProperties = new Properties();
+	inputProperties.put(propertyName, propertyValue );
+	return vCACEntityManager.readModelEntitiesByCustomFilter(vcacHost.id, modelName, entitySetName, inputProperties, null);
+}
+
+function getAllReservations(tenantCafeHost){
+	System.log("Get all reservations for host: "+tenantCafeHost);
+	var reservationClient = tenantCafeHost.createReservationClient();
+	var reservationService = reservationClient.getReservationReservationService();
+	var tenantReservationPagedResources = reservationService.getAllReservations(null);
+	var allReservations = new Array();
+	for each(reservation in tenantReservationPagedResources.getContent()){
+		//System.log("reservation.name: "+reservation.name);
+		allReservations.push(reservation);
+	}
+return allReservations;
+}
+
+function getComputeResourceOfRes(reservation){
+	System.log("inside get compute resource for reservation");
+	var extensionData = reservation.getExtensionData();
+	var reservationComputeResource = extensionData.get("computeResource").getLabel();
+	System.log("Reservation " + reservation.name);
+	System.log("computeResource name: " + reservationComputeResource);
+	return reservationComputeResource;
+}
+]]></script>
+</dunes-script-module>

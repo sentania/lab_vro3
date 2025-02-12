@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getUsergroupsFromContainer" result-type="Array/AD:UserGroup" api-version="6.0.0" id="53fd745a-6ad4-4ba2-a6e7-859ad906b4ed" version="1.1.0" allowed-operations="evf" category-name="com.nm.ucp">
+  <description><![CDATA[Get a usergroup by his name in the given OU or Group (container)]]></description>
+  <param n="container" t="AD:OrganizationalUnit"><![CDATA[Organizationl Unit / Group]]></param>
+  <param n="usergroupName" t="string"><![CDATA[Name of the usergroup]]></param>
+  <script encoded="false"><![CDATA[usergroups = container.userGroups;
+usergroupName = usergroupName.toLowerCase();
+var groups = [];
+for (var index in usergroups) {
+	var groupName = usergroups[index].name.toLowerCase();
+	if(groupName.search(usergroupName) > -1) {
+		groups.push(usergroups[index]);
+	}
+}
+return groups;]]></script>
+</dunes-script-module>

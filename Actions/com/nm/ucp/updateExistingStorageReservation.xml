@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="updateExistingStorageReservation" result-type="void" api-version="6.0.0" id="e8f00c73-3e49-4a41-939d-33abe6250dd1" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="host" t="vCACCAFE:VCACHost"/>
+  <param n="resName" t="string"/>
+  <param n="reStoragePathLabel" t="string"/>
+  <param n="resStorageNewSize" t="number"/>
+  <script encoded="false"><![CDATA[System.log("Retrieving Reservations...") ;
+// Retrieve Reservation Client from Host
+var resCl = host.createReservationClient();
+
+// Retrieve Reservation Service from Client
+var resSrv = resCl.getReservationReservationService();
+
+// Browse All reservations
+for each(var res in resSrv.getAllReservations().getContent())
+{
+	// Find the reservation to Update
+	if(res.getName() == resName)
+	{
+		System.log("Reservation found: " + resName);
+		
+		// Browse all Storage Reservation
+		for each(var resStorage in res.getExtensionData().get("reservationStorages").getValue())
+		{
+			// Find the storage reservation to Update
+			if(resStorage.getValue().get("storagePath").getLabel() == resStoragePathLabel)
+			{
+				System.log("Storage Path found: " + resStoragePathLabel);
+				System.log("Current reservation size: " + resStorage.getValue().get("storageReservedSizeGB").getValue());
+				resStorage.getValue().put("storageReservedSizeGB", new vCACCAFEIntegerLiteral(resStorageNewSize));
+			
+				System.log("Updating reservation to " + resStorageNewSize);
+				// Update Reservation
+				resSrv.updateReservation(res);
+			}
+			
+			//Stop browsing (we found the right storage reservation)
+			break;
+		}
+		
+		//Stop browsing (we found the right reservation)
+		break;
+	}
+}
+
+System.log("Done") ;
+]]></script>
+</dunes-script-module>

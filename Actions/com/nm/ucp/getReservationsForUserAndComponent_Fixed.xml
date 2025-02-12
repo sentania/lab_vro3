@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getReservationsForUserAndComponent_Fixed" result-type="Array/Any" api-version="6.0.0" id="cff88b8a-dff8-4f16-aacf-3cf45b21c071" version="1.0.1" allowed-operations="evf" category-name="com.nm.ucp">
+  <param n="user" t="string"/>
+  <param n="tenant" t="string"/>
+  <param n="host" t="vCACCAFE:VCACHost"/>
+  <param n="blueprintId" t="string"/>
+  <param n="componentId" t="string"/>
+  <script encoded="false"><![CDATA[//create services
+var subTenantService = host.createAuthenticationClient().getAuthenticationSubtenantService();
+var reservationService = host.createReservationClient().getReservationReservationService();
+
+// get sub tenants for user
+var userPrincipal = splitUser(user);
+var principal = new vCACCAFEPrincipalId(userPrincipal.username, userPrincipal.domain);
+subTenants = subTenantService.getSubtenantsByPrincipalAndRole(tenant, principal, null, true, new vCACCAFEPageOdataRequest(1 , 2147483647));
+
+// get reservation filtered by sub tenants
+/*
+var reservationFilter = getReservationFilterForSubTenants(subTenants);
+var reservations = [];
+if (reservationFilter) {
+	reservations = reservationService.getAllReservations(reservationFilter).getContent();
+}
+*/
+return subTenants
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function splitUser(userParam) {
+	var indexOfAt = userParam.lastIndexOf("@");
+	if(indexOfAt > 0) {
+		return {
+			username: userParam.substring(0, userParam.lastIndexOf("@")),
+			domain: userParam.substring(userParam.lastIndexOf("@") +1)
+		}
+	}
+}
+
+function getReservationFilterForSubTenants(subTenants) {
+	var query = new vCACCAFEOdataQuery();
+
+	var queryParams = [];
+	for each (var subTenant in subTenants) {
+		var subTenantIdParam = vCACCAFEFilterParam.equal("subTenantId" , vCACCAFEFilterParam.string(subTenant.getId()));
+		// call the action to get resrvation type
+		// check for null....
+		var activeReservationParam = vCACCAFEFilterParam.equal("enabled" , true);
+		var IdAndActiveParam = vCACCAFEFilterParam.and([subTenantIdParam,activeReservationParam]);
+		var reservationTypeId = System.getModule("com.nm.ucp").getReservationTypeIdForComponent_Fixed(host, blueprintId, componentId);
+		if(reservationTypeId) {
+			var reservationTypeParam = vCACCAFEFilterParam.equal("reservationTypeId" , vCACCAFEFilterParam.string(reservationTypeId));
+			IdAndActiveParam = vCACCAFEFilterParam.and([IdAndActiveParam, reservationTypeParam]);
+		}
+
+		var paramGroup = vCACCAFEFilterParam.group([IdAndActiveParam]);
+		queryParams.push(paramGroup);
+	}
+
+	if(queryParams.length > 1) {
+		query.addFilter([vCACCAFEFilterParam.or(queryParams)]);
+	} else if(queryParams.length == 1){
+		query.addFilter(queryParams);
+	} else {
+		return null;
+	}
+	return new vCACCAFEPageOdataRequest(1 , 2147483647, query);
+}]]></script>
+</dunes-script-module>

@@ -1,0 +1,320 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="initialize_vmProperties" result-type="Any" api-version="6.0.0" id="c480d558-a7fb-4bca-a1d6-acb4d91d5b20" version="0.0.30" allowed-operations="evf" category-name="com.sovlabs.vra.utilities">
+  <param n="iaasHost" t="vCAC:VCACHost"/>
+  <param n="iaasVm" t="vCAC:VirtualMachine"/>
+  <param n="iaasVmEntity" t="vCAC:Entity"/>
+  <param n="tenant" t="string"/>
+  <param n="cafeHost" t="vCACCAFE:VCACHost"/>
+  <script encoded="false"><![CDATA[var vmProperties = new Object();
+
+// get plugin info
+if (iaasHost == null) { throw "iaasHost is null"; }
+if (iaasVm == null) { throw "iaasVm is null"; }
+if (iaasVmEntity == null) { throw "iaasVmEntity is null"; }
+
+var virtualMachinePropertiesEntities = iaasVmEntity.getLink(iaasHost, "VirtualMachineProperties");
+for each (var virtualMachinePropertiesEntity in virtualMachinePropertiesEntities) {
+	var propertyName = virtualMachinePropertiesEntity.getProperty("PropertyName");
+	var propertyValue = virtualMachinePropertiesEntity.getProperty("PropertyValue");
+	vmProperties[propertyName] = propertyValue;
+}
+
+vmProperties.iaasProperties = new Object();
+for each (var key in iaasVmEntity.getProperties().keys) {
+	vmProperties.iaasProperties[key] = iaasVmEntity.getProperty(key);
+}
+
+var pluginInfos = Server.getAllPluginInfo();
+vmProperties.plugins = new Object()
+for each (var plugin in pluginInfos) {
+	vmProperties.plugins[plugin.name] = plugin.version;
+}
+
+if (vmProperties.plugins.vCACCAFE == undefined || vmProperties.plugins.vCACCAFE == null) {
+	throw "vCACCAFE plugin not detected in plugins: " + JSON.stringify(vmProperties.plugins);
+}					
+var isComponent = iaasVmEntity.getProperty("IsComponent");
+vmProperties.isComponent = isComponent;
+
+// get the machine ID and add to vmProperties
+vmProperties.machineId = iaasVm.virtualMachineID;
+vmProperties.creationDate = iaasVm.vmCreationDate.toString();
+
+// Get the OWNER Username and add to vmProperties
+var ownerEntity = iaasVmEntity.getLink(iaasHost, "Owner")[0];
+vmProperties.ownerName = ownerEntity.getProperty("UserName").toString();
+
+// Get the virtualMachineName and add to vmProperties
+vmProperties.virtualMachineName = iaasVm.virtualMachineName;
+vmProperties.virtualMachineState = iaasVm.virtualMachineState;
+vmProperties.currentTask = iaasVm.currentTask;
+
+
+if ( vmProperties["Hostname"] == undefined || vmProperties["Hostname"] == null ) {
+  vmProperties["Hostname"] = vmProperties["virtualMachineName"];
+}
+// Override the Network0 suffix if this property is defined and not null or "" 
+if ( "PrimaryDnsDomain" in vmProperties ) {
+   if ( vmProperties.PrimaryDnsDomain != null && vmProperties.PrimaryDnsDomain != "" ) { 
+      vmProperties["VirtualMachine.Network0.DnsSuffix"] = vmProperties["PrimaryDnsDomain"];
+   } else {
+      vmProperties["PrimaryDnsDomain"] = vmProperties["VirtualMachine.Network0.DnsSuffix"];
+   }	  
+} else { 
+   vmProperties["PrimaryDnsDomain"] = vmProperties["VirtualMachine.Network0.DnsSuffix"];
+}
+
+if (vmProperties.plugins.vCACCAFE.match("^6")) {
+	
+	// Get the blueprint Name 
+	var modelName = 'ManagementModelEntities.svc';
+	var entitySetName = 'VirtualMachineTemplates';
+	var links = null;
+	var headers = null;
+	var blueprintId = {
+	  VirtualMachineTemplateID:vmProperties["blueprintId"],
+	};
+	var entity = vCACEntityManager.readModelEntity(iaasHost.id, modelName, entitySetName, blueprintId, headers);
+	vmProperties.blueprintName = entity.getProperty("VirtualMachineTemplateName");
+	
+	if ( isComponent ) { 
+		vmProperties.ParentMachineId = iaasVmEntity.getProperty("ParentMachineID");
+	
+		// Get the applayer of the Multimachine
+		var appServiceComponent = iaasVmEntity.getLink(iaasHost, "AppServiceComponent")[0];
+		var appServiceComponentTemplate = appServiceComponent.getLink(iaasHost, "AppServiceComponentTemplate")[0];
+		applayer = appServiceComponentTemplate.getProperty("Name").toString();
+		vmProperties["applayer"] = applayer;
+	}
+	
+	var childEntities = iaasVmEntity.getLink(iaasHost, "ChildVirtualMachines");
+	if ( childEntities.length == 0 ) {
+		vmProperties.hasChildEntities = false;
+	} else {
+		vmProperties.hasChildEntities = true;
+	}
+	
+	vmProperties.tenant = System.getModule("com.sovlabs.vra.utilities").provisionigIdtoTenantName(vmProperties.provisioningGroupId);
+	
+} else {
+	if (vmProperties.plugins.vCACCAFE.match("^7")) {
+		vmProperties.blueprintName = vmProperties["VirtualMachine.Cafe.Blueprint.Name"];
+		vmProperties.blueprintId = vmProperties["VirtualMachine.Cafe.Blueprint.Id"];
+		if (tenant != null && tenant != "") {
+			vmProperties.tenant = tenant;
+		} else {
+		   if (vmProperties["__asd_tenantRef"] != null && vmProperties["__asd_tenantRef"] != "") {
+			  vmProperties.tenant = vmProperties["__asd_tenantRef"];
+		   }
+		   vmProperties["tenant"] = getTenant(iaasHost, iaasVmEntity);
+		   vmProperties["businessGroup"] = getBusinessGroup(iaasHost, iaasVmEntity);
+		   vmProperties["guestOS"] = iaasVm.guestOS;
+		   vmProperties["guestOSFamily"] = iaasVm.guestOSFamily;
+		   vmProperties["externalReferenceId"] = iaasVm.externalReferenceId;
+		}
+		
+		if (vmProperties.tenant == null) {
+			throw "Unable to determine tenant based on VM properties: " + JSON.stringify(vmProperties);
+		}
+		
+		if (cafeHost == null) {
+			cafeHost = System.getModule("com.sovlabs.vra.utilities").tenantNametoCafeHost(vmProperties["tenant"]);
+		}
+		try {
+			var reqId = vmProperties["__Cafe.Root.Request.Id"];
+			var catalogResourceObj = null;
+			var catalogResourceObjs = Server.findAllForType("vCACCAFE:CatalogResource", vmProperties.iaasProperties.VirtualMachineName);
+			if (catalogResourceObjs != null && catalogResourceObjs.length > 0) {
+				if (catalogResourceObjs.length == 1) {
+					catalogResourceObj = catalogResourceObjs[0];
+				} else {
+					for each (var cObj in catalogResourceObjs) {
+						if (cObj.requestId == reqId) {
+							catalogResourceObj = cObj;
+							break;
+						}
+					}
+				}
+			}
+			
+			var parentResourceRefObj = null;
+			if (catalogResourceObj != null) {
+				parentResourceRefObj = catalogResourceObj.parentResourceRef;
+				vmProperties.resource = new Object();
+				vmProperties.resource.id = catalogResourceObj.id;
+				vmProperties.resource.costToDate = catalogResourceObj.costToDate;
+				vmProperties.resource.costs = catalogResourceObj.costs;
+				vmProperties.resource.dateCreated = catalogResourceObj.dateCreated;
+				vmProperties.resource.description = catalogResourceObj.description;
+				vmProperties.resource.destroyDate = catalogResourceObj.destroyDate;
+				if (catalogResourceObj.catalogItem != null) {
+					vmProperties.resource.catalogItemId = catalogResourceObj.catalogItem.id;
+					vmProperties.resource.catalogItemName = catalogResourceObj.catalogItem.label;
+				}
+				vmProperties.resource.lastUpdated = catalogResourceObj.lastUpdated;
+				vmProperties.resource.lease = catalogResourceObj.lease;
+				vmProperties.resource.name = catalogResourceObj.name;
+				vmProperties.resource.ownerUserName = catalogResourceObj.owners.ref;
+				vmProperties.resource.ownerFullName = catalogResourceObj.owners.value;
+				vmProperties.resource.requestId = catalogResourceObj.requestId;
+				vmProperties.resource.resourceTypeId = catalogResourceObj.resourceTypeRef.id;
+				vmProperties.resource.resourceTypeLabel = catalogResourceObj.resourceTypeRef.label;
+				vmProperties.resource.totalCost = catalogResourceObj.totalCost;
+			} else {
+				//System.debug("[" + vmProperties.iaasProperties.VirtualMachineName + "] Unable to obtain catalog resource properties");
+			}
+			
+			try {
+				var parentRequestObj = vCACCAFEEntitiesFinder.getCatalogItemRequest(cafeHost, reqId);
+			} catch (e) {
+				try {
+					var parentRequestObj = vCACCAFEEntitiesFinder.getResourceActionRequest(cafeHost, reqId);
+				} catch (e) {
+				}
+			}
+			
+			if (parentRequestObj != null) {
+				if (parentRequestObj.resourceRef != null) {
+					parentResourceRefObj = parentRequestObj.resourceRef;
+				}
+				vmProperties.catalogItemRequest = new Object();
+				vmProperties.catalogItemRequest.id = reqId;
+				vmProperties.catalogItemRequest.number = parentRequestObj.requestNumber;
+				vmProperties.catalogItemRequest.requestedBy = parentRequestObj.requestedBy;
+				vmProperties.catalogItemRequest.requestedFor = parentRequestObj.requestedFor;
+				vmProperties.catalogItemRequest.state = parentRequestObj.stateName;
+				vmProperties.catalogItemRequest.quote = parentRequestObj.quote;
+				vmProperties.catalogItemRequest.description = parentRequestObj.description;
+				vmProperties.catalogItemRequest.reasons = parentRequestObj.reasons;
+				vmProperties.catalogItemRequest.itemLabel = parentRequestObj.requestedItemName;
+				vmProperties.catalogItemRequest.itemDescription = parentRequestObj.requestedItemDescription;
+				vmProperties.catalogItemRequest.version = parentRequestObj.version;
+				vmProperties.catalogItemRequest.dateApproved = parentRequestObj.dateApproved;
+				vmProperties.catalogItemRequest.dateCreated = parentRequestObj.dateCreated;
+				vmProperties.catalogItemRequest.dateSubmitted = parentRequestObj.dateSubmitted;
+				vmProperties.catalogItemRequest.preApprovalId = parentRequestObj.preApprovalId;
+				vmProperties.catalogItemRequest.postApprovalId = parentRequestObj.postApprovalId;
+				vmProperties.catalogItemRequest.requestorEntitlementId = parentRequestObj.requestorEntitlementId;
+				vmProperties.catalogItemRequest.lastUpdated = parentRequestObj.lastUpdated;
+			} else {
+				//System.debug("[" + vmProperties.iaasProperties.VirtualMachineName + "] Unable to obtain deployment request properties");
+			}
+			
+			if (parentResourceRefObj != null) {
+				vmProperties.deploymentResource = new Object();
+				try {
+					var deploymentObj = vCACCAFEEntitiesFinder.getCatalogResource(cafeHost, parentResourceRefObj.id);
+					if (deploymentObj.catalogItem != null) {
+						vmProperties.deploymentResource.catalogItemId = deploymentObj.catalogItem.id;
+						vmProperties.deploymentResource.catalogItemName = deploymentObj.catalogItem.label;
+					}
+					vmProperties.deploymentResource.id = deploymentObj.id;
+					vmProperties.deploymentResource.name = deploymentObj.name;
+					if (deploymentObj.parentResourceRef != null) {
+       					vmProperties.deploymentResource.parentDeploymentId = deploymentObj.parentResourceRef.id;
+       					vmProperties.deploymentResource.parentDeploymentName = deploymentObj.parentResourceRef.label;
+       				}
+					vmProperties.deploymentResource.requestId = deploymentObj.requestId;
+					vmProperties.deploymentResource.costToDate = deploymentObj.costToDate;
+					vmProperties.deploymentResource.costs = deploymentObj.costs;
+					vmProperties.deploymentResource.costToDate = deploymentObj.costToDate;
+					vmProperties.deploymentResource.dateCreated = deploymentObj.dateCreated;
+					vmProperties.deploymentResource.description = deploymentObj.description;
+					vmProperties.deploymentResource.destroyDate = deploymentObj.destroyDate;
+					vmProperties.deploymentResource.lastUpdated = deploymentObj.lastUpdated;
+					vmProperties.deploymentResource.lease = deploymentObj.lease;
+					vmProperties.deploymentResource.costToDate = deploymentObj.costToDate;
+					vmProperties.deploymentResource.ownerUserName = deploymentObj.owners.ref;
+					vmProperties.deploymentResource.ownerFullName = deploymentObj.owners.value;
+					vmProperties.deploymentResource.resourceTypeId = deploymentObj.resourceTypeRef.id;
+					vmProperties.deploymentResource.resourceTypeLabel = deploymentObj.resourceTypeRef.label;
+					vmProperties.deploymentResource.totalCost = deploymentObj.totalCost;
+				} catch (e) {
+					//System.debug("[" + vmProperties.iaasProperties.VirtualMachineName + "] Unable to obtain deployment resource properties: " + e);
+				}
+			} else {
+				//System.debug("[" + vmProperties.iaasProperties.VirtualMachineName + "] Unable to obtain deployment resource properties");
+			}
+		} catch (e) {
+			//System.debug("Unable to obtain resource/request/deployment properties: " + e);
+		}
+
+	} else {
+		throw "Unsupported vCACCAFE plugin version: " + vmProperties.plugins.vCACCAFE;
+	}
+}
+
+try {
+	System.log("");
+	if ( vmProperties["Hostname"] !== undefined && vmProperties["PrimaryDnsDomain"] !== undefined ) {
+	    System.log("Processing machine: " +  vmProperties["Hostname"] + "." + vmProperties.PrimaryDnsDomain);
+	} else if (vmProperties["Hostname"] !== undefined && vmProperties["__datacollected_ipaddress"] !== undefined ) { 
+		System.log("Processing machine: " +  vmProperties["Hostname"] + " - " + vmProperties["__datacollected_ipaddress"]);
+	} else if (vmProperties["VirtualMachine.Network0.Address"] !== undefined ) { 
+		System.log("Processing machine: " + vmProperties["VirtualMachine.Network0.Address"]);
+	}
+} catch (e) {
+}
+
+System.debug("");
+System.debug("\nVM Properties\n---------------\n" + JSON.stringify(vmProperties));
+System.debug("");
+
+try {
+	System.getModule("com.sovlabs.vra.utilities").updateVroWorkflowTokenName(JSON.stringify(vmProperties));
+} catch (e) {
+	System.warn("Unable to update vRO workflow token name");
+}
+
+
+//  Check to see if previous workflows used the virtualMachineAddOrUpdateProperties to set properties
+// preserve those in order to ensure they are set at the end of the lifecycle state. 
+var ctxt = System.getContext();
+var prop = ctxt.getParameter("virtualMachineAddOrUpdateProperties");
+if ( prop != undefined && prop != null && prop != "" ) { 
+	try { 
+		props = JSON.parse(prop);
+	} catch (e) { 
+		throw "ERROR: Unable to parse virtualMachineAddOrUpdateProperties, invalid json string";
+	}
+	
+	for (var p in props ) { 
+		vmProperties[p]=props[p];
+	}
+} 
+
+//  Check to see if previous workflows used the virtualMachineAddOrUpdateProperties to set properties
+// preserve those in order to ensure they are set at the end of the lifecycle state. 
+var prop = ctxt.getParameter("virtualMachineDeleteProperties");
+retprops = new Properties();
+if ( prop != undefined && prop != null && prop != "" ) { 
+	try { 
+		props = JSON.parse(prop);
+	} catch (e) { 
+		throw "ERROR: Unable to parse virtualMachineDeleteProperties, invalid json string";
+	}
+	
+	for (var p in props ) {
+		delete vmProperties[p];
+	}
+} 
+
+return vmProperties;
+
+
+function getTenant(vcacHost, machineEntity) { 
+	var hre = machineEntity.getLink(vcacHost, "HostReservation")[0];
+	var pge = hre.getLink(vcacHost,"ProvisioningGroup")[0];
+	var tenant = pge.getProperty("TenantID");
+	//System.log("tenant: " + tenant);
+	return tenant;
+}
+
+function getBusinessGroup(vcacHost, machineEntity) { 
+	var hre = machineEntity.getLink(vcacHost, "HostReservation")[0];
+	var pge = hre.getLink(vcacHost,"ProvisioningGroup")[0];
+	var pg = pge.getInventoryObject();
+	return pg.groupName;
+}
+]]></script>
+</dunes-script-module>

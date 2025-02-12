@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="setOrderOfEnvironment" result-type="Array/string" api-version="6.0.0" id="d2908bd9-f978-4842-a2c9-7f48d50f3b43" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="location" t="string"><![CDATA[The datacenter location]]></param>
+  <script encoded="false"><![CDATA[// Define Environment Array
+var environment = [];
+
+if (location) {
+	// Set Array order for environment values
+	if(location == "frk") {
+		environment = ["Production", "Non-Production", "Development"];
+	} else {
+		environment = ["Non-Production", "Production", "Development"];
+	}
+
+} else {
+environment.push("Please select a datacenter location above.")
+}
+
+return environment;]]></script>
+</dunes-script-module>

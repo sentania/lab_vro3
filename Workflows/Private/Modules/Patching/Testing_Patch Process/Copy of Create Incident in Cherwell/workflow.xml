@@ -1,0 +1,282 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="bb22038c-a44f-473e-a06d-b20a69f8e906" version="0.0.18" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Copy of Create Incident in Cherwell]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="RequestedBy" type="string"/>
+    <param name="Source" type="string"/>
+    <param name="ShortDescription" type="string"/>
+    <param name="Description" type="string"/>
+    <param name="Service" type="string"/>
+    <param name="Category" type="string"/>
+    <param name="Subcategory" type="string"/>
+    <param name="Impact" type="string"/>
+    <param name="Urgency" type="string"/>
+    <param name="Priority" type="string"/>
+    <param name="OwnedByTeam" type="string"/>
+    <param name="CustomerDisplayName" type="string"/>
+    <param name="ConfigItemDisplayName" type="string"/>
+    <param name="Server_Name" type="string"/>
+    <param name="NPForcePatchDate" type="string"/>
+    <param name="ProdForcePatchDate" type="string"/>
+  </input>
+  <attrib name="param" type="REST:RESTHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='22e43fcf-7ed2-4485-9a7e-fe284a62381c'&dunesName='REST:RESTHost']]></value>
+  </attrib>
+  <attrib name="Key_Content" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="Value_content" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="424.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[// Email function to notify
+function eMail(Content,Sub1, bgpdl){
+	var objEmail = new EmailMessage();
+	objEmail.fromAddress = 'ucp-vro@nm.nmfco.com'
+	objEmail.fromName = 'DL-SDDC@northwesternmutual.com'
+	objEmail.smtpHost = 'hera.nml.com'
+	objEmail.smtpPort = 25
+	objEmail.toAddress = bgpdl
+	//objEmail.ccAddress = 'DL-SDDC@northwesternmutual.com'
+	objEmail.subject = Sub1
+	objEmail.addMimePart(Content,"text/html; charset=UTF-8")
+	objEmail.sendMessage()
+}
+
+System.log(Server_Name + "Server List")
+// Get todays date to update ETCD with INC details
+
+INC_date =  new Date
+//System.log(INC_date)
+var s = new Date(INC_date).toLocaleDateString("en-US")
+//System.log(s)
+check = s.split(" ")[0]
+//System.log(check)
+var Month 
+switch(check){
+	case "December": 
+		   Month = '12'
+	       break;
+	case "November": 
+		   Month = '11'
+	       break;
+	case "October": 
+		   Month = '10'
+	       break;
+	case "September": 
+		   Month = '09'
+	       break;
+	case "August": 
+		   Month = '08'
+	       break;
+	case "July": 
+		   Month = '07'
+	       break;
+	case "June": 
+		   Month = '06'
+	       break;
+	case "May": 
+		   Month = '05'
+	       break;
+	case "April": 
+		   Month = '04'
+	       break;
+	case "March": 
+		   Month = '03'
+	       break;
+	case "February": 
+		   Month = '02'
+	       break;
+	case "January": 
+		   Month = '01'
+	       break;
+	}
+Day = (s.split(" ")[1]).split(",")[0]
+if(Day < 10){
+		Day = 0 + Day
+	}
+Year = s.split(" ")[2]
+tINC_Date = Year+Month+Day
+//System.log(tINC_Date)
+
+if( RequestedBy  == '' || RequestedBy == null){
+		RequestedBy = "Dinesh Solaiappan"
+	}
+if(Source == '' || Source == null){
+		Source = "Event"
+	}
+if(ShortDescription == '' || ShortDescription == null){
+		ShortDescription = "Force Patching - Notification for the list of servers in Description"
+	}	
+if(Description == "" || Description == null){
+		Description = "ETCC:  Can you please assign to the associated Cherwell queue for the servers below?  If the Cherwell queue is missing, please look at the application name and PDL to see if you can determine which queue this should go to.  (this will be improved in the near future), http://ucp-etcd.nml.com/ucp/serverinfo.html  SERVER OWNERS: Below is list of servers which will be Forced Patched by an automated process on the dates listed below.  Your team is responsible for pre/post work prior to the force patching changes if these servers are not patched, destroyed or have an approved exception in place prior to the date&time below.  If your server does go through force patching, your team is accountable to checkout after the patching is done.  These servers will be recycled as part of that patching process. if you do not see the list of servers, please contact dl-sddc@northwesternmutual.com. Please check the #unifiedcompute slack channel for additional instructions on how to patch your server"+ '<br />' + '<br />' + "Non-Prod Force Patch Date - " + NPForcePatchDate + '<br />' + '<br />'+"  Prod Force Patch Date - " + ProdForcePatchDate +'<br />' + '<br />' + Server_Name
+	}	
+if(Service == "" || Service == null){
+		Service = "Servers and Storage Service"
+    }
+if(Category == "" || Category == null){
+		Category = "UCP - Unified Compute Platform"
+	}
+if(Subcategory == "" || Subcategory == null){
+		Subcategory = "UCP Core Infra"
+	}
+if(Impact == "" || Impact == null){
+		Impact = "Medium"
+	}		
+if(Urgency == "" || Urgency == null){
+		Urgency = "High"
+	}
+if(Priority == "" || Priority == null){
+  		Priority = 3
+	}	
+if(OwnedByTeam == "" || OwnedByTeam == null){
+		System.log("I dont have quene name")  
+		OwnedByTeam = "Enterprise Tech Command Center"
+		//OwnedByTeam = "UCP Unified Compute Platform"
+    }
+if(CustomerDisplayName == "" || CustomerDisplayName == null){
+		CustomerDisplayName = "Dinesh Solaiappan"
+	}	
+if(ConfigItemDisplayName == "" ||  ConfigItemDisplayName == null){
+		ConfigItemDisplayName = "UCP Automation"
+	}
+	
+//Creating pay load for Cherwell and triger an INC
+
+json_Payload = '{"RequestedBy": "' + RequestedBy + '", "Source": "' + Source + '","ShortDescription": "' + ShortDescription + '","Description": "' + Description + '","Service": "' + Service + '","Category": "' + Category + '","Subcategory": "' + Subcategory + '","Impact": "' + Impact + '","Urgency": "' + Urgency + '","Priority": "' + Priority + '","OwnedByTeam": "' + OwnedByTeam + '","CustomerDisplayName": "' + CustomerDisplayName + '","ConfigItemDisplayName": "' + ConfigItemDisplayName + '"}'
+System.log(json_Payload)
+var suburl = "/incident" 
+var Connection = param.createRequest('PUT',suburl,json_Payload)
+System.log(suburl)
+System.log(Connection)
+Connection.contentType = "application/json"
+try{
+		var response = Connection.execute()
+	}catch (ignore){
+		System.log("Coould not create INC in first attempt")
+	}
+if(response.statusCode != 200){
+		Content = "Unable create INC for Server " + Server_Name + ', Status Code is not 200. ' +'<br />' + '<br />' +" This can be due to incorrect charwell queue in etcd." + '<br />' + '<br />' + "Json Pay Load: " +'<br />' + '<br />'+ json_Payload + '<br />' + '<br />' + "Going to try and assign the Incident to ETCC"
+		Sub1 = "Unable to Create INC for Patching Non Compliance - " + Server_Name
+		//bgpdl = "dl-sddc@northwesternmutual.com" 
+		bgpdl = "dineshsolaiappan@northwesternmutual.com" 
+		eMail(Content,Sub1, bgpdl)
+		//working on to assign INC to ETCC
+		OwnedByTeam = "UCP Unified Compute Platform"
+		json_Payload = '{"RequestedBy": "' + RequestedBy + '", "Source": "' + Source + '","ShortDescription": "' + ShortDescription + '","Description": "' + Description + '","Service": "' + Service + '","Category": "' + Category + '","Subcategory": "' + Subcategory + '","Impact": "' + Impact + '","Urgency": "' + Urgency + '","Priority": "' + Priority + '","OwnedByTeam": "' + OwnedByTeam + '","CustomerDisplayName": "' + CustomerDisplayName + '","ConfigItemDisplayName": "' + ConfigItemDisplayName + '"}'
+		System.log(json_Payload)
+		var Connection = param.createRequest('PUT',suburl,json_Payload)
+		Connection.contentType = "application/json"
+		try{
+				var response = Connection.execute()
+			}catch (ignore){
+				System.log("Error, Unable to triger INC")
+			}
+}
+System.log("INC Api Execution code - "+ response.statusCode)
+var valueq = JSON.parse(response.contentAsString)
+System.log("INC NUmber " + valueq['Incident ID'])
+
+if(response.statusCode == 200){
+	var Key_Content = [];
+	var Value_content = [];
+	var etcd_update = Server_Name.split(",")
+	for each(etcd in etcd_update){
+	System.log(etcd)
+		Key_Content.push('unifiedcompute/servers/' + etcd +'/patchHistory/' + tINC_Date )
+		Value_content.push(encodeURI('INC' + valueq['Incident ID']))
+	}
+	System.log(Key_Content)
+	System.log(Value_content)
+}else{
+	Content = "Unable create INC for Server " + Server_Name + ', Status Code is not 200 for the pay load, ' +'<br />' + '<br />'+ "Json Pay Load: " +'<br />' + '<br />'+ json_Payload + '<br />' + '<br />' + '<br />' + '<br />' + "Could not assign Incident to ETCC, need manual check here."
+	Sub1 = "Unable to Create INC for Patching Non Compliance - " + Server_Name
+	//bgpdl = "dl-sddc@northwesternmutual.com" 
+	bgpdl = "dineshsolaiappan@northwesternmutual.com" 
+	eMail(Content,Sub1, bgpdl)
+	System.log(JSON.parse(response.contentAsString))
+	System.throw("No INC Created and Breaking Script here")
+}
+
+]]></script>
+    <in-binding>
+      <bind name="RequestedBy" type="string" export-name="RequestedBy"/>
+      <bind name="Source" type="string" export-name="Source"/>
+      <bind name="ShortDescription" type="string" export-name="ShortDescription"/>
+      <bind name="Description" type="string" export-name="Description"/>
+      <bind name="Service" type="string" export-name="Service"/>
+      <bind name="Subcategory" type="string" export-name="Subcategory"/>
+      <bind name="Impact" type="string" export-name="Impact"/>
+      <bind name="Urgency" type="string" export-name="Urgency"/>
+      <bind name="Priority" type="string" export-name="Priority"/>
+      <bind name="OwnedByTeam" type="string" export-name="OwnedByTeam"/>
+      <bind name="CustomerDisplayName" type="string" export-name="CustomerDisplayName"/>
+      <bind name="ConfigItemDisplayName" type="string" export-name="ConfigItemDisplayName"/>
+      <bind name="param" type="REST:RESTHost" export-name="param"/>
+      <bind name="Server_Name" type="string" export-name="Server_Name"/>
+      <bind name="Category" type="string" export-name="Category"/>
+      <bind name="NPForcePatchDate" type="string" export-name="NPForcePatchDate"/>
+      <bind name="ProdForcePatchDate" type="string" export-name="ProdForcePatchDate"/>
+    </in-binding>
+    <out-binding>
+      <bind name="Key_Content" type="Array/string" export-name="Key_Content"/>
+      <bind name="Value_content" type="Array/string" export-name="Value_content"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="RequestedBy">
+      <desc><![CDATA[RequestedBy]]></desc>
+    </p-param>
+    <p-param name="Source">
+      <desc><![CDATA[Source]]></desc>
+    </p-param>
+    <p-param name="ShortDescription">
+      <desc><![CDATA[ShortDescription]]></desc>
+    </p-param>
+    <p-param name="Description">
+      <desc><![CDATA[Description]]></desc>
+    </p-param>
+    <p-param name="Service">
+      <desc><![CDATA[Service]]></desc>
+    </p-param>
+    <p-param name="Category">
+      <desc><![CDATA[Category]]></desc>
+    </p-param>
+    <p-param name="Subcategory">
+      <desc><![CDATA[Subcategory]]></desc>
+    </p-param>
+    <p-param name="Impact">
+      <desc><![CDATA[Impact]]></desc>
+    </p-param>
+    <p-param name="Urgency">
+      <desc><![CDATA[Urgency]]></desc>
+    </p-param>
+    <p-param name="Priority">
+      <desc><![CDATA[Priority]]></desc>
+    </p-param>
+    <p-param name="OwnedByTeam">
+      <desc><![CDATA[OwnedByTeam]]></desc>
+    </p-param>
+    <p-param name="CustomerDisplayName">
+      <desc><![CDATA[CustomerDisplayName]]></desc>
+    </p-param>
+    <p-param name="ConfigItemDisplayName">
+      <desc><![CDATA[ConfigItemDisplayName]]></desc>
+    </p-param>
+    <p-param name="Server_Name">
+      <desc><![CDATA[Server_Name]]></desc>
+    </p-param>
+    <p-param name="NPForcePatchDate">
+      <desc><![CDATA[NPForcePatchDate]]></desc>
+    </p-param>
+    <p-param name="ProdForcePatchDate">
+      <desc><![CDATA[ProdForcePatchDate]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="b8992daa-c940-4f95-8f80-841b75993e39" version="0.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Remove Aliases Day 2]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="hostname" type="String">
+      <description><![CDATA[FQDN of server]]></description>
+    </param>
+    <param name="removeAlias" type="Array/string">
+      <description><![CDATA[Remove this Alias from the server's host record.]]></description>
+    </param>
+    <param name="vm" type="VC:VirtualMachine">
+      <description><![CDATA[Virtual Machine related to the Host Record]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="statusCode" type="Number">
+      <description><![CDATA[Response status code]]></description>
+    </param>
+    <param name="contentLength" type="Number">
+      <description><![CDATA[Response content length]]></description>
+    </param>
+    <param name="headers" type="Properties">
+      <description><![CDATA[Response headers]]></description>
+    </param>
+    <param name="contentAsString" type="String">
+      <description><![CDATA[Response content as string]]></description>
+    </param>
+    <param name="statusCodeGetAliases" type="Number">
+      <description><![CDATA[Response status code]]></description>
+    </param>
+    <param name="headersGetAliases" type="Properties">
+      <description><![CDATA[Response headers]]></description>
+    </param>
+  </output>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item1" type="task">
+    <display-name><![CDATA[VM Log]]></display-name>
+    <script encoded="false"><![CDATA[System.log("Removing the alias '"+removeAlias+"' from "+vm.name+"'s host record.");]]></script>
+    <in-binding>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm"/>
+      <bind name="removeAlias" type="Array/string" export-name="removeAlias"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="link" linked-workflow-id="3ecdb8e1-a7f2-4b21-8294-2076eee96ef0">
+    <display-name><![CDATA[Remove Aliases from a Host Record]]></display-name>
+    <in-binding>
+      <bind name="hostname" type="String" export-name="hostname">
+        <description><![CDATA[FQDN of server]]></description>
+      </bind>
+      <bind name="removeAlias" type="Array/string" export-name="removeAlias">
+        <description><![CDATA[Remove this Alias from the server's host record.]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="statusCode" type="Number" export-name="statusCode">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="contentLength" type="Number" export-name="contentLength">
+        <description><![CDATA[Response content length]]></description>
+      </bind>
+      <bind name="headers" type="Properties" export-name="headers">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+      <bind name="contentAsString" type="String" export-name="contentAsString">
+        <description><![CDATA[Response content as string]]></description>
+      </bind>
+      <bind name="statusCodeGetAliases" type="Number" export-name="statusCodeGetAliases">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="headersGetAliases" type="Properties" export-name="headersGetAliases">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+    </out-binding>
+    <position y="55.90909090909091" x="345.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="hostname">
+      <desc><![CDATA[FQDN of server]]></desc>
+    </p-param>
+    <p-param name="removeAlias">
+      <desc><![CDATA[Remove this Alias from the server's host record.]]></desc>
+    </p-param>
+    <p-param name="vm">
+      <desc><![CDATA[Virtual Machine related to the Host Record]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

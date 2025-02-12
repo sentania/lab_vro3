@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getSubtenantName" result-type="string" api-version="6.0.0" id="2ea80095-852d-4161-9cf8-59695bf98374" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <description><![CDATA[Used on Custom form to populate the subtenant name since custom properties no longer get passed]]></description>
+  <param n="subtenantId" t="string"/>
+  <script encoded="false"><![CDATA[//Used on Custom form to populate the subtenant name since custom properties no longer get passed
+var host = Server.findAllForType("vCACCAFE:VCACHost")[0];
+var subtenant = vCACCAFEEntitiesFinder.getSubtenant(host,subtenantId);
+return subtenant.name;]]></script>
+</dunes-script-module>

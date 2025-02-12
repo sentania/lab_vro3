@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getVcVmFromVcac" result-type="VC:VirtualMachine" api-version="6.0.0" id="920ed97a-6ca3-4c14-b041-fd736803877f" version="1.0.0" allowed-operations="evf" category-name="com.thinkahead.vcac">
+  <description><![CDATA[Get the vCenter VM from the vCAC VM.  Only works if vCenter has already created the VM (after BuildingMachine).
+Uses sdkConnection.searchIndex, which is supposed to be very effecient.]]></description>
+  <param n="vcacVm" t="vCAC:VirtualMachine"><![CDATA[vCAC VM object]]></param>
+  <script encoded="false"><![CDATA[//Get the UUID to look for in vCenter from the vCAC VM object
+var uuid = vcacVm.vmUniqueID;
+
+//Make sure the UUID exists
+if (uuid === undefined || uuid === null || uuid === "") {
+	System.warn("vcacVm.vmUniqueID is invalid. This can happen when vCenter has not created the VM yet. "
+		+ "For example, at the BuildingMachine lifecycle state.");
+	return null;
+}
+
+//Get all vCenter connections in vRO's vCenter plugin
+var sdkConnections = VcPlugin.allSdkConnections;
+if (sdkConnections === null || sdkConnections.length === 0) {
+	throw "Unable to find any vCenter connections. Make sure vRO's vCenter plug-in is configured."
+}
+
+//Loop through all vCenter connections, check each one for the VM's UUID
+var vcVm = null; // the VM to return
+for each (var sdkConnection in sdkConnections) {
+	System.log("Checking vCenter '" + sdkConnection.name + "' for VM UUID '" + uuid + "'.");
+	try {
+		//https://www.vmware.com/support/orchestrator/doc/vro-vsphere60-api/html/VcSearchIndex.html#findByUuid
+		vcVm = sdkConnection.searchIndex.findByUuid(null, uuid, true, true);
+	} catch(err) {
+		System.warn("Not found in vCenter '" + sdkConnection.name + "'. Error: '" + err + "'");
+	}
+	//If the vCenter VM was found, break from the loop and return it
+	if (vcVm !== null) { 
+		System.log("Found vCenter VM for UUID '" + uuid + "' in vCenter '" + sdkConnection.name + "'.");
+		break; 
+	}
+}
+
+return vcVm;]]></script>
+</dunes-script-module>

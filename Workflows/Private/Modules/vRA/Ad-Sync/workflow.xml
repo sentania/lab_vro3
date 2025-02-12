@@ -1,0 +1,318 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="45530372-767f-4a5a-9471-2c254580fe85" version="0.0.23" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Ad-Sync]]></display-name>
+  <position y="55.0" x="105.0"/>
+  <input>
+    <param name="ADGrouptoSync" type="Array/string"/>
+  </input>
+  <attrib name="resthostPassword" type="SecureString" read-only="false">
+    <value encoded="n"><![CDATA[9BS50G61N63K6BU69T37H75X70Q21P5B8DF35KE6542AFRD84FFDAUF02CC9W8BBABFHD033DE7V75E1217I1D6416RF0BDBB6UFDFB96UE3B546Z4E2607EK51BF720UFC5B30BL2DD7AECP386C5EAK5D91F5DT7D861B2Z9AE463CIE2F7CD3W7871E0COF35BB39R9435C7DW]]></value>
+  </attrib>
+  <attrib name="sessionToken" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="tenant" type="string" read-only="false">
+    <value encoded="n"><![CDATA[vsphere.local]]></value>
+  </attrib>
+  <attrib name="restHost" type="REST:RESTHost" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="restOperation" type="REST:RESTOperation" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='fb7471ca-6d77-45a8-998f-b5142c8d6362:31283e66-3613-436c-8744-d84c5b0ed8ae'&dunesName='REST:RESTOperation']]></value>
+  </attrib>
+  <attrib name="directoryIds" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="directoryId" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="timestamp" type="Date" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="ADHost" type="AD:AdHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23RootItem%23%2C%2304f57e41-daba-46a0-9e0a-62730f828775%23'&dunesName='AD:AdHost']]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="54.5" x="904.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item5" type="task">
+    <display-name><![CDATA[Get-vRA-Auth ID]]></display-name>
+    <script encoded="false"><![CDATA[// collection of Rest Host and filter ETCD Rest host
+var getHosts = Server.findAllForType("REST:RESTHost")
+for(var i =0; i < getHosts.length ; i++){
+	if(getHosts[i].name == "vRA - myucp"){
+		var R = getHosts[i]
+		restHost = getHosts[i]
+		}
+}
+
+//Creating Body for rest call
+
+var inParamtersValues = [tenant];
+//var resthostUsername = "vraconfig"
+var resthostUsername = "administrator"
+System.log(resthostUsername + " - Rest User Name")
+var bodyJSON = new Object();
+bodyJSON.username 		= resthostUsername;
+bodyJSON.password 		= resthostPassword;
+bodyJSON.tenant			= inParamtersValues
+bodyJSON.issueToken 	= "true";
+var body = JSON.stringify(bodyJSON);
+var acceptHeaders;
+var headerParams = [];
+var acceptHeadersValue = "";
+
+//Setting up the url for rest operation
+var runrul = "/SAAS/t/vsphere.local/API/1.0/REST/auth/system/login"
+System.log(runrul)
+
+//Creating Execution request of rest call
+var request = R.createRequest('POST',runrul,body);
+request.setHeader("Accept","application/json");
+request.contentType = "application/json"
+
+//Executing rest call and getting Token id
+var response = request.execute();
+statusCode = response.statusCode;
+System.log("Status code: " + statusCode);
+
+//Parsing output as Json
+var contentAsString = response.contentAsString;
+var jsonContent = JSON.parse(contentAsString);
+sessionToken = jsonContent.sessionToken;
+System.log("vRA token - " + sessionToken)
+
+
+var inParamtersValues = [tenant];
+var acceptHeaders;
+var runrul = "SAAS/t/vsphere.local/jersey/manager/api/connectormanagement/directoryconfigs"
+System.log(runrul)
+var request = restHost.createRequest('GET',runrul,inParamtersValues);
+request.setHeader("Content-type","application/vnd.vmware.horizon.manager.connector.management.directory.ad.over.ldap+json");
+request.setHeader("Authorization","Bearer " + sessionToken);
+var response = request.execute();
+statusCode = response.statusCode;
+System.log("Status code: " + statusCode);
+var contentAsString = response.contentAsString;
+//System.log("Content as string: " + contentAsString);
+var jsonContent = JSON.parse(contentAsString);
+var items = jsonContent.items;
+directoryIds = items.map(function(item) {
+		return	item.directoryId
+});
+
+
+]]></script>
+    <in-binding>
+      <bind name="resthostPassword" type="SecureString" export-name="resthostPassword"/>
+      <bind name="tenant" type="string" export-name="tenant"/>
+    </in-binding>
+    <out-binding>
+      <bind name="sessionToken" type="string" export-name="sessionToken"/>
+      <bind name="restHost" type="REST:RESTHost" export-name="restHost"/>
+      <bind name="directoryIds" type="string" export-name="directoryIds"/>
+    </out-binding>
+    <position y="64.5" x="164.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item0" type="task">
+    <display-name><![CDATA[Sync Result]]></display-name>
+    <script encoded="false"><![CDATA[
+//Find last Sync up time 
+System.log("Am on LAST")
+var headerParams = [];
+var acceptHeadersValue
+var runrul = "/SAAS/jersey/manager/api/connectormanagement/directoryconfigs/1760e3ad-52d6-4cc3-9527-a2c70e4bd357/syncexecutions";
+var request = restHost.createRequest('GET',runrul,null);
+request.setHeader("Content-type","application/vnd.vmware.horizon.manager.connector.management.directory.ad.over.ldap+json");
+request.setHeader("Authorization","Bearer " + sessionToken);
+var response = request.execute();
+statusCode = response.statusCode;
+System.log("Status code: " + statusCode);
+var contentAsString = response.contentAsString;
+//System.log("Content as string: " + contentAsString);
+var jsonContent = JSON.parse(contentAsString);
+var items = jsonContent.items;
+directorydata = items.map(function(item) {
+	//System.log(item.timeStamp);
+	var test = item.timeStamp
+});
+
+var lastExecution = items[0];
+//System.log(lastExecution.syncResult);
+System.log(timestamp)
+System.log("Last Execution Time Stamp - " + lastExecution.timeStamp)
+
+
+if (lastExecution.timeStamp > timestamp && lastExecution.syncResult != "message.sync.success"  ) {
+	throw "Sync not yet finished.";
+}else{
+	System.log("AD Sync Updated")
+}
+
+
+
+/*
+items = items.sort(function(a,b) {
+System.log("a.timestamp - " + a.timeStamp)
+System.log("b.timestamp - " + b.timeStamp)
+	if(a.timeStamp > b.timeStamp) {
+		return -1
+	} else {
+		return 1;
+	}
+	return 0
+});
+var lastExecution = items[0];
+System.log(lastExecution.syncResult);
+if (lastExecution.syncResult != "message.sync.success") {
+	throw "Sync not yet finished.";
+}
+*/
+]]></script>
+    <in-binding>
+      <bind name="sessionToken" type="string" export-name="sessionToken"/>
+      <bind name="restHost" type="REST:RESTHost" export-name="restHost"/>
+      <bind name="directoryIds" type="string" export-name="directoryIds"/>
+      <bind name="timestamp" type="Date" export-name="timestamp"/>
+    </in-binding>
+    <out-binding/>
+    <position y="65.0" x="724.5"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item3" type="task">
+    <display-name><![CDATA[Sync AD Operation]]></display-name>
+    <script encoded="false"><![CDATA[var inParamtersValues = [directoryId];
+var acceptHeaders;
+var headerParams = [];
+var acceptHeadersValue = "";
+
+var headerParams = [];
+var acceptHeadersValue = "";
+Server.log(restOperation.getHeaderParameters());
+
+var request = restOperation.createRequest(inParamtersValues, '{"ignoreSafeguards":true}');
+request.setHeader("Content-type","application/vnd.vmware.horizon.manager.connector.management.directory.sync.profile.sync+json");
+request.setHeader("Authorization","Bearer " + sessionToken);
+System.log(restOperation.method)
+System.log(request.ContentType)
+System.log(request.fullUrl)
+System.log(request.getMethod())
+//set the request content type]
+
+var response = request.execute();
+System.log(response.getAllHeaders())
+if (System.getModule("com.vmware.library.http-rest.configuration").hasHttpMethodHasBodyPayload(request.getMethod())) {
+   System.log("Setting defaut content type to:  " + restOperation.defaultContentType );
+   request.contentType = restOperation.defaultContentType;
+}
+
+System.log("Request URL: " + request.fullUrl);
+statusCode = response.statusCode;
+System.log("Status code: " + statusCode);
+contentAsString = response.contentAsString;
+
+System.sleep(6 * 60 * 1000)
+
+]]></script>
+    <in-binding>
+      <bind name="sessionToken" type="string" export-name="sessionToken"/>
+      <bind name="restOperation" type="REST:RESTOperation" export-name="restOperation"/>
+      <bind name="directoryId" type="string" export-name="directoryId"/>
+    </in-binding>
+    <out-binding/>
+    <position y="64.5" x="584.5"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item2" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[//nm.nmfco.com id is picked 
+directoryId = directoryIds[1];
+System.log("Am on Item 2")
+var dateTime = Date.now();
+timestamp = Math.floor(dateTime / 1000);
+]]></script>
+    <in-binding>
+      <bind name="directoryIds" type="string" export-name="directoryIds"/>
+    </in-binding>
+    <out-binding>
+      <bind name="directoryId" type="string" export-name="directoryId"/>
+      <bind name="timestamp" type="Date" export-name="timestamp"/>
+    </out-binding>
+    <position y="65.0" x="304.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item4" type="task">
+    <display-name><![CDATA[Update group before Sync]]></display-name>
+    <script encoded="false"><![CDATA[for each(gg in ADGrouptoSync){
+	gg = (gg.toUpperCase()).split("@")[0]
+	Tx = ActiveDirectory.search("UserGroup",gg,ADHost);
+	inputcontent = '{"searchDns":["' + Tx[0].distinguishedName + '"]}'
+	System.log("MY INPUT CONTENT - " + inputcontent)
+	var uri_link_base = "/SAAS/jersey/manager/api/connectormanagement/directoryconfigs/" + directoryId + "/directorygroups";
+	var rest_req = restHost.createRequest("POST", uri_link_base,inputcontent);
+	rest_req.setHeader("Content-Type", "application/vnd.vmware.horizon.manager.connector.management.ops.groupquery+json");
+	rest_req.setHeader("Accept", "application/vnd.vmware.horizon.manager.connector.management.ops.group.map+json");
+	rest_req.setHeader("Authorization", "Bearer " + sessionToken);
+	var rest_response = rest_req.execute();
+	System.log("MY EXECUTION STATUS CODE  - " + rest_response.statusCode)
+
+	var Sync_uri_link_base = "/SAAS/jersey/manager/api/connectormanagement/directoryconfigs/" + directoryId + "/syncprofile";
+	var Sync_rest_req = restHost.createRequest("GET", Sync_uri_link_base);
+	Sync_rest_req.setHeader("Accept", "application/vnd.vmware.horizon.manager.connector.management.directory.sync.profile.groups.from.db+json");
+	Sync_rest_req.setHeader("Authorization", "Bearer " + sessionToken);
+	var Sync_rest_response = Sync_rest_req.execute();
+	System.log("MY EXECUTION STATUS CODE  - " + Sync_rest_response.statusCode)
+	System.log("MY EXECUTION STATUS CONTENT  - " + Sync_rest_response.contentAsString)
+	Opt_2 = Sync_rest_response.contentAsString
+	System.log(Opt_2.split('"identityGroupInfo":{')[0])
+	Pass_CNT = '"'+ Tx[0].distinguishedName + '"'
+	Pass_CNT1 = Pass_CNT + ': {"mappedGroupData": [],"numSelected": 0,"numTotal": 0,"selected": true},'
+	var Sync_value_AD = Opt_2.split('"identityGroupInfo":{')[0] + '"identityGroupInfo":{' + Pass_CNT1 + Opt_2.split('"identityGroupInfo":{')[1]
+	System.log("Value to be passed for SYNC - " + Sync_value_AD )
+	
+	var uri_link_base = "/SAAS/jersey/manager/api/connectormanagement/directoryconfigs/" + directoryId + "/syncprofile";
+	pass_data = new Object();
+	pass_data = Sync_value_AD
+	System.log("DEBUG - Directory Sync data will be sent as follows:\n" + JSON.stringify(pass_data));
+
+	var uri_safeguard = "SAAS/jersey/manager/api/connectormanagement/directoryconfigs/" + directoryId + "/syncprofile";
+	var rest_req_safeguard = restHost.createRequest("PUT", uri_link_base, Sync_value_AD);
+	rest_req_safeguard.setHeader("Content-Type", "application/vnd.vmware.horizon.manager.connector.management.directory.sync.profile.groups+json");
+	rest_req_safeguard.setHeader("Accept", "application/vnd.vmware.horizon.manager.connector.management.directory.sync.profile.groups+json");
+	rest_req_safeguard.setHeader("Accept-Encoding", "gzip, deflate, br")
+	rest_req_safeguard.setHeader("Authorization", "Bearer " + sessionToken);
+	System.log("DEBUG - Making REST call to: " + rest_req_safeguard.fullUrl);
+	try {
+			var rest_response_safeguard = rest_req_safeguard.execute();
+	    } catch (ignore){
+			System.log("Submitted Sync request")
+	    }	
+	var Sync1_uri_link_base = "/SAAS/jersey/manager/api/connectormanagement/directoryconfigs/" + directoryId + "/syncprofile"; 
+	var Sync1_rest_req = restHost.createRequest("GET", Sync1_uri_link_base)
+	Sync1_rest_req.setHeader("Accept", "application/vnd.vmware.horizon.manager.connector.management.directory.sync.profile.groups.from.db+json");
+	Sync1_rest_req.setHeader("Authorization", "Bearer " + sessionToken);
+	var Sync1_rest_response = Sync_rest_req.execute();
+	System.log("MY EXECUTION POST CHECK CODE  - " + Sync1_rest_response.statusCode)
+	System.log("MY EXECUTION POST CHECK CONTENT   - " + Sync_rest_response.contentAsString)
+	op2 = Sync_rest_response.contentAsString
+	search_code = op2.search(gg)
+	if (search_code != -1){
+		System.log("AD Sync successfully posted")
+	}else{
+		System.throw("AD Sync POST Sync call failed")
+	}
+}]]></script>
+    <in-binding>
+      <bind name="sessionToken" type="string" export-name="sessionToken"/>
+      <bind name="tenant" type="string" export-name="tenant"/>
+      <bind name="restHost" type="REST:RESTHost" export-name="restHost"/>
+      <bind name="directoryId" type="string" export-name="directoryId"/>
+      <bind name="ADGrouptoSync" type="Array/string" export-name="ADGrouptoSync"/>
+      <bind name="ADHost" type="AD:AdHost" export-name="ADHost"/>
+    </in-binding>
+    <out-binding/>
+    <position y="64.5" x="444.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="ADGrouptoSync">
+      <desc><![CDATA[ADGrouptoSync]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

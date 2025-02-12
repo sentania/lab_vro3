@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item3" object-name="workflow:name=generic" id="2ea19bf9-8a37-4d90-83db-b5e5678ca2e2" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Snapshot Test]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="vm" type="VC:VirtualMachine">
+      <description><![CDATA[Virtual machine of which to create a snapshot]]></description>
+    </param>
+    <param name="description" type="string">
+      <description><![CDATA[Snapshot description.]]></description>
+    </param>
+    <param name="name" type="string">
+      <description><![CDATA[Snapshot name. The name need not be unique for this virtual machine.]]></description>
+    </param>
+  </input>
+  <attrib name="memory" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[false]]></value>
+    <description><![CDATA[If TRUE, the snapshot includes a dump of the internal state of the virtual machine (a memory dump). ]]></description>
+  </attrib>
+  <attrib name="quiesce" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[false]]></value>
+    <description><![CDATA[If TRUE and the virtual machine is powered on when the snapshot is taken, VMware Tools are used to quiesce the file system in the virtual machine.]]></description>
+  </attrib>
+  <attrib name="snapshot" type="VC:VirtualMachineSnapshot" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[The snapshot created]]></description>
+  </attrib>
+  <attrib name="actionResult2" type="Array/VC:VirtualMachineSnapshot" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="964.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item4" type="link" linked-workflow-id="BD80808080808080808080808080808053C180800122528313869552e41805bb1">
+    <display-name><![CDATA[Create a snapshot]]></display-name>
+    <in-binding>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm">
+        <description><![CDATA[Virtual machine of which to create a snapshot]]></description>
+      </bind>
+      <bind name="name" type="string" export-name="name">
+        <description><![CDATA[Snapshot name. The name need not be unique for this virtual machine.]]></description>
+      </bind>
+      <bind name="description" type="string" export-name="description">
+        <description><![CDATA[Snapshot description.]]></description>
+      </bind>
+      <bind name="memory" type="boolean" export-name="memory">
+        <description><![CDATA[If TRUE, the snapshot includes a dump of the internal state of the virtual machine (a memory dump). ]]></description>
+      </bind>
+      <bind name="quiesce" type="boolean" export-name="quiesce">
+        <description><![CDATA[If TRUE and the virtual machine is powered on when the snapshot is taken, VMware Tools are used to quiesce the file system in the virtual machine.]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="snapshot" type="VC:VirtualMachineSnapshot" export-name="snapshot">
+        <description><![CDATA[The snapshot created]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Creates a snapshot.]]></description>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item1" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[//Documenting Start Time
+System.log("***Start Wait Time***");
+System.log("Creating Snapshot for: " + vm.name);
+System.log("Snapshot Name: " + name);
+System.log("Snapshot Description: " +description);]]></script>
+    <in-binding>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm">
+        <description><![CDATA[Virtual machine of which to create a snapshot]]></description>
+      </bind>
+      <bind name="description" type="string" export-name="description">
+        <description><![CDATA[Snapshot description.]]></description>
+      </bind>
+      <bind name="name" type="string" export-name="name">
+        <description><![CDATA[Snapshot name. The name need not be unique for this virtual machine.]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[System.log(actionResult2);
+
+var vcVM = Server.findAllForType("VC:VirtualMachine","xpath:name='"+vm+"'");
+
+System.log(vcVM.snapshot);]]></script>
+    <in-binding>
+      <bind name="actionResult2" type="Array/VC:VirtualMachineSnapshot" export-name="actionResult2"/>
+      <bind name="vm" type="VC:VirtualMachine" export-name="vm"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="604.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="vm">
+      <desc><![CDATA[Virtual machine of which to create a snapshot]]></desc>
+    </p-param>
+    <p-param name="description">
+      <desc><![CDATA[Snapshot description.]]></desc>
+    </p-param>
+    <p-param name="name">
+      <desc><![CDATA[Snapshot name. The name need not be unique for this virtual machine.]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

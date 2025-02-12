@@ -1,0 +1,177 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="eds_vra_update_test" result-type="void" api-version="6.0.0" id="78503e7f-6334-4d91-8088-c6274d8480ef" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp.reservations">
+  <param n="businessGroupName" t="string"/>
+  <param n="networkName" t="string"/>
+  <param n="networkProfile" t="string"/>
+  <script encoded="false"><![CDATA[/*var businessGroupName = "bk test group";
+var networkName = "vxw-dvs-269-virtualwire-182-sid-5084-bk test group-mke";
+var networkProfileMKE = "bk test group mke";*/
+
+System.log("=====================================================");
+System.log("===						Start of Network create 						===");
+System.log("=====================================================");
+
+var reservations = new Array();
+var iaasHost = Server.findAllForType("vCAC:VCACHost")[0];
+var cafeHost = Server.findAllForType("vCACCAFE:VCACHost")[0];
+
+var tenantName = cafeHost.tenant;
+//var allReservations = vCACCAFEEntitiesFinder.getReservations(cafeHost) ;
+var allReservations = getAllReservations(cafeHost);
+
+//Get applicable  Reservations details
+for each (cafeReservation in allReservations){
+	System.log("Reservation Name: "+cafeReservation.name);
+	
+	if((cafeReservation.name.indexOf(businessGroupName) != -1) && (cafeReservation.name.indexOf("ReservationName") != -1)){
+		System.log("Reservation Name: "+cafeReservation.name+"\n");
+		reservations.push(cafeReservation);
+		
+	}else if(String(businessGroupName) == String(cafeReservation.name)){
+		System.log("Found Reservation: "+cafeReservation.name+"\n");
+		reservations.push(cafeReservation);
+		break;
+	}
+}
+
+System.log("--------------------cafeReservation--------------------");
+System.log(reservations);
+System.log("-------------------------------------------------------");
+
+for each (cafeReservation in reservations){
+	var computeResource = getComputeResourceOfRes(cafeReservation); // compute resource name
+	System.log("************ START FOR "+cafeReservation.name+" ************");
+	System.debug("\n\n---------------------- computeResource ------------------------------");
+	System.warn("\n computeResource is: \n"+computeResource);
+	System.warn("\n computeResource is: \n"+computeResource.split("(")[0].replace(' ',''));
+	System.debug("\n\n----------------------------------------------------");
+	computeResource = computeResource.split("(")[0].replace(' ','');
+	var newNetworkLiteralArr = new Array();
+	System.log("Compute Resource = "+ computeResource);
+	System.debug("\n \n [computeResource]:\t "+ computeResource);
+	
+	//for each (var networkName in portGroupName) {
+	var networkProfileName = networkProfileMKE;
+	var newNetworkLiteral = buildComplexNetworkLiteral(iaasHost, computeResource, networkName, networkProfileMKE);
+	//var newNetworkLiteral = buildComplexNetworkLiteral(iaasHost, computeResource, networkName, networkProfileMKE);
+	newNetworkLiteralArr.push(newNetworkLiteral);
+	System.warn("computeResource: "+computeResource+" networkName: "+networkName.replace(' ','')+" networkProfileName: "+networkProfileName);
+	System.debug("computeResource: "+computeResource+" networkName: "+networkName.replace(' ','')+" networkProfileName: "+networkProfileName);
+	System.debug("\n Network Literal:" +newNetworkLiteral);
+}
+
+System.log("--------------------Net Literal Arr--------------------");
+System.log(newNetworkLiteralArr);
+System.log("--------------------Net Literal------------------------");
+System.log(newNetworkLiteral);
+System.log("-------------------------------------------------------");
+
+System.log("===================================================");
+System.log("===						End of Network create 						===");
+System.log("===================================================");
+
+return newNetworkLiteral;
+
+function buildComplexNetworkLiteral(vcacHost, computeResourceHostName, netLabel, netProfileLabel){
+	var literalMap =  new vCACCAFELiteralMap();
+	literalMap.put("networkPath", getNetworkPathEntityReference(vcacHost, computeResourceHostName, netLabel));
+	literalMap.put("networkProfile", getNetworkProfileEntityReference(vcacHost, netProfileLabel));
+	var componentTypeId = "com.vmware.csp.iaas.blueprint.service";
+	var componentId = null;
+	var classId = "Infrastructure.Reservation.Network";
+	var typeFilter = null;
+	return new vCACCAFEComplexLiteral(componentTypeId, componentId, classId, typeFilter, literalMap);
+}
+
+function getNetworkPathEntityReference(vcacHost, computeResourceHostName, netLabel){
+	var id = getNetworkId(vcacHost, netLabel, computeResourceHostName);
+	//System.log("Network ["+netLabel+"] id = " + id);
+	var componentId = null;
+	var classId = "Network";
+	var entityReference = new vCACCAFEEntityReference(componentId, classId, id, netLabel);
+	return entityReference;
+}
+
+function getNetworkId(vcacHost, netLabel, computeResourceHostName){
+	//System.log("********************* inside getNetworkId");
+	var networks = getInfrastructureManagementModelEntitiesByProperty(vcacHost, "HostNics", "HostNicName", netLabel);
+	//System.log("******* networks: "+networks);
+	var resultNetwork = null;
+	for each(var network in networks){
+		var host = network.getLink(vcacHost, "Host")[0];
+		var hostName = host.getProperty("HostName");
+		//System.log("hostname: "+hostName);
+		//System.log("computeResourceHostName: "+computeResourceHostName);
+		if(hostName.toLowerCase() == computeResourceHostName.toLowerCase()){
+			resultNetwork = network;
+			break;
+		}
+	}
+	if(resultNetwork == null){
+		throw("No network with name [" + netLabel + "] was found for compute resource [" + computeResourceHostName +"]");
+	}
+	return resultNetwork.getProperty("HostNicID");
+}
+
+function getNetworkProfileEntityReference(vcacHost, netProfileLabel){
+	var id = getNetworkProfileIdByLabel(vcacHost, netProfileLabel);
+	var entityReference =null;
+	if(id){
+		var componentId = null;
+		var classId = "NetworkProfile";
+		entityReference = new vCACCAFEEntityReference(componentId, classId, id, netProfileLabel);
+	}
+	return entityReference;
+}
+
+function getNetworkProfileIdByLabel(vcacHost, netProfileLabel){
+	var networkProfile = getInfrastructureManagementModelEntityByProperty(vcacHost, "StaticIPv4NetworkProfiles", "StaticIPv4NetworkProfileName", netProfileLabel);
+	var id = null;
+	if(networkProfile != null){
+		System.log("Network profile with name " + netProfileLabel + " found.");
+		id = networkProfile.getProperty("ID");
+	}else{
+		System.log("Network profile with name " + netProfileLabel + " not found.");
+	}
+	return id;
+}
+
+function getInfrastructureManagementModelEntityByProperty(vcacHost, entityType, propertyName, propertyValue){
+	var modelName = 'ManagementModelEntities.svc';
+	var entitySetName = entityType;
+	var inputProperties = new Properties();
+	inputProperties.put(propertyName, propertyValue);
+	return getInfrastructureManagementModelEntitiesByProperty(vcacHost, entityType, propertyName, propertyValue)[0];
+}
+
+function getInfrastructureManagementModelEntitiesByProperty(vcacHost, entityType, propertyName, propertyValue){
+	var modelName = 'ManagementModelEntities.svc';
+	var entitySetName = entityType;
+	var inputProperties = new Properties();
+	inputProperties.put(propertyName, propertyValue );
+	return vCACEntityManager.readModelEntitiesByCustomFilter(vcacHost.id, modelName, entitySetName, inputProperties, null);
+}
+
+function getAllReservations(tenantCafeHost){
+	System.log("Get all reservations for host: "+tenantCafeHost);
+	var reservationClient = tenantCafeHost.createReservationClient();
+	var reservationService = reservationClient.getReservationReservationService();
+	var tenantReservationPagedResources = reservationService.getAllReservations(null);
+	var allReservations = new Array();
+	for each(reservation in tenantReservationPagedResources.getContent()){
+		//System.log("reservation.name: "+reservation.name);
+		allReservations.push(reservation);
+	}
+return allReservations;
+}
+
+function getComputeResourceOfRes(reservation){
+	System.log("inside get compute resource for reservation");
+	var extensionData = reservation.getExtensionData();
+	var reservationComputeResource = extensionData.get("computeResource").getLabel();
+	System.log("Reservation " + reservation.name);
+	System.log("computeResource name: " + reservationComputeResource);
+	return reservationComputeResource;
+}
+]]></script>
+</dunes-script-module>

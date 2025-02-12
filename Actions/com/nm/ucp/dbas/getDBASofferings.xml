@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getDBASofferings" result-type="Array/string" api-version="6.0.0" id="2a685ce6-569e-469d-978b-e4354729c0f0" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp.dbas">
+  <description><![CDATA[This is used in vRA to populate the Database offerings pulldown within the database as a service blueprint.]]></description>
+  <script encoded="false"><![CDATA[// Returns a collection of REST:RESTHost object types from the inventory service plugin
+var restHost = RESTHostManager.getHost('5fec3274-e146-4f07-9340-1a13e6d7f890')
+var restOperation = restHost.getOperation('5fec3274-e146-4f07-9340-1a13e6d7f890:96ca0446-3d7f-4241-b9d1-aaff6e8d10bb')
+var request = restOperation.createRequest();
+
+var request = restOperation.createRequest();
+//set the request content type
+request.contentType = "application\/json";
+
+//Customize the request here
+request.setHeader("accept", "application/vnd.github.VERSION.raw");
+var response = request.execute();
+//prepare output parameters
+
+statusCode = response.statusCode;
+statusCodeAttribute = statusCode;
+
+contentLength = response.contentLength;
+headers = response.getAllHeaders();
+contentAsString = response.contentAsString;
+var outputarray = [];
+
+var contentArray = contentAsString.split("\n");
+for (index = 0; index < contentArray.length; ++index)
+{
+ 	var friendlyName = contentArray[index].split(',')[0];
+	if (friendlyName != '')
+	{
+		outputarray.push(friendlyName);
+	}
+}
+return outputarray
+
+]]></script>
+</dunes-script-module>

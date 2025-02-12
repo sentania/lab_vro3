@@ -1,0 +1,212 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="e41b1518-bde4-4654-ab44-4e21339218ae" version="0.0.20" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Restart_vmtools_on_Backup_Failure]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="ServerName" type="string"/>
+  </input>
+  <attrib name="vmUsername" type="string" read-only="false">
+    <value encoded="n"><![CDATA[ucpuser]]></value>
+  </attrib>
+  <attrib name="vmPassword" type="SecureString" read-only="false">
+    <value encoded="n"><![CDATA[7BL75Y63M70J75N73O65N72OC2AA5A2X49E20E8UE2068C7P4DA0ED7OA53185BO73E5B84HA9A1824Y366966U5C9D5CCV47D1392L9950671W19E8601Y3B8E5E8NDCED0A5VBB65EF3OE258E8FG64937AEGB734E70G6FCD16DH47AFDA8WF5FBF51SE346B2BXA606ACAJ6F10B7CQ481315CH]]></value>
+  </attrib>
+  <attrib name="programPath" type="string" read-only="false">
+    <value encoded="n"><![CDATA[c:\windows\system32\cmd.exe]]></value>
+  </attrib>
+  <attrib name="arguments" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="workingDirectory" type="string" read-only="false">
+    <value encoded="n"><![CDATA[C:\Users\ucpuser\Desktop]]></value>
+  </attrib>
+  <attrib name="Server_name" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="systemout" type="VC:VirtualMachine" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="Managedstatus" type="VC:ManagedEntityStatus" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='green'&dunesName='VC:ManagedEntityStatus']]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item4" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var servername = Server_name
+System.log(servername)
+var memory = false
+var quiesce = true
+var SnapshotName = "CTK_ENabled - "+ servername
+var Description = "Snapshot Taken for Enabling CTK"
+System.log('Checking on - ' + Server_name)
+var VirtualMachinelist = VcPlugin.getAllVirtualMachines();
+for each(Vmlist in VirtualMachinelist){
+		if(servername == Vmlist.name){
+			System.log("Found Match")
+			var VM = Vmlist
+			}
+	}
+systemout = VM
+
+var staticserver = "ucp00001845"
+var vms = VcPlugin.getAllVirtualMachines(null, staticserver);	
+			
+if (VM == null || VM == "") {
+	throw "Error: Server Name cannot be null";
+}
+
+var keyPresent = "false"
+for each( var kcheck in VM.config.extraConfig){
+	if(kcheck.key == "ctkEnabled"){
+		keyPresent = "true"
+			if(kcheck.value != "TRUE"){
+				var spec = new VcVirtualMachineConfigSpec();
+      			spec.changeTrackingEnabled = true;
+	     		VM.reconfigVM_Task(spec);
+			 }else if(kcheck.value == "TRUE"){
+				System.log("Key Available for Server - "  + servername)
+			 }
+ 	}
+ }
+if(keyPresent != "true"){
+		keyPresent = "true"
+		var spec = new VcVirtualMachineConfigSpec();
+      	spec.changeTrackingEnabled = true;
+	    VM.reconfigVM_Task(spec);
+	}
+	
+if(keyPresent == "true"){			
+	try{
+			var CreateSnapshot = VM.createSnapshot_Task(SnapshotName, Description, memory, quiesce);
+		}catch (error){
+			throw "Snapshot failed"
+		}
+		
+	System.sleep(10000)
+	var sdktm = VM.sdkConnection.taskManager;
+	for each(task in sdktm.recentTask){
+			if(task.id == CreateSnapshot.moref.value && task.info.state.value == "success"){
+			System.log("Snapshot Successfully Completed for VM - " + servername )
+		}
+	}	
+	
+	var Snap = VM.sdkConnection.allVirtualMachineSnapshots	
+	var actionResult =  System.getModule("com.vmware.library.vc.vm.snapshot").getAllSnapshotsOfVM(VM)
+	for each(sy in actionResult){
+			if(sy.name == SnapshotName){
+				try{
+						var Result = System.getModule("com.nm.ucp").removeSnapshotTask(sy)
+				   }catch (error){
+						throw "unable to remove snapshot"
+				   }	
+			}
+		}
+}
+if(VM.guestOS == "Red Hat Enterprise Linux 7 (64-bit)" ){
+	try{
+			var session = new SSHSession(Server_name, "ucpuser", "22");
+			session.connectWithPasswordOrIdentity(false,"","/var/lib/vco/app-server/conf/vco_key");
+			session.executeCommand("StrictHostKeyChecking=no systemctl stop vmtoolsd.service", true)
+			System.sleep(100) 
+			session.executeCommand("StrictHostKeyChecking=no systemctl start vmtoolsd.service", true)
+			System.sleep(100) 
+			session.executeCommand("StrictHostKeyChecking=no systemctl status vmtoolsd.service", true)
+			var opt = session.getOutput()
+			System.log("Final Result - " + opt)
+			System.log(opt)
+			session.disconnect();
+	   } catch(error) {
+			System.log(session.error)
+			System.log(session.exitCode)
+			throw "unable to open ssh or execute command"
+	   }
+}else if (VM.guest.guestFamily == "windowsGuest"){
+	System.log("Checking process for Windows - " + servername)
+	host = vms[0].sdkConnection
+	var guestOperationsManager = host.guestOperationsManager;
+	var guestAuth = new VcNamePasswordAuthentication();
+	guestAuth.username = vmUsername;
+	guestAuth.password = vmPassword;
+	guestAuth.interactiveSession = "No";
+
+	arguments = '/c PsExec.exe '+ '\\'+ '\\'+ Server_name + ' -u "ucpuser" -password '+'"' + vmPassword + '"'+ ' -d cmd.exe /c ' + '"'+ 'sc stop vmtools' +'"'
+			System.log(arguments)
+			var guestProgramSpec = new VcGuestProgramSpec();
+			guestProgramSpec.programPath = programPath;
+			guestProgramSpec.arguments = arguments
+			guestProgramSpec.workingDirectory = workingDirectory;
+			var PM = guestOperationsManager.processManager;
+			result = PM.startProgramInGuest(vms[0] , guestAuth , guestProgramSpec);
+			System.log(result)
+			
+	System.sleep(10000)
+
+	arguments = '/c PsExec.exe '+ '\\'+ '\\'+ Server_name + ' -u "ucpuser" -password '+'"' + vmPassword + '"'+ ' -d cmd.exe /c ' + '"'+ 'sc start vmtools' +'"'
+			System.log(arguments)
+			var guestProgramSpec = new VcGuestProgramSpec();
+			guestProgramSpec.programPath = programPath;
+			guestProgramSpec.arguments = arguments
+			guestProgramSpec.workingDirectory = workingDirectory;
+			var PM = guestOperationsManager.processManager;
+			result = PM.startProgramInGuest(vms[0] , guestAuth , guestProgramSpec);
+			System.log(result)
+ }else{
+		System.log ("I have NO Idea About this OS - " + vms[0].guestOS )
+	   }
+]]></script>
+    <in-binding>
+      <bind name="vmUsername" type="string" export-name="vmUsername"/>
+      <bind name="vmPassword" type="SecureString" export-name="vmPassword"/>
+      <bind name="programPath" type="string" export-name="programPath"/>
+      <bind name="arguments" type="string" export-name="arguments"/>
+      <bind name="workingDirectory" type="string" export-name="workingDirectory"/>
+      <bind name="Server_name" type="string" export-name="ServerName"/>
+    </in-binding>
+    <out-binding>
+      <bind name="systemout" type="VC:VirtualMachine" export-name="systemout"/>
+    </out-binding>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item1" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[System.log(ServerName)
+
+]]></script>
+    <in-binding>
+      <bind name="ServerName" type="string" export-name="ServerName"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[Alkey = 'alarm-603.'+  systemout.id
+System.log(Alkey)
+var i = 0
+for each(al in systemout.triggeredAlarmState){
+			if(al.key == Alkey ){
+				System.log("Found Alarm Match")
+				altoclear = systemout.triggeredAlarmState[i]
+				}
+			i = i+1	
+		   }
+System.log(altoclear)
+if(altoclear != null || altoclear != ''){
+	System.log(VcPlugin.allSdkConnections[0].alarmManager.acknowledgeAlarm(altoclear.alarm.info.alarm, systemout))
+	System.log(VcPlugin.allSdkConnections[0].alarmManager.setAlarmStatus(altoclear.alarm.info.alarm, systemout,Managedstatus))
+}]]></script>
+    <in-binding>
+      <bind name="systemout" type="VC:VirtualMachine" export-name="systemout"/>
+      <bind name="Managedstatus" type="VC:ManagedEntityStatus" export-name="Managedstatus"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="ServerName">
+      <desc><![CDATA[ServerName]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

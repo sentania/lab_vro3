@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getADOUs" result-type="AD:OrganizationalUnit" api-version="6.0.0" id="d048fce2-df1d-420b-9172-da4e306c01e1" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp">
+  <param n="adOUString" t="string"><![CDATA[AD:OU  within the ActiveDirectory ConfigElement]]></param>
+  <script encoded="false"><![CDATA[// 2. Find ADHost from Config Element
+// 2. Get OUs from Configuration Elements
+// 2.1 Get ConfigElement values
+var adElement = [];
+var ConfigElCategory = Server.getConfigurationElementCategoryWithPath("UCP");
+System.log(ConfigElCategory.name);
+var configEls = ConfigElCategory.allConfigurationElements;
+for(element in configEls) {
+	if(configEls[element].name == "ActiveDirectory") {
+	adElement = configEls[element];
+	System.log("AD Elements: "+adElement.name);
+	}
+}
+
+// 2.1.2 Get AD OU
+var adOU;
+if(adElement.getAttributeWithKey(adOUString) != null) {
+	attribute = adElement.getAttributeWithKey(adOUString);
+	adOU = attribute.value;
+	System.log(adOU.name);
+}
+return adOU]]></script>
+</dunes-script-module>

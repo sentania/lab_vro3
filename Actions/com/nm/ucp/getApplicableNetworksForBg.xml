@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getApplicableNetworksForBg" result-type="Properties" api-version="6.0.0" id="949882f7-eec0-4064-8f62-cc8ba0b100ce" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <script encoded="false"><![CDATA[// Pass variables in from vRA Form
+//var blueprint = System.getContext().getParameter("__asd_composition_blueprintId");
+//var component = System.getContext().getParameter("__asd_composition_componentId");
+//var user = System.getContext().getParameter("__asd_requestedFor");
+var tenant = System.getContext().getParameter("__asd_tenantRef");
+var bizGroup = System.getContext().getParameter("__asd_subtenantRef");
+
+
+///////////////////////////////////////////// TESTING
+/*
+var blueprint = "42d2b39b-6b15-4733-9113-5c52c7ab9fe3";
+var component = "RHEL_7_POSIX";
+var user = "kol2843-nm@nm.nmfco.com";
+var tenant = "vsphere.local";
+var bizGroup = "d2a8d581-3b1c-43c3-8f5e-63c9de14483c";
+*/
+
+//Get vRA Host and all reservations from host.
+var host = vCACCAFEHostManager.getDefaultHostForTenant(tenant , true);
+var res = vCACCAFEEntitiesFinder.getReservations(host);
+System.log(res.length+" total reservations found.");
+
+//Find reservations that match up with Business Group context
+var selectedRes = [];
+for (r in res) {
+	if (res[r].subTenantId == bizGroup) {
+		System.log("Reservation Name: "+res[r].name);
+		System.log("Biz Group Name: "+res[r].subTenantId);
+		System.log("Extension Data: "+res[r].extensionData);
+
+		selectedRes.push(res[r]);
+	}
+}
+System.log(selectedRes.length+ " reservations that match criteria found.");
+
+// Find available networks within selected reservations.
+var applicableNetworks = new Properties();
+
+for each(var s in selectedRes) {
+	var extensionData = s.getExtensionData();
+	if(extensionData) {
+		var networks = extensionData.get("reservationNetworks");
+    System.log("Networks Data: " +networks);
+		if(networks) {
+			for each(var network in networks.getValue()) {
+				var path = network.getValue().get("networkPath");
+				applicableNetworks.put(path.label, path.label);
+			}
+		}
+	}
+}
+
+System.log(applicableNetworks + "networks found that match criteria");
+
+// Return available networks in a Properties type to be displayed in the vRA form.
+return applicableNetworks;]]></script>
+</dunes-script-module>

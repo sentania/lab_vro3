@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="be05609a-087a-47c8-95fe-88e054db3f83" version="0.0.1" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Update Custom Property]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="propertyName" type="string">
+      <description><![CDATA[Property Name to Update]]></description>
+    </param>
+    <param name="propertyValue" type="string">
+      <description><![CDATA[Property Value to Update]]></description>
+    </param>
+    <param name="vm" type="vCAC:VirtualMachine"/>
+  </input>
+  <output>
+    <param name="actionResult" type="vCAC:Entity"/>
+  </output>
+  <attrib name="host" type="vCAC:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='b9c69cb3-e162-4919-be78-4fe8347bc925'&dunesName='vCAC:VCACHost']]></value>
+    <description><![CDATA[IaaS Host]]></description>
+  </attrib>
+  <attrib name="propertyIsHidden" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[false]]></value>
+    <description><![CDATA[Blueprint property 'isHidden' flag]]></description>
+  </attrib>
+  <attrib name="propertyIsRuntime" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[false]]></value>
+    <description><![CDATA[Blueprint property 'isRuntime' flag]]></description>
+  </attrib>
+  <attrib name="propertyIsEncrypted" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[false]]></value>
+    <description><![CDATA[Blueprint property 'isHidden' flag]]></description>
+  </attrib>
+  <attrib name="doNotUpdate" type="boolean" read-only="false">
+    <value encoded="n"><![CDATA[false]]></value>
+    <description><![CDATA[Update flag]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task" script-module="com.nm.ucp/addUpdatePropertyFromVirtualMachineEntity">
+    <display-name><![CDATA[addUpdatePropertyFromVirtualMachineEntity]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.nm.ucp").addUpdatePropertyFromVirtualMachineEntity(host, propertyName, propertyValue, propertyIsHidden, propertyIsRuntime, propertyIsEncrypted, doNotUpdate, vm) ;]]></script>
+    <in-binding>
+      <bind name="host" type="vCAC:VCACHost" export-name="host">
+        <description><![CDATA[vCloud Automation Center host]]></description>
+      </bind>
+      <bind name="propertyName" type="string" export-name="propertyName">
+        <description><![CDATA[Blueprint update property name]]></description>
+      </bind>
+      <bind name="propertyValue" type="string" export-name="propertyValue">
+        <description><![CDATA[Blueprint update property value]]></description>
+      </bind>
+      <bind name="propertyIsHidden" type="boolean" export-name="propertyIsHidden">
+        <description><![CDATA[Blueprint property 'isHidden' flag]]></description>
+      </bind>
+      <bind name="propertyIsRuntime" type="boolean" export-name="propertyIsRuntime">
+        <description><![CDATA[Blueprint property 'isRuntime' flag]]></description>
+      </bind>
+      <bind name="propertyIsEncrypted" type="boolean" export-name="propertyIsEncrypted">
+        <description><![CDATA[Blueprint property 'isHidden' flag]]></description>
+      </bind>
+      <bind name="doNotUpdate" type="boolean" export-name="doNotUpdate">
+        <description><![CDATA[Update flag]]></description>
+      </bind>
+      <bind name="vm" type="vCAC:VirtualMachine" export-name="vm"/>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="vCAC:Entity" export-name="actionResult"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="vm">
+      <desc><![CDATA[Virtual Machine]]></desc>
+    </p-param>
+    <p-param name="propertyName">
+      <desc><![CDATA[Property Name]]></desc>
+    </p-param>
+    <p-param name="propertyValue">
+      <desc><![CDATA[Property Value]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

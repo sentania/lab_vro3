@@ -1,0 +1,210 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="e7c969ee-a2de-4d75-9322-a70220093d52" version="0.0.43" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Copy of Patching Snapshot 48 hours]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="VMName" type="string"/>
+  </input>
+  <attrib name="naptime" type="number" read-only="false">
+    <value encoded="n"><![CDATA[60.0]]></value>
+  </attrib>
+  <attrib name="WF_status" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="Dummy_exception" type="string" read-only="false">
+    <value encoded="n"><![CDATA[Need Admin Touch]]></value>
+  </attrib>
+  <attrib name="prework_failed" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="99.95454545454544" x="864.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item3" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[function eMail(Content,vmName,Sub1, bgpdl){
+	var objEmail = new EmailMessage();
+	objEmail.fromAddress = 'ucp-vro@nm.nmfco.com'
+	objEmail.fromName = 'dl-serverpatching@northwesternmutual.com'
+	objEmail.smtpHost = 'hera.nml.com'
+	objEmail.smtpPort = 25
+	objEmail.toAddress = 'dineshsolaiappan@northwesternmutual.com'
+	//objEmail.toAddress = bgpdl
+	objEmail.ccAddress = 'dl-serverpatching@northwesternmutual.com'
+	objEmail.subject = Sub1
+	objEmail.addMimePart(Content,"text/html; charset=UTF-8")
+	objEmail.sendMessage()
+}
+
+// Assign and Declare Variable
+System.log('Input VirtualMachine Name - ' + VMName)
+var memory = false
+var quiesce = false
+notify_os = 'na'
+Guest_OS = null
+prework_failed = false
+
+// Getting all VM Details from vCenter
+var VirtualMachinelist = VcPlugin.getAllVirtualMachines();
+for each(Vmlist in VirtualMachinelist){
+		if(VMName == Vmlist.name){
+			System.log("Found Match")
+			var VM = Vmlist
+			Guest_OS = VM.guest.guestFamily
+			System.log("Guest OS - " + Guest_OS)
+			}
+	}
+
+// Finding the match	
+if (VM == null || VM == "") {
+	Content = "Unable to find the server in vCenter - " + VMName + ', Not continuing further for Patching. Need Admin to validate if Machine is availble in vCenter'
+	Sub1 = "Server not found in vCenter - " + VMName
+	bgpdl = "dl-serverpatching@northwesternmutual.com" 
+//	bgpdl = "dineshsolaiappan@northwesternmutual.com" 
+	eMail(Content,vmName,Sub1, bgpdl)
+	prework_failed = true
+}	
+
+System.log("VM Current Power State "+ VM.runtime.powerState.value)
+if(VM.runtime.powerState.value == 'poweredOff'){
+		prework_failed = true
+		System.log("Machine found to be in Powered off state and not processing further for Patching")
+	}
+if(prework_failed != true){
+	// collection of Rest Host and filter ETCD Rest host
+	var getHosts = Server.findAllForType("REST:RESTHost")
+	for(var i =0; i < getHosts.length ; i++){
+		if(getHosts[i].name == "ucp-etcd"){
+			var R = getHosts[i]
+			}
+	}
+	var suburl_pdl = "/unifiedcompute/servers/" + VMName + "/contactPDL" 
+	var Connection = R.createRequest('GET',suburl_pdl)
+	System.log(suburl_pdl)
+	System.log(Connection)
+	Connection.contentType = "application/x-www-form-urlencoded"
+	var response = Connection.execute()
+	var valueq = JSON.parse(response.contentAsString)
+	notify_bg = valueq.node.value
+	System.log(notify_bg)
+	
+	if(Guest_OS == null){
+			System.log("Could not find Guest OS details, refering to ETCD")
+			var suburl_os = "/unifiedcompute/servers/" + VMName + "/operatingSystem" 
+			var ConnectionOS = R.createRequest('GET',suburl_os)
+			System.log(suburl_os)
+			System.log(ConnectionOS)
+			ConnectionOS.contentType = "application/x-www-form-urlencoded"
+			var responseOS = ConnectionOS.execute()
+			var value_os = JSON.parse(responseOS.contentAsString)
+			notify_os = value_os.node.value
+			System.log(notify_os + ' ETCD OS Details')
+		}
+	
+	var suburl = "/unifiedcompute/servers/" + VMName + "/state" 
+	if(Guest_OS == "windowsGuest" || (notify_os.toLowerCase()).match('windows') ){
+		var Connection = R.createRequest('PUT',suburl,'value=needsPatchingW')
+		System.log("Updating ETCD for WINDOWS Guest OS")
+	}else if (Guest_OS == "linuxGuest" || (notify_os.toLowerCase()).match('rhel') || (notify_os.toLowerCase()).match('centos')){
+		var Connection = R.createRequest('PUT',suburl,'value=needsPatchingL')
+		System.log("Updating ETCD for Linux Guest OS")
+	}
+	
+	System.log(suburl)
+	System.log(Connection)
+	Connection.contentType = "application/x-www-form-urlencoded"
+	var response = Connection.execute()
+	System.log(response.contentAsString)
+	System.log(response.statusCode)
+	if(response.statusCode != 200){
+		    Content = "Unable to change ETCD state for Patching process of the server " + VMName + ', Not processing further for Patching. Need Admin to check.'
+			Sub1 = "Unable to Update ETCD for Patching  - " + VMName
+		//	bgpdl = "dl-sddc@northwesternmutual.com" 
+			notify_bg = "dineshsolaiappan@northwesternmutual.com" 
+			eMail(Content,vmName,Sub1, notify_bg)
+			prework_failed = true
+	   }
+}
+
+if(prework_failed != true){
+	System.log("Please wait for Checkouts")
+}else{
+	System.log("Prep Work failed, Need Admin to Check")
+}
+]]></script>
+    <in-binding>
+      <bind name="VMName" type="string" export-name="VMName"/>
+    </in-binding>
+    <out-binding>
+      <bind name="prework_failed" type="string" export-name="prework_failed"/>
+    </out-binding>
+    <position y="55.40909090909091" x="244.5"/>
+  </workflow-item>
+  <workflow-item name="item5" prototype-id="sleep" out-name="item2" content-mode="x" type="task">
+    <display-name><![CDATA[Sleep]]></display-name>
+    <script encoded="false"><![CDATA[//Auto-generated script
+if ( sleepTime != null )  {
+	System.sleep(sleepTime*1000);
+}
+else  {
+	throw "'sleepTime' is NULL";
+}
+]]></script>
+    <in-binding>
+      <bind name="sleepTime" type="number" export-name="naptime">
+        <description><![CDATA[Time to sleep in seconds]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Sleep a given number of seconds]]></description>
+    <position y="55.40909090909091" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item7" out-name="item0" type="custom-condition" alt-out-name="item8">
+    <display-name><![CDATA[Custom decision]]></display-name>
+    <script encoded="false"><![CDATA[System.log("My WF_Status is - " + WF_status)
+if (WF_status == "Passed" || WF_status == "Success"){
+		System.log("WorkFlow Successfully Completed")
+		return true
+	}else{
+		return false
+	}]]></script>
+    <in-binding>
+      <bind name="WF_status" type="string" export-name="WF_status"/>
+    </in-binding>
+    <position y="99.95454545454544" x="704.5"/>
+  </workflow-item>
+  <workflow-item name="item8" business-status="I need Admin Touch" throw-bind-name="Dummy_exception" type="end" end-mode="1">
+    <position y="145.4090909090909" x="744.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item5" type="custom-condition" alt-out-name="item2">
+    <display-name><![CDATA[Custom decision]]></display-name>
+    <script encoded="false"><![CDATA[System.log("Is Prep Work Failed - " + prework_failed)
+if (prework_failed == "false"){
+		System.log("continue for checkout process")
+		return true
+	}else{
+		System.log("continue to create INC and fail the workflow")
+		return false
+	}]]></script>
+    <in-binding>
+      <bind name="prework_failed" type="string" export-name="prework_failed"/>
+    </in-binding>
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item7" type="link" linked-workflow-id="1939eb5b-f480-463b-8543-f7dd103f4e10">
+    <display-name><![CDATA[Copy of checkPatchStatus]]></display-name>
+    <in-binding>
+      <bind name="server_name" type="string" export-name="VMName"/>
+      <bind name="prework_failed" type="string" export-name="prework_failed"/>
+    </in-binding>
+    <out-binding>
+      <bind name="WF_status" type="string" export-name="WF_status"/>
+    </out-binding>
+    <position y="109.95454545454544" x="525.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="VMName">
+      <desc><![CDATA[VMName]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

@@ -1,0 +1,164 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="692f6ff9-44eb-4933-baac-39a82efaadcf" version="1.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Get the Reference ID for an Infoblox Host Record]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="restHost" type="REST:RESTHost">
+      <description><![CDATA[The Infoblox REST host that should take the request.]]></description>
+    </param>
+    <param name="hostFqdn" type="string">
+      <description><![CDATA[Fully Qualified Domain Name of the host record to find]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="hostReferenceId" type="string">
+      <description><![CDATA[Infoblox Reference ID of the host record]]></description>
+    </param>
+  </output>
+  <attrib name="requestType" type="string" read-only="true">
+    <value encoded="n"><![CDATA[GET]]></value>
+    <description><![CDATA[The type of the request (GET, SET, POST, etc).]]></description>
+  </attrib>
+  <attrib name="requestUrl" type="string" read-only="false">
+    <value encoded="n"><![CDATA[/wapi/v1.2/record:host?name~=FQDN]]></value>
+    <description><![CDATA[The URL that should be appended to the host base URL in order to make the request.]]></description>
+  </attrib>
+  <attrib name="logUrl" type="boolean" read-only="true">
+    <value encoded="n"><![CDATA[true]]></value>
+    <description><![CDATA[Optional debug logging. Use null/false if there is a password or secret key in the URL.]]></description>
+  </attrib>
+  <attrib name="logResults" type="boolean" read-only="true">
+    <value encoded="n"><![CDATA[true]]></value>
+    <description><![CDATA[Optional debug logging. Use null/false if there is a password or secret key in the Results.]]></description>
+  </attrib>
+  <attrib name="requestResponse" type="Properties" read-only="false">
+    <description><![CDATA[Properties object with the results of the REST request.]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="804.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item3" type="link" linked-workflow-id="9bbb1d58-85e6-4620-982f-128693dfd40b">
+    <display-name><![CDATA[Make a REST call (with logging and validation)]]></display-name>
+    <in-binding>
+      <bind name="restHost" type="REST:RESTHost" export-name="restHost">
+        <description><![CDATA[The host that should take the request.]]></description>
+      </bind>
+      <bind name="requestType" type="string" export-name="requestType">
+        <description><![CDATA[The type of the request (GET, SET, POST, etc).]]></description>
+      </bind>
+      <bind name="requestUrl" type="string" export-name="requestUrl">
+        <description><![CDATA[The URL that should be appended to the host base URL in order to make the request.]]></description>
+      </bind>
+      <bind name="requestContent" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Optional. Content that is submitted as part of the request.]]></description>
+      </bind>
+      <bind name="requestContentType" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Optional. If requestContent is specified, then specify its Type (ex: text/html).]]></description>
+      </bind>
+      <bind name="requestOtherSuccessCode" type="number" explicitly-not-bound="true">
+        <description><![CDATA[Optional. If provided, the workflow will interpret this code as success. Otherwise 200-208,226 are the only success codes.]]></description>
+      </bind>
+      <bind name="requestSuccessText" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Optional. If provided, the workflow will make sure this text appears in the Results.]]></description>
+      </bind>
+      <bind name="logUrl" type="boolean" export-name="logUrl">
+        <description><![CDATA[Optional debug logging. Use null/false if there is a password or secret key in the URL.]]></description>
+      </bind>
+      <bind name="logContent" type="boolean" explicitly-not-bound="true">
+        <description><![CDATA[Optional debug logging. Use null/false if there is a password or secret key in the Content.]]></description>
+      </bind>
+      <bind name="logResults" type="boolean" export-name="logResults">
+        <description><![CDATA[Optional debug logging. Use null/false if there is a password or secret key in the Results.]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="requestResponse" type="Properties" export-name="requestResponse">
+        <description><![CDATA[Properties object with the results of the REST request.]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Makes a quick call to a REST host, without the need to have a REST Operation defined.
+
+Adds debug logging and success validation to VMware's "Invoke a REST host" workflow.  
+Keeps the same Output type as that workflow, to make it easier to swap-out that workflow with this one.
+Logging the Request URL, Request Content, and Results are all optional, in case they contain a password or secret key.]]></description>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item1" type="task">
+    <display-name><![CDATA[Build REST URL]]></display-name>
+    <script encoded="false"><![CDATA[System.log("Looking up Infoblox host record for '" + hostFqdn + "'...");
+
+requestUrl = requestUrl.replace("FQDN", hostFqdn);]]></script>
+    <in-binding>
+      <bind name="hostFqdn" type="string" export-name="hostFqdn">
+        <description><![CDATA[Hostname record to create]]></description>
+      </bind>
+      <bind name="requestUrl" type="string" export-name="requestUrl">
+        <description><![CDATA[The URL that should be appended to the host base URL in order to make the request.]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="requestUrl" type="string" export-name="requestUrl">
+        <description><![CDATA[The URL that should be appended to the host base URL in order to make the request.]]></description>
+      </bind>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item0" type="task">
+    <display-name><![CDATA[Set Output]]></display-name>
+    <script encoded="false"><![CDATA[//Pull the Reference ID out of the response content
+
+//Example contentAsString = "record:host/ZG5zLmhvc3QkLl9kZWZhdWx0LmNvbS51c3Njby5kcy5uYS5jaDJscHRlc3QwMTM:ch2lptest013.na.ds.ussco.com/default"
+var contentAsString = requestResponse.contentAsString;
+
+//Chop off the text before the Ref Id (up to the slash)
+if (contentAsString.indexOf("/") == -1) {
+	throw "Invalid content, does not contain a valid Reference Id: '" + contentAsString + "'.";
+}
+var afterSlash = contentAsString.split("host/")[1];
+
+//Chop off the text after the Ref Id (starting with the next colon)
+if (afterSlash.indexOf(":") == -1) {
+	throw "Invalid content, does not contain a valid Reference Id: '" + contentAsString + "'.";
+}
+hostReferenceId = afterSlash.split(":")[0];
+
+//Log the Reference ID
+System.log("Host record has Reference ID '" + hostReferenceId + "'.");]]></script>
+    <in-binding>
+      <bind name="requestResponse" type="Properties" export-name="requestResponse">
+        <description><![CDATA[Properties object with the results of the REST request.]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="hostReferenceId" type="string" export-name="hostReferenceId">
+        <description><![CDATA[Infoblox Reference ID of the new host record]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Output the Reference ID that was returned from the REST operation]]></description>
+    <position y="55.40909090909091" x="624.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item4" type="task">
+    <display-name><![CDATA[Validate Results]]></display-name>
+    <script encoded="false"><![CDATA[var statusCode = requestResponse.statusCode;
+
+if (statusCode != 200) { 
+	throw "REST operation did not produce the expected status code (200).";
+}
+]]></script>
+    <in-binding>
+      <bind name="requestResponse" type="Properties" export-name="requestResponse">
+        <description><![CDATA[Properties object with the results of the REST request.]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="restHost">
+      <desc><![CDATA[The Infoblox REST host that should take the request.]]></desc>
+    </p-param>
+    <p-param name="hostFqdn">
+      <desc><![CDATA[Fully Qualified Domain Name of the host record to find]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

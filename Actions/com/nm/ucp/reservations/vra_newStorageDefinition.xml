@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_newStorageDefinition" result-type="Properties" api-version="6.0.0" id="15566f77-f949-404a-a473-a57d833f0db1" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="computeResourceStorage" t="Properties"/>
+  <param n="priority" t="number"/>
+  <param n="reservedSizeGb" t="number"/>
+  <script encoded="false"><![CDATA[var reservedSizeGb = Math.round(reservedSizeGb);
+
+var computeResourceStorageEntries = computeResourceStorage.underlyingValue.values.entries;
+
+var storagePathObject = computeResourceStorageEntries.filter(function (entry) {return entry.key == "storagePath";})[0]
+var storagePathId = storagePathObject.value.id;
+var storagePathLabel = storagePathObject.value.label;
+var computeResourceStorageTotalSizeGBObject = computeResourceStorageEntries.filter(function (entry) {return entry.key == "computeResourceStorageTotalSizeGB";})[0]
+var computeResourceStorageTotalSizeGB = computeResourceStorageTotalSizeGBObject.value.value;
+
+// Validate ReservedSizeGb is not greater than computeResourceStorageTotalSizeGB
+/*if (reservedSizeGb > computeResourceStorageTotalSizeGB){
+	throw new Error("Reserved Size (" + reservedSizeGb + ") is greater than Total Size (" + computeResourceStorageTotalSizeGB + ") of Storage Path: storagePathLabel")
+}*/ 
+System.log("computeResourceStorageTotalSizeGB ="+computeResourceStorageTotalSizeGB);
+var storageDefinitionJsonString =	'{' + 
+										'"type": "complex",' + 
+										'"componentTypeId": "com.vmware.csp.iaas.blueprint.service",' + 
+										'"componentId": null,' + 
+										'"classId": "Infrastructure.Reservation.Storage",' + 
+										'"typeFilter": null,' + 
+										'"values": {' + 
+											'"entries": [' + 
+												'{' + 
+													'"key": "storageReservationPriority",' + 
+													'"value": {' + 
+														'"type": "integer",' + 
+														'"value": ' + Math.round(priority) + 
+													'}' + 
+												'},' + 
+												'{' + 
+													'"key": "storageReservedSizeGB",' + 
+													'"value": {' + 
+														'"type": "integer",' + 
+														'"value": ' + reservedSizeGb +  
+													'}' + 
+												'},' + 
+												'{' + 
+													'"key": "storagePath",' + 
+													'"value": {' + 
+														'"type": "entityRef",' + 
+														'"componentId": null,' + 
+														'"classId": "Storage",' + 
+														'"id": "' + storagePathId + '",' + 
+														'"label": "' + storagePathLabel + '"' + 
+													'}' + 
+												'},' + 
+												'{' + 
+													'"key": "storageEnabled",' + 
+													'"value": {' + 
+														'"type": "boolean",' + 
+														'"value": true' + 
+													'}' + 
+												'}' + 
+											']' + 
+										'}' + 
+									'}'
+					
+var storageDefinition = JSON.parse(storageDefinitionJsonString);
+
+return storageDefinition;]]></script>
+</dunes-script-module>

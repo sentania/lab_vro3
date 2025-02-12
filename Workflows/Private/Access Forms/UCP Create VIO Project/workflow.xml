@@ -1,0 +1,260 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="d1fae055-1047-4285-bde2-f14383dcd8ed" version="0.0.21" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[UCP Create VIO Project]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="Application" type="string">
+      <description><![CDATA[Enter the name of the application or business area. This will be used to create a name for your business group.]]></description>
+    </param>
+    <param name="ADGroup" type="string">
+      <description><![CDATA[Enter the AD Group that will be used to control access to your project.]]></description>
+    </param>
+    <param name="AdminUserName" type="string">
+      <description><![CDATA[Enter you AdminUserName to authenticate to the VIO Admin API to create the project]]></description>
+    </param>
+    <param name="AdminPassword" type="SecureString">
+      <description><![CDATA[Enter you Admin password to authenticate to the VIO Admin API]]></description>
+    </param>
+    <param name="Environment" type="string">
+      <description><![CDATA[ENVIRONMENT:  Which environment would you like to deploy (Prod, NonProd, Both)?]]></description>
+    </param>
+    <param name="Campus" type="string">
+      <description><![CDATA[CAMPUS: 
+
+Which campus do you want to deploy too (MKE, FRK, Both)?]]></description>
+    </param>
+    <param name="ContactPDL" type="Array/string"/>
+  </input>
+  <attrib name="TargetResource" type="ResourceElement" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/ResourceElement?id='cee97646-ac21-4201-8d68-782427ae70ee'&dunesName='ResourceElement']]></value>
+  </attrib>
+  <attrib name="ProgramPathToExecuteScript" type="string" read-only="false">
+    <value encoded="n"><![CDATA[/usr/bin/python]]></value>
+  </attrib>
+  <attrib name="PythonScriptVariable" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="ScriptOutPut" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="FloatingIP" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="ProjectName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="subject" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Email subject]]></description>
+  </attrib>
+  <attrib name="content" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Email content (text or HTML)]]></description>
+  </attrib>
+  <attrib name="ContactPDLS" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="984.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item6" type="task">
+    <display-name><![CDATA[Gather Inputs]]></display-name>
+    <script encoded="false"><![CDATA[var PythonScriptVariable = ("--application " + Application + " --adgroups " + ADGroup + " --environment " + Environment + " --campus " + Campus + " --username " + AdminUserName + " --password " + AdminPassword);
+]]></script>
+    <in-binding>
+      <bind name="Application" type="string" export-name="Application"/>
+      <bind name="ADGroup" type="string" export-name="ADGroup"/>
+      <bind name="AdminUserName" type="string" export-name="AdminUserName"/>
+      <bind name="AdminPassword" type="SecureString" export-name="AdminPassword"/>
+      <bind name="Environment" type="string" export-name="Environment"/>
+      <bind name="Campus" type="string" export-name="Campus"/>
+    </in-binding>
+    <out-binding>
+      <bind name="PythonScriptVariable" type="string" export-name="PythonScriptVariable"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item5" type="task">
+    <display-name><![CDATA[Parse Script Output]]></display-name>
+    <script encoded="false"><![CDATA[var lines = new Array();
+lines = ScriptOutPut.toString().split("\n");
+
+for(var i = 0;i < lines.length;i++){
+    //code here using lines[i] which will give you each line
+	//System.log(lines[i])
+	if (!lines[i].indexOf("Jump Server Floating IP")) {
+		FloatingIP = lines[i].split(":")[1]
+	}
+	if (!lines[i].indexOf("Project Name(s)")) {
+		ProjectName = lines[i].split(":")[1]
+	}
+}
+
+System.log("===Parse Script Output===");
+System.log("	Project Name: " + ProjectName);
+System.log("	Floating IP: " + FloatingIP);
+]]></script>
+    <in-binding>
+      <bind name="ScriptOutPut" type="string" export-name="ScriptOutPut"/>
+    </in-binding>
+    <out-binding>
+      <bind name="FloatingIP" type="string" export-name="FloatingIP"/>
+      <bind name="ProjectName" type="string" export-name="ProjectName"/>
+    </out-binding>
+    <position y="55.40909090909091" x="504.5"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item1" type="task">
+    <display-name><![CDATA[Set Email Variables]]></display-name>
+    <script encoded="false"><![CDATA[//Validate Contact PDL's have @northwesternmutual.com
+ContactPDLS = new Array();
+
+for(var i = 0;i < ContactPDL.length;i++){
+	var correct = ContactPDL[i].search("@northwesternmutual.com");
+	if (correct == -1) {
+		var pdl = ContactPDL[i] + "@northwesternmutual.com";
+		System.log("PDL Update: " + pdl);
+		ContactPDLS.push(pdl);
+	}
+	else {
+		System.log("PDL OK: " + ContactPDL[i]);
+		ContactPDLS.push(ContactPDL[i]);
+	}
+}
+
+subject = ProjectName + " VIO Project Created";
+
+if (Campus == "MKE") {
+	var campus_url = "mke-vio";
+}
+if (Campus == "FRK") {
+	var campus_url = "fkr-vio";
+}
+
+content_start = " \
+Hello, <br/> \
+<br> \
+Your project has been created within the Unified Compute Platform VIO environment. <br> \
+<br> \
+Before Loggin in please be sure to be apart of the following groups: <br> \
+<ul> \
+<li><b>AG-VIO-Users</b>: This group allows access to VIO </li><br>";
+if (ADGroup.split(",").length > 1) {
+	var content_adGroups = "<li>Member of one of the following groups. These provide access to the project:<br><ul>";
+	for (var i = 0;i < ADGroup.split(",").length;i++) {
+		content_adGroups = content_adGroups + "<li><b>" + ADGroup.split(",")[i] + "</b></li><br>";
+	}
+	content_adGroups = content_adGroups + "</ul>";
+}
+else { var content_adGroups = "<li><b>" + ADGroup + "</b>: This will provide the access to your project </li><br>";}
+content_info = " \
+</ul> \
+General Information: <br> \
+<ul> \
+<li>You can access the web GUI at: <br> \
+<ul>";
+if (Campus == "MKE") {var content_url = "<li> Milwaukee: https:\/\/" + campus_url + ".nm.nmfco.com, please use your NM LAN ID and password to login </li><br>";}
+else if (Campus == "FRK") {var content_url = "<li> Franklin: https:\/\/" + campus_url + ".nm.nmfco.com, please use your NM LAN ID and password to login </li><br>";}
+else if (Campus == "Both") {
+	var content_url = " \
+	<li> Milwaukee: https:\/\/mke-vio.nm.nmfco.com, please use your NM LAN ID and password to login </li><br> \
+	<li> Franklin: https:\/\/frk.nm.nmfco.com, please use your NM LAN ID and password to login </li><br> \
+	";
+}
+content_end = " \
+</ul> \
+<li>You can find the UCP wiki and How-To guides here: https:\/\/learnvest.atlassian.net/wiki/spaces/UCP/overview </li><br> \
+<li>You can find How-To videos located here: https:\/\/video.nml.com/playlist/dedicated/80782451/1_s527izp7/1_j9wfluok </li><br> \
+</ul> \
+<br> \
+How to Contact: <br> \
+<ul> \
+<li>If you have general questions please drop by our NM Slack Channel: \#unifiedcompute </li><br> \
+<li>For troubleshooting help please open ticket in Cherwell, and assign to <i>UCP Unified Compute Platform</i> </li><br> \
+</ul> \
+<br> \
+Thanks, <br> \
+Unified Compute Platform Team \
+";
+
+content = content_start + content_adGroups + content_info + content_url + content_end;]]></script>
+    <in-binding>
+      <bind name="FloatingIP" type="string" export-name="FloatingIP"/>
+      <bind name="ProjectName" type="string" export-name="ProjectName"/>
+      <bind name="ContactPDL" type="Array/string" export-name="ContactPDL"/>
+      <bind name="Campus" type="string" export-name="Campus"/>
+      <bind name="ADGroup" type="string" export-name="ADGroup"/>
+    </in-binding>
+    <out-binding>
+      <bind name="subject" type="string" export-name="subject"/>
+      <bind name="content" type="string" export-name="content"/>
+      <bind name="ContactPDLS" type="Array/string" export-name="ContactPDLS"/>
+    </out-binding>
+    <position y="55.40909090909091" x="644.5"/>
+  </workflow-item>
+  <workflow-item name="item6" out-name="item3" type="link" linked-workflow-id="1673b9e7-a215-4ac5-9596-e57caf60162d">
+    <display-name><![CDATA[UCP Run Script In Guest]]></display-name>
+    <in-binding>
+      <bind name="TargetResource" type="ResourceElement" export-name="TargetResource"/>
+      <bind name="ProgramPathToExecuteScript" type="string" export-name="ProgramPathToExecuteScript"/>
+      <bind name="ScriptArguments" type="string" export-name="PythonScriptVariable"/>
+    </in-binding>
+    <out-binding>
+      <bind name="ScriptOutPut" type="string" export-name="ScriptOutPut"/>
+    </out-binding>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="link" linked-workflow-id="09bd2f04-3a45-48ef-a90c-2501c5e0e0de">
+    <display-name><![CDATA[UCP Send VIO Project Create email]]></display-name>
+    <in-binding>
+      <bind name="subject" type="string" export-name="subject">
+        <description><![CDATA[Email subject]]></description>
+      </bind>
+      <bind name="content" type="string" export-name="content">
+        <description><![CDATA[Email content (text or HTML)]]></description>
+      </bind>
+      <bind name="pdls" type="Array/string" export-name="ContactPDLS"/>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Gets all business groups and extracts the custom attribute nm.ucp.businessGroupPDL.]]></description>
+    <position y="55.90909090909091" x="785.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="Application">
+      <desc><![CDATA[Application/Project Name:
+
+Enter the name of the application or business area. This will be used to create a name for your business group.]]></desc>
+    </p-param>
+    <p-param name="ADGroup">
+      <desc><![CDATA[Access AD Group:
+
+Enter the AD Group that will be used to control access to your project.]]></desc>
+    </p-param>
+    <p-param name="ContactPDL">
+      <desc><![CDATA[Contact PDL:
+
+What this the contact PDL that can be used for the team that owns this project?]]></desc>
+    </p-param>
+    <p-param name="Environment">
+      <desc><![CDATA[Environment: 
+
+Which environment would you like to deploy (Prod, NonProd, Both)?]]></desc>
+      <p-qual kind="static" name="genericEnumeration" type="Array/string"><![CDATA[#{#string# #;#string#Prod#;#string#NonProd#}#]]></p-qual>
+    </p-param>
+    <p-param name="Campus">
+      <desc><![CDATA[CAMPUS: 
+
+Which campus do you want to deploy too (MKE, FRK, Both)?]]></desc>
+      <p-qual kind="static" name="genericEnumeration" type="Array/string"><![CDATA[#{#string# #;#string#MKE#;#string#FRK#}#]]></p-qual>
+    </p-param>
+    <p-param name="AdminUserName">
+      <desc><![CDATA[Admin Username:
+
+Enter you AdminUserName to authenticate to the VIO Admin API to create the project]]></desc>
+    </p-param>
+    <p-param name="AdminPassword">
+      <desc><![CDATA[Admin Password:
+
+Enter you Admin password to authenticate to the VIO Admin API]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

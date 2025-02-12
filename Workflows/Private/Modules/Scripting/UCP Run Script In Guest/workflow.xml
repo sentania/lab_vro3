@@ -1,0 +1,164 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item5" object-name="workflow:name=generic" id="1673b9e7-a215-4ac5-9596-e57caf60162d" version="0.0.25" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[UCP Run Script In Guest]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="TargetResource" type="ResourceElement"/>
+    <param name="ProgramPathToExecuteScript" type="string"/>
+    <param name="ScriptArguments" type="string"/>
+  </input>
+  <output>
+    <param name="ScriptOutPut" type="string"/>
+    <param name="ScriptExitCode" type="number"/>
+  </output>
+  <attrib name="GuestFileName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="arguments" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="keyFile" type="string" read-only="false">
+    <value encoded="n"><![CDATA[/var/lib/vco/app-server/conf/vco_key]]></value>
+  </attrib>
+  <attrib name="pathToExecute" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="VM" type="VC:VirtualMachine" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='vcvrapf01.nm.nmfco.com%2Cid:vm-109257'&dunesName='VC:VirtualMachine']]></value>
+    <description><![CDATA[Virtual machine]]></description>
+  </attrib>
+  <attrib name="TargetDirectoryOnGuest" type="string" read-only="false">
+    <value encoded="n"><![CDATA[/var/tmp]]></value>
+  </attrib>
+  <attrib name="VMUsername" type="string" read-only="false">
+    <value encoded="n"><![CDATA[ucpuser]]></value>
+    <description><![CDATA[Username for the virtual machine]]></description>
+  </attrib>
+  <attrib name="scriptOutput" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="scriptExitCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="944.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item3" type="task">
+    <display-name><![CDATA[Set Arguments]]></display-name>
+    <script encoded="false"><![CDATA[//If the program we are executing is the script name we copied to the guest, then don't past the script name as an argument
+//  If they are not equal, then we will pass the first argument as the script name
+//  For example, c:\windows\system32\WindowsPowershell\v1.0\powershell.exe example.ps1 %ARGUMENTS%
+if(GuestFileName != ProgramPathToExecuteScript)
+{
+	arguments = GuestFileName + " " + ScriptArguments;
+}
+//In this case, the path was the script itself, it doesn't make sense to pass the script name as an argument to the
+//  script
+//  for example, c:\temp\test.bat test.bat %ARGUMENTS% doesn't make sense
+else
+{
+	arguments = ScriptArguments;
+}
+
+pathToExecute = ProgramPathToExecuteScript;
+
+System.log("====Set Arguments for script====");
+
+System.log("    Path to Execute: " + pathToExecute);
+System.log("    Arguments: " + arguments);
+System.log("    Guest File Name: " + GuestFileName);
+]]></script>
+    <in-binding>
+      <bind name="TargetResource" type="ResourceElement" export-name="TargetResource"/>
+      <bind name="TargetDirectoryOnGuest" type="string" export-name="TargetDirectoryOnGuest"/>
+      <bind name="VM" type="VC:VirtualMachine" export-name="VM"/>
+      <bind name="ProgramPathToExecuteScript" type="string" export-name="ProgramPathToExecuteScript"/>
+      <bind name="ScriptArguments" type="string" export-name="ScriptArguments"/>
+      <bind name="GuestFileName" type="string" export-name="GuestFileName"/>
+    </in-binding>
+    <out-binding>
+      <bind name="arguments" type="string" export-name="arguments"/>
+      <bind name="pathToExecute" type="string" export-name="pathToExecute"/>
+    </out-binding>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item4" type="task">
+    <display-name><![CDATA[Execute Script on Script Server]]></display-name>
+    <script encoded="false"><![CDATA[var mySSHSession = new SSHSession(VM.name,VMUsername);
+mySSHSession.connectWithIdentity(keyFile,"");
+
+var myCommand = pathToExecute + " " + arguments;
+
+System.log("===Execute Script on Guest====");
+System.log("	VM Name: " + VM.name);
+System.log("	VM Username: " + VMUsername);
+System.log("	Command to run: " + myCommand);
+
+mySSHSession.executeCommand(myCommand,true);
+
+var scriptOutput = mySSHSession.getOutput();
+var scriptError = mySSHSession.getError();
+var exitCode = mySSHSession.exitCode;
+System.log("===Script Output===");
+System.log(scriptOutput)
+System.log("===Script Error===");
+System.log(scriptError);
+System.log("===Exit Code===");
+System.log(exitCode);
+scriptExitCode = exitCode;
+
+mySSHSession.disconnect();
+
+]]></script>
+    <in-binding>
+      <bind name="arguments" type="string" export-name="arguments"/>
+      <bind name="keyFile" type="string" export-name="keyFile"/>
+      <bind name="pathToExecute" type="string" export-name="pathToExecute"/>
+      <bind name="VM" type="VC:VirtualMachine" export-name="VM"/>
+      <bind name="VMUsername" type="string" export-name="VMUsername"/>
+    </in-binding>
+    <out-binding>
+      <bind name="scriptOutput" type="string" export-name="scriptOutput"/>
+      <bind name="scriptExitCode" type="string" export-name="scriptExitCode"/>
+    </out-binding>
+    <position y="55.40909090909091" x="624.5"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item0" type="task">
+    <display-name><![CDATA[Set Outputs]]></display-name>
+    <script encoded="false"><![CDATA[ScriptOutPut = scriptOutput;
+ScriptExitCode = scriptExitCode;]]></script>
+    <in-binding>
+      <bind name="scriptExitCode" type="string" export-name="scriptExitCode"/>
+      <bind name="scriptOutput" type="string" export-name="scriptOutput"/>
+    </in-binding>
+    <out-binding>
+      <bind name="ScriptOutPut" type="string" export-name="ScriptOutPut"/>
+      <bind name="ScriptExitCode" type="number" export-name="ScriptExitCode"/>
+    </out-binding>
+    <position y="55.40909090909091" x="764.5"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item2" type="link" linked-workflow-id="5b1abe9c-4d1b-4102-9dda-650c24b97210">
+    <display-name><![CDATA[UCP Copy Resource To Guest with SSH Keys]]></display-name>
+    <in-binding>
+      <bind name="TargetResource" type="ResourceElement" export-name="TargetResource"/>
+      <bind name="TargetDirectoryOnGuest" type="string" export-name="TargetDirectoryOnGuest"/>
+      <bind name="vm" type="VC:VirtualMachine" export-name="VM"/>
+      <bind name="vmUsername" type="string" export-name="VMUsername"/>
+    </in-binding>
+    <out-binding>
+      <bind name="GuestFileName" type="string" export-name="GuestFileName"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="TargetResource">
+      <desc><![CDATA[TargetResource]]></desc>
+    </p-param>
+    <p-param name="ProgramPathToExecuteScript">
+      <desc><![CDATA[ProgramPathToExecuteScript]]></desc>
+    </p-param>
+    <p-param name="ScriptArguments">
+      <desc><![CDATA[ScriptArguments]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

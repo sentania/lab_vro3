@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getVcTagCategoryIdByName" result-type="string" api-version="6.0.0" id="e79aee61-0025-40ef-b356-ff88fd74aa8d" version="1.0.0" allowed-operations="evf" category-name="com.thinkahead.vapi">
+  <param n="endpoint" t="VAPI:VAPIEndpoint"><![CDATA[the vAPI endpoint on which to look]]></param>
+  <param n="catName" t="string"><![CDATA[the name of the Tag Category to look for]]></param>
+  <script encoded="false"><![CDATA[if (endpoint == null) {
+  throw "'endpoint' parameter should not be null";
+}
+
+var client = endpoint.client();
+var tagging = new com_vmware_cis_tagging_category(client);
+var catIdList = tagging.list();  //returns an array of category IDs (strings)
+
+for each (var catId in catIdList){
+	var catObject = tagging.get(catId);
+	//catObject structure:
+	//  [{associable_types=[], catName=test-ted-cat, description=, id=urn:vmomi:InventoryServiceCategory:e6549f2d-b23b-4608-9ec3-c17516e820ed:GLOBAL, used_by=[], cardinality=SINGLE}]
+	//System.debug(catObject.name);
+	if (catObject.name == catName) {
+		System.debug("Category with name '" + catName + "' found, ID: " + catObject.id);
+		return catObject.id;
+	}
+}
+
+System.debug("Category with name '" + catName + "' was not found on vAPI endpoint '" + endpoint.name + "'");
+return null;
+
+
+
+]]></script>
+</dunes-script-module>

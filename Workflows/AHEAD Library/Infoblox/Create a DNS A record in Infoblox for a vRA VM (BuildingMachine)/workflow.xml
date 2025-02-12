@@ -1,0 +1,149 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="b2d68c1d-49ea-4f95-b96e-389108745d27" version="1.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Create a DNS A record in Infoblox for a vRA VM (BuildingMachine)]]></display-name>
+  <description><![CDATA[Looks for a vRA Custom Property called 'AheadInfoblox.Domain' which contains the DNS domain (ex: mycompany.org) in which to create the A record.
+
+If the Custom Property is not present, the workflow skips creating the DNS record.  
+So you can effectively disable this workflow (perhaps after implementing the official Infoblox Plug-In) by simply removing this Custom Property.
+
+If the DNS record is created, its FQDN is stored in Custom Property 'AheadInfoblox.HostRecord' 
+so that the corresponding Disposing workflow knows what record to delete from Infoblox.]]></description>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="customProperties" type="Properties">
+      <description><![CDATA[vRA Custom Properties of the target VM]]></description>
+    </param>
+    <param name="hostname" type="string">
+      <description><![CDATA[hostname of the DNS record to create]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="customPropertyValue" type="string">
+      <description><![CDATA[The parent workflow (BuidlingMachine) should write this value to custom prop AheadInfoblox.HostRecord]]></description>
+    </param>
+  </output>
+  <attrib name="dnsDomain" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[DNS domain in which to create the A record]]></description>
+  </attrib>
+  <attrib name="restHost" type="REST:RESTHost" read-only="true" conf-id="49ee40b8-06c5-40c5-9b9b-fd0861407450" conf-key="restHost">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='a4349959-c772-46f0-90e1-c9fd0b9fbe53'&dunesName='REST:RESTHost']]></value>
+    <description><![CDATA[The Infoblox REST host that should take the request.]]></description>
+  </attrib>
+  <attrib name="ipAddress" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[IP address for the hostname record]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="944.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="task">
+    <display-name><![CDATA[Get Domain Prop]]></display-name>
+    <script encoded="false"><![CDATA[dnsDomain = customProperties.get("AheadInfoblox.Domain");
+]]></script>
+    <in-binding>
+      <bind name="customProperties" type="Properties" export-name="customProperties">
+        <description><![CDATA[vRA Custom Properties of the target VM]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="dnsDomain" type="string" export-name="dnsDomain">
+        <description><![CDATA[DNS domain in which to create the A record]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Read the DNS domain from a vRA Custom Property]]></description>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item7" type="custom-condition" alt-out-name="item4">
+    <display-name><![CDATA[Domain Present?]]></display-name>
+    <script encoded="false"><![CDATA[//if dnsDomain is falsy, then the Custom Property wasn't present
+if (dnsDomain) return true;
+return false;]]></script>
+    <in-binding>
+      <bind name="dnsDomain" type="string" export-name="dnsDomain"/>
+    </in-binding>
+    <description><![CDATA[If the vRA Custom Property with the domain wasn't present, then end the workflow.]]></description>
+    <position y="45.90909090909091" x="345.0"/>
+  </workflow-item>
+  <workflow-item name="item3" type="end" end-mode="0">
+    <position y="172.68181818181816" x="385.0"/>
+  </workflow-item>
+  <workflow-item name="item4" prototype-id="system-warning" out-name="item3" type="task" interaction="l">
+    <display-name><![CDATA[Log a Warning]]></display-name>
+    <script encoded="false"><![CDATA[var message = "vRA Custom Property 'AheadInfoblox.Domain' was not found. "
+			+ "Skipping DNS record creation via Ahead's '" + workflow.currentWorkflow.name + "' workflow. "
+			+ "This could be intentional, if the official Infoblox plug-in is now installed.";
+
+System.warn(message);]]></script>
+    <in-binding/>
+    <out-binding/>
+    <description><![CDATA[Log the fact that the Custom Property wasn't present, and a DNS record isn't being created.]]></description>
+    <position y="119.04545454545453" x="345.0"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item6" type="link" linked-workflow-id="d3df89ef-30a8-4555-8606-ef2f393af5c8">
+    <display-name><![CDATA[Create a DNS A record in Infoblox]]></display-name>
+    <in-binding>
+      <bind name="restHost" type="REST:RESTHost" export-name="restHost">
+        <description><![CDATA[The Infoblox REST host that should take the request.]]></description>
+      </bind>
+      <bind name="hostname" type="string" export-name="hostname">
+        <description><![CDATA[Hostname record to create]]></description>
+      </bind>
+      <bind name="ipAddress" type="string" export-name="ipAddress">
+        <description><![CDATA[IP address for the hostname record]]></description>
+      </bind>
+      <bind name="domain" type="string" export-name="dnsDomain">
+        <description><![CDATA[DNS zone in which the hostname record should be created.  ex: mycompany.org]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="hostReferenceId" type="string" explicitly-not-bound="true">
+        <description><![CDATA[Infoblox Reference ID of the new host record]]></description>
+      </bind>
+    </out-binding>
+    <position y="55.40909090909091" x="624.5"/>
+  </workflow-item>
+  <workflow-item name="item6" out-name="item0" type="task">
+    <display-name><![CDATA[Write Output]]></display-name>
+    <script encoded="false"><![CDATA[customPropertyValue = hostname + "." + dnsDomain;]]></script>
+    <in-binding>
+      <bind name="hostname" type="string" export-name="hostname">
+        <description><![CDATA[hostname of the DNS record to create]]></description>
+      </bind>
+      <bind name="dnsDomain" type="string" export-name="dnsDomain">
+        <description><![CDATA[DNS domain in which to create the A record]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="customPropertyValue" type="string" export-name="customPropertyValue">
+        <description><![CDATA[The parent workflow (BuidlingMachine) should write this value to custom prop AheadInfoblox.HostRecord]]></description>
+      </bind>
+    </out-binding>
+    <position y="55.40909090909091" x="764.5"/>
+  </workflow-item>
+  <workflow-item name="item7" out-name="item5" type="task">
+    <display-name><![CDATA[Get IP Address]]></display-name>
+    <script encoded="false"><![CDATA[ipAddress = customProperties.get("VirtualMachine.Network0.Address");
+
+if (!ipAddress) throw "A required custom property, 'VirtualMachine.Network0.Address', was not found.";]]></script>
+    <in-binding>
+      <bind name="customProperties" type="Properties" export-name="customProperties">
+        <description><![CDATA[vRA Custom Properties of the target VM]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="ipAddress" type="string" export-name="ipAddress">
+        <description><![CDATA[IP address for the hostname record]]></description>
+      </bind>
+    </out-binding>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="customProperties">
+      <desc><![CDATA[vRA Custom Properties of the target VM]]></desc>
+    </p-param>
+    <p-param name="hostname">
+      <desc><![CDATA[Newly generated hostname]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

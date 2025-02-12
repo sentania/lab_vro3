@@ -1,0 +1,174 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item4" object-name="workflow:name=generic" id="f5ace837-fdea-4deb-8507-bc8d98e2e666" version="0.1.6" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Manage users in serverSudoSpec]]></display-name>
+  <description><![CDATA[This workflow adds or removes access to an already existing sudoer server spec.]]></description>
+  <position y="50.0" x="160.0"/>
+  <input>
+    <param name="serverName" type="string">
+      <description><![CDATA[Server name to apply the post deploy configuration]]></description>
+    </param>
+    <param name="sudoer" type="string">
+      <description><![CDATA[A group that shoudl be given administrator rights tot he server.]]></description>
+    </param>
+    <param name="state" type="string">
+      <description><![CDATA[The state ]]></description>
+    </param>
+    <param name="requestor" type="string">
+      <description><![CDATA[Who requested this change]]></description>
+    </param>
+    <param name="specName" type="string">
+      <description><![CDATA[The spec users should be managed with.]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="etcd_output" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)"/>
+  </output>
+  <attrib name="etcd_keys" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="etcd_values" type="Array/string" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="109.04545454545453" x="564.5"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item5" type="task">
+    <display-name><![CDATA[Set Variables]]></display-name>
+    <script encoded="false"><![CDATA[//We take all of the variables and work above and generate our etcd keys and values arrays.
+var baseURL = 'unifiedcompute/servers/';  //the base URL for all UCP records in etcd
+var serverURL = baseURL + serverName + '/';
+var sudoSpecURL = serverURL + 'sudo/sudoSpecs/' + specName + '/';
+var safesudoer = sudoer.replace(/_/i,'');
+var etcd_keys = [];
+var etcd_values = [];
+
+//First set the state of the server needsDay2
+etcd_keys.push(serverURL + 'state');
+etcd_values.push('needsDay2');
+
+//brute Force
+ var d = new Date();
+	
+etcd_keys.push(sudoSpecURL + 'addedOn');
+etcd_values.push(System.formatDate(d,'yyyMMdd-HHmm'));
+
+etcd_keys.push(sudoSpecURL + 'state');
+etcd_values.push('grant');
+
+etcd_keys.push(sudoSpecURL + 'name');
+etcd_values.push(specName);
+	
+
+adHostString = "adProd";
+	var adElement = [];
+		var ConfigElCategory = Server.getConfigurationElementCategoryWithPath("UCP");
+		System.log(ConfigElCategory.name);
+		var configEls = ConfigElCategory.allConfigurationElements;
+		for(element in configEls) {
+			if(configEls[element].name == "ActiveDirectory") {
+			adElement = configEls[element];
+			System.log("AD Elements: "+adElement.name);
+			}
+		}
+	
+	// 2.1.2 Get AD Host
+		var adHost;
+		if(adElement.getAttributeWithKey(adHostString) != null) {
+			attribute = adElement.getAttributeWithKey(adHostString);
+			adHost = attribute.value;
+			System.log(adHost.name);
+		}
+	//we need to identify if this is a user or group so that sudo is happy
+	
+	var groupSearch = ActiveDirectory.search("UserGroup",sudoer,adHost);
+	System.log('Group search: ' + groupSearch);
+	if (groupSearch.length > 0)
+	{
+		etcd_keys.push(sudoSpecURL + 'users/'+ safesudoer +'/linuxName');
+		etcd_values.push(encodeURI('%'+ sudoer));  //Lookup linuxname if a group
+	}
+	else
+	{
+		etcd_keys.push(sudoSpecURL + 'users/'+ safesudoer +'/linuxName');
+		etcd_values.push(sudoer);  //Lookup linuxname if a group
+	}
+
+etcd_keys.push(sudoSpecURL + 'users/'+ safesudoer +'/state');
+etcd_values.push(state);  
+
+//Finally we define the users who we are manipulating
+etcd_keys.push(sudoSpecURL + 'users/'+ safesudoer +'/name');
+etcd_values.push(sudoer);
+
+
+
+if (state == 'grant')
+{
+etcd_keys.push(sudoSpecURL + 'users/'+ safesudoer + '/addedOn');
+etcd_values.push(System.formatDate(d,'yyyMMdd-HHmm'));
+
+etcd_keys.push(sudoSpecURL + 'users/'+ safesudoer + '/addedBy');
+etcd_values.push(requestor)
+}
+
+else if (state == 'revoke')
+{
+etcd_keys.push(sudoSpecURL + 'users/'+ safesudoer + '/revokedOn');
+etcd_values.push(System.formatDate(d,'yyyMMdd-HHmm'));
+
+etcd_keys.push(sudoSpecURL + 'users/'+ safesudoer + '/revokedBy');
+etcd_values.push(requestor)
+}]]></script>
+    <in-binding>
+      <bind name="serverName" type="string" export-name="serverName"/>
+      <bind name="sudoer" type="string" export-name="sudoer"/>
+      <bind name="state" type="string" export-name="state"/>
+      <bind name="requestor" type="string" export-name="requestor"/>
+      <bind name="specName" type="string" export-name="specName">
+        <description><![CDATA[The spec users should be managed with.]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="etcd_keys" type="Array/string" export-name="etcd_keys"/>
+      <bind name="etcd_values" type="Array/string" export-name="etcd_values"/>
+    </out-binding>
+    <position y="119.04545454545453" x="125.0"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item0" type="foreach">
+    <display-name><![CDATA[Foreach (etcd - Add Key)]]></display-name>
+    <in-binding>
+      <bind name="key" type="Array/string" export-name="*etcd_keys">
+        <description><![CDATA[etcd key to update]]></description>
+      </bind>
+      <bind name="value" type="Array/string" export-name="*etcd_values">
+        <description><![CDATA[value of the key]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="statusCode" type="Array/Number" export-name="*etcd_output.statusCode"/>
+      <bind name="contentLength" type="Array/Number" export-name="*etcd_output.contentLength"/>
+      <bind name="headers" type="Array/Properties" export-name="*etcd_output.headers"/>
+      <bind name="contentAsString" type="Array/String" export-name="*etcd_output.contentAsString"/>
+    </out-binding>
+    <reference type="Workflow" id="1fa52ce3-f6c0-43f8-a28f-6790c2e93f13"/>
+    <description><![CDATA[Autogenerated workflow.]]></description>
+    <position y="119.04545454545453" x="264.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="serverName">
+      <desc><![CDATA[Server name to apply the post deploy configuration]]></desc>
+    </p-param>
+    <p-param name="state">
+      <desc><![CDATA[A flag used by the ansible job to determine which actions to take.]]></desc>
+    </p-param>
+    <p-param name="requestor">
+      <desc><![CDATA[requestor]]></desc>
+    </p-param>
+    <p-param name="sudoer">
+      <desc><![CDATA[A group that shoudl be given administrator rights tot he server.]]></desc>
+    </p-param>
+    <p-param name="specName">
+      <desc><![CDATA[The spec users should be managed with.]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

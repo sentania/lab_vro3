@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="4274e689-452f-495e-ab57-08e4fc447d0e" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[dynatrace - maintenancemode]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="host" type="string"/>
+    <param name="mode" type="string"/>
+  </input>
+  <attrib name="ScriptArguments" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="ScriptOutput" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="ProgramPathtoExecute" type="string" read-only="false">
+    <value encoded="n"><![CDATA[/opt/dynatraceAPI/.envDynaAPI/bin/python]]></value>
+  </attrib>
+  <attrib name="pythonScript" type="ResourceElement" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/ResourceElement?id='9d59ead2-ca2f-4094-bd30-88eabc6ca352'&dunesName='ResourceElement']]></value>
+  </attrib>
+  <attrib name="ScriptExitCode" type="number" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="544.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="task">
+    <display-name><![CDATA[Script Variables]]></display-name>
+    <script encoded="false"><![CDATA[var prod_api_token = 'pPqMu8VnQuSmbisuexiTw';
+var nonprod_api_token = 'vMgHKuH1RuO68lfqVoOBi';
+
+ScriptArguments = " -m " + mode + " -o " + host + " -p " + prod_api_token + " -n " + nonprod_api_token;]]></script>
+    <in-binding>
+      <bind name="run_environment" type="string" explicitly-not-bound="true"/>
+      <bind name="host" type="string" export-name="host"/>
+      <bind name="mode" type="string" export-name="mode"/>
+    </in-binding>
+    <out-binding>
+      <bind name="ScriptArguments" type="string" export-name="ScriptArguments"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item0" type="link" linked-workflow-id="1673b9e7-a215-4ac5-9596-e57caf60162d">
+    <display-name><![CDATA[UCP Run Script In Guest]]></display-name>
+    <in-binding>
+      <bind name="TargetResource" type="ResourceElement" export-name="pythonScript"/>
+      <bind name="ProgramPathToExecuteScript" type="string" export-name="ProgramPathtoExecute"/>
+      <bind name="ScriptArguments" type="string" export-name="ScriptArguments"/>
+    </in-binding>
+    <out-binding>
+      <bind name="ScriptOutPut" type="string" export-name="ScriptOutput"/>
+      <bind name="ScriptExitCode" type="number" export-name="ScriptExitCode"/>
+    </out-binding>
+    <position y="55.40909090909091" x="364.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="host">
+      <desc><![CDATA[host]]></desc>
+    </p-param>
+    <p-param name="mode">
+      <desc><![CDATA[mode]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

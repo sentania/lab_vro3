@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="testDNSAssignment" result-type="boolean" api-version="6.0.0" id="e9242f8b-ecfa-4b89-acc4-636237c68325" version="0.0.0" category-name="net.sentania.net.Actions.MSDNS">
+  <runtime><![CDATA[powershell:7.4]]></runtime>
+  <param n="IPAddress" t="string"/>
+  <param n="Hostname" t="string"/>
+  <script encoded="false"><![CDATA[function Handler($Context, $inputs)
+{
+    # Extract the inputs.
+    $IPAddress = $inputs.IPAddress
+    $Hostname  = $inputs.Hostname
+
+    # Define a simple logging function.
+    function Log($message) {
+        Write-Host $message
+    }
+
+    Log "Starting .NET-based DNS validation for IP '$IPAddress' and hostname '$Hostname'."
+
+    # Initialize an array to collect any error messages.
+    $errorList = @()
+
+    # 1. Ping Check Using .NET Ping Class
+    try {
+        $ping = New-Object System.Net.NetworkInformation.Ping
+        # Send a ping with a 2000ms timeout.
+        $reply = $ping.Send($IPAddress, 2000)
+        if ($reply.Status -eq [System.Net.NetworkInformation.IPStatus]::Success) {
+            $errorList += "IP address $IPAddress responded to ping; it may already be in use."
+        }
+    }
+    catch {
+        Log "Ping check: Exception encountered while pinging $IPAddress. Assuming no response."
+    }
+
+    # 2. PTR Record Check Using .NET DNS Resolution on the IP Address
+    try {
+        $ptrEntry = [System.Net.Dns]::GetHostEntry($IPAddress)
+        if ($ptrEntry.HostName -and $ptrEntry.HostName -ne $IPAddress) {
+            $errorList += "A PTR record exists for IP address $IPAddress (resolved hostname: $($ptrEntry.HostName)); it might be allocated."
+        }
+    }
+    catch {
+        Log "PTR check: No PTR record found for IP address $IPAddress (expected for an unassigned IP)."
+    }
+
+    # 3. A Record Check for the Hostname Using GetHostAddresses
+    try {
+        $addresses = [System.Net.Dns]::GetHostAddresses($Hostname)
+        if ($addresses -and $addresses.Count -gt 0) {
+            $errorList += "Hostname $Hostname resolves to IP address(es): $([string]::Join(', ', $addresses)); it may already be in use."
+        }
+    }
+    catch {
+        Log "A record check: Hostname $Hostname did not resolve to any IP addresses (as expected)."
+    }
+
+    # 4. Reverse Lookup for the Hostname Using GetHostEntry (Optional Check)
+    try {
+        $hostEntry = [System.Net.Dns]::GetHostEntry($Hostname)
+        if ($hostEntry -and $hostEntry.AddressList -and $hostEntry.AddressList.Count -gt 0) {
+            $errorList += "Reverse lookup for hostname $Hostname returned IP address(es), suggesting it is already assigned."
+        }
+    }
+    catch {
+        Log "Reverse lookup: Hostname $Hostname could not be resolved (expected)."
+    }
+
+    # Return a Boolean value based on the validation result.
+    if ($errorList.Count -gt 0) {
+        Log ("Validation failed: " + ($errorList -join "; "))
+        return $false
+    }
+    else {
+        Log "Validation succeeded: No conflicting records or active hosts found for IP $IPAddress and hostname $Hostname."
+        return $true
+    }
+}
+]]></script>
+</dunes-script-module>

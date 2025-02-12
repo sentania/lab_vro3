@@ -1,0 +1,174 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item7" object-name="workflow:name=generic" id="a2d3a643-eb1e-4eb6-a13f-512d8e39097f" version="0.0.17" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Manage Admin Access]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="manageAdminAction" type="string"/>
+    <param name="admin_group" type="string"/>
+    <param name="remove_admin" type="string"/>
+    <param name="sudoSpec" type="string"/>
+    <param name="requestor" type="string"/>
+    <param name="vRAVirtualMachine" type="VC:VirtualMachine"/>
+  </input>
+  <output>
+    <param name="etcd_output" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)"/>
+  </output>
+  <attrib name="revoke_state" type="string" read-only="false">
+    <value encoded="n"><![CDATA[revoke]]></value>
+  </attrib>
+  <attrib name="grant_state" type="string" read-only="false">
+    <value encoded="n"><![CDATA[grant]]></value>
+  </attrib>
+  <attrib name="serverName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item1" out-name="item4" type="custom-condition" alt-out-name="item3">
+    <display-name><![CDATA[Add or Remove?]]></display-name>
+    <script encoded="false"><![CDATA[if (manageAdminAction == 'Remove Access')
+{
+	return false
+}
+
+else if (manageAdminAction == 'Add Access')
+{
+	return true
+}]]></script>
+    <in-binding>
+      <bind name="manageAdminAction" type="string" export-name="manageAdminAction"/>
+    </in-binding>
+    <position y="45.40909090909091" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item0" type="link" linked-workflow-id="5d551443-662c-4971-9f32-fad72d13bc5f">
+    <display-name><![CDATA[Manage Local Admins and Check Status (etcd)]]></display-name>
+    <in-binding>
+      <bind name="serverName" type="string" export-name="serverName"/>
+      <bind name="localAdmin" type="string" export-name="remove_admin">
+        <description><![CDATA[A group that shoudl be given administrator rights tot he server.]]></description>
+      </bind>
+      <bind name="state" type="string" export-name="revoke_state">
+        <description><![CDATA[A flag used by the ansible job to determine which actions to take.]]></description>
+      </bind>
+      <bind name="requestor" type="string" export-name="requestor">
+        <description><![CDATA[Who requested this change]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="etcd_output" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)" export-name="etcd_output"/>
+    </out-binding>
+    <position y="119.04545454545453" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item4" out-name="item0" type="link" linked-workflow-id="5d551443-662c-4971-9f32-fad72d13bc5f">
+    <display-name><![CDATA[Manage Local Admins and Check Status (etcd)]]></display-name>
+    <in-binding>
+      <bind name="serverName" type="string" export-name="serverName"/>
+      <bind name="localAdmin" type="string" export-name="admin_group">
+        <description><![CDATA[A group that shoudl be given administrator rights tot he server.]]></description>
+      </bind>
+      <bind name="state" type="string" export-name="grant_state">
+        <description><![CDATA[A flag used by the ansible job to determine which actions to take.]]></description>
+      </bind>
+      <bind name="requestor" type="string" export-name="requestor">
+        <description><![CDATA[Who requested this change]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="etcd_output" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)" export-name="etcd_output"/>
+    </out-binding>
+    <position y="55.40909090909091" x="624.5"/>
+  </workflow-item>
+  <workflow-item name="item0" out-name="item2" type="custom-condition" alt-out-name="item5">
+    <display-name><![CDATA[Custom decision]]></display-name>
+    <script encoded="false"><![CDATA[if (manageAdminAction == 'Add Access')
+{
+	return true
+}
+else
+{
+return false
+}]]></script>
+    <in-binding>
+      <bind name="manageAdminAction" type="string" export-name="manageAdminAction"/>
+    </in-binding>
+    <position y="109.04545454545453" x="624.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item5" type="link" linked-workflow-id="7c3c3e2a-10fd-4f8b-969c-7c3d688a6f07">
+    <display-name><![CDATA[Manage users in serverSudoSpec and Check Status (etcd)]]></display-name>
+    <in-binding>
+      <bind name="serverName" type="string" export-name="serverName"/>
+      <bind name="state" type="string" export-name="grant_state">
+        <description><![CDATA[A flag used by the ansible job to determine which actions to take.]]></description>
+      </bind>
+      <bind name="requestor" type="string" export-name="requestor">
+        <description><![CDATA[Who requested this change]]></description>
+      </bind>
+      <bind name="sudoer" type="string" export-name="admin_group"/>
+      <bind name="specName" type="string" export-name="sudoSpec"/>
+    </in-binding>
+    <out-binding>
+      <bind name="etcd_output" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)" export-name="etcd_output"/>
+    </out-binding>
+    <position y="119.04545454545453" x="764.5"/>
+  </workflow-item>
+  <workflow-item name="item5" type="end" end-mode="0">
+    <position y="172.68181818181816" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item6" out-name="item1" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var serverName = vRAVirtualMachine.name]]></script>
+    <in-binding>
+      <bind name="vRAVirtualMachine" type="VC:VirtualMachine" export-name="vRAVirtualMachine"/>
+    </in-binding>
+    <out-binding>
+      <bind name="serverName" type="string" export-name="serverName"/>
+    </out-binding>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item7" out-name="item6" type="custom-condition" alt-out-name="item9">
+    <display-name><![CDATA[Custom decision]]></display-name>
+    <script encoded="false"><![CDATA[if ((admin_group == '' && remove_admin == '') || admin_group == 'No Valid Group Found.' || admin_group == 'Please search for user/group above.')
+{ return false
+}
+else
+{return true}]]></script>
+    <in-binding>
+      <bind name="admin_group" type="string" export-name="admin_group"/>
+      <bind name="remove_admin" type="string" export-name="remove_admin"/>
+    </in-binding>
+    <position y="45.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item8" throw-bind-name="errorCode" type="end" end-mode="1">
+    <position y="172.68181818181816" x="244.5"/>
+  </workflow-item>
+  <workflow-item name="item9" out-name="item8" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[errorCode = 'You did not enter a valid admin user or group to add/remove access."']]></script>
+    <in-binding/>
+    <out-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+    </out-binding>
+    <position y="119.04545454545453" x="205.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="manageAdminAction">
+      <desc><![CDATA[manageAdminAction]]></desc>
+    </p-param>
+    <p-param name="admin_group">
+      <desc><![CDATA[admin_group]]></desc>
+    </p-param>
+    <p-param name="remove_admin">
+      <desc><![CDATA[remove_admin]]></desc>
+    </p-param>
+    <p-param name="sudoSpec">
+      <desc><![CDATA[sudoSpec]]></desc>
+    </p-param>
+    <p-param name="requestor">
+      <desc><![CDATA[requestor]]></desc>
+    </p-param>
+    <p-param name="vRAVirtualMachine">
+      <desc><![CDATA[vRAVirtualMachine]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

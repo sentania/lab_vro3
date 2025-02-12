@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="asdGetAllTenantRestipesByType" result-type="Array/string" api-version="6.0.0" id="1115b4c3-dad8-43f6-8ca1-0af7a832ef50" version="0.0.0" allowed-operations="evf" category-name="com.sovlabs.restipe">
+  <param n="tenant" t="string"/>
+  <param n="type" t="string"/>
+  <script encoded="false"><![CDATA[var retArray = [];
+
+try {
+	var items = sovlabsRestipeconfigManager.getAllbyTenant(tenant);
+	
+	if (type.toLowerCase() == "") {
+		for each (var item in items) {
+			retArray.push(item.shortName);
+		}
+	} else {
+		for each (var item in items) {
+			if (item.type == type) {
+				retArray.push(item.shortName);
+			}
+		}
+	}
+} catch (e) {
+	//Unable to retrieve Restipe by tenant
+}
+
+return retArray;]]></script>
+</dunes-script-module>

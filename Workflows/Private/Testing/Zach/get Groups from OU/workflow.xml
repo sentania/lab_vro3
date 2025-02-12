@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="7205101d-4a53-47dc-bc6c-e3a81b2cd9c6" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[get Groups from OU]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="usergroupName" type="string">
+      <description><![CDATA[Name of the usergroup]]></description>
+    </param>
+  </input>
+  <attrib name="actionResult" type="Array/AD:UserGroup" read-only="false"/>
+  <attrib name="container" type="AD:OrganizationalUnit" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%2304f57e41-daba-46a0-9e0a-62730f828775%23%2C%23OU%3DWindows%20Servers%2COU%3DHO%2COU%3DInternal%2COU%3DGroups%2CDC%3Dnm%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+    <description><![CDATA[Organizationl Unit / Group]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="task" script-module="com.nm.ucp/getUsergroupsFromContainer">
+    <display-name><![CDATA[getUsergroupsFromContainer]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.nm.ucp").getUsergroupsFromContainer(container,usergroupName) ;]]></script>
+    <in-binding>
+      <bind name="container" type="AD:OrganizationalUnit" export-name="container">
+        <description><![CDATA[Organizationl Unit / Group]]></description>
+      </bind>
+      <bind name="usergroupName" type="string" export-name="usergroupName">
+        <description><![CDATA[Name of the usergroup]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="Array/AD:UserGroup" export-name="actionResult"/>
+    </out-binding>
+    <description><![CDATA[Get a usergroup by his name in the given OU or Group (container)]]></description>
+    <position y="55.90909090909091" x="205.0"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[for(g in actionResult) {
+	System.log(actionResult[g].name);
+}]]></script>
+    <in-binding>
+      <bind name="actionResult" type="Array/AD:UserGroup" export-name="actionResult"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="usergroupName">
+      <desc><![CDATA[Name of the usergroup]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getHostRecordByIP" result-type="string" api-version="6.0.0" id="0beedfd6-7fec-47fe-ae97-65066a0bce5c" version="0.0.2" allowed-operations="evf" category-name="com.nm.ucp">
+  <description><![CDATA[Gets a host record by IP address in specified network view.
+If network view is not specified, then default network view will be used.]]></description>
+  <param n="ipAddress" t="string"><![CDATA[IP address]]></param>
+  <script encoded="false"><![CDATA[var ipamConnection = System.getModule("com.infoblox.ipam").getDefaultIpamConnection();
+var networkView = "default";
+var hostManager = ipamConnection.getHostManager();
+var result = hostManager.findHostsByIP(ipAddress, networkView);
+var effectiveNetworkView = networkView ? "network view [" + networkView + "]" : "default network view";
+
+if (result.length == 0) {
+	throw "The host record with IP address [" + ipAddress + "] was not found in " + effectiveNetworkView + "."
+}
+
+if (result.length > 1) {
+	throw "More than one host records with IP address [" + ipAddress + "] were found in " + effectiveNetworkView + ".";
+}
+
+var refInfo = ReferenceInfo.parse(result[0].reference);
+var fqdn = result[0].fqdn;
+System.log("The host record [" + refInfo.description + "] was found by IP address [" + ipAddress + "] in " + effectiveNetworkView + ".");
+
+return fqdn;]]></script>
+</dunes-script-module>

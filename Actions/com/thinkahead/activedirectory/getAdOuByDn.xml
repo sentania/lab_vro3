@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getAdOuByDn" result-type="AD:OrganizationalUnit" api-version="6.0.0" id="49f8d275-ba2d-4356-b9a9-d55eace55817" version="1.0.0" allowed-operations="evf" category-name="com.thinkahead.activedirectory">
+  <description><![CDATA[Returns the AD:OrganizationalUnit object for the OU specified by its distinguished name (DN).
+
+Be sure you've run the "Configure Active Directory plug-in options" workflow and set a default AD Server.]]></description>
+  <param n="ouDistinguishedName" t="string"><![CDATA[The Distinguished Name (path) of the OU]]></param>
+  <script encoded="false"><![CDATA[validateDn(ouDistinguishedName);
+
+//Get short name of the OU from the Distinguished Name
+// The name starts at position 3 (right after 'OU=' and ends before the first comma
+var ouNameLength = ouDistinguishedName.indexOf(",") - 3;
+var ouName = ouDistinguishedName.substr(3, ouNameLength);
+System.log("Getting OU object for '" + ouName + "' with Distinguished Name '" + ouDistinguishedName + "'");
+
+//Search AD for all OUs with the same short name (max 20 results)
+var ouList = ActiveDirectory.searchExactMatch("OrganizationalUnit", ouName, 20);
+if (!ouList || ouList.length == 0) { throw "AD plug-in did not find any OUs with that name."; }
+
+//Filter search results to find the specified DN (case-insensitive)
+var ou; //return variable
+System.debug("Filtering OUs for matching DN...");
+for each (var i in ouList){
+	System.debug(i.distinguishedName);
+	var lcDn = i.distinguishedName.toLowerCase();
+	if (lcDn == ouDistinguishedName.toLowerCase()) { 
+		ou = i; 
+		break;
+	}
+}
+
+//Return the OU object if one was found
+if (!ou) { throw "No OU was found for the specified DN '" + ouDistinguishedName + "'"; }
+return ou;
+
+
+//************** Functions **************
+
+function validateDn(ouDistinguishedName){
+//Throws an error if input does not start with "OU=" or "ou="
+	var lcDn = ouDistinguishedName.toLowerCase();
+	if (lcDn.indexOf("ou=") != 0) {
+		throw "Input 'ouDistinguishedName' does not contain a valid Distinguished Name. It must begin with 'OU='";
+	}
+}]]></script>
+</dunes-script-module>

@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<config-element id="5dc44ab5-7bf7-4a75-91e1-2f542cb4ec33" version="0.0.0">
+  <display-name><![CDATA[NSX]]></display-name>
+  <atts>
+    <att name="nsxManager" type="string" read-only="false">
+      <value encoded="n"><![CDATA[frk-vra-mgmt-manager.nm.nmfco.com]]></value>
+      <description><![CDATA[NSX Manager DNS]]></description>
+    </att>
+    <att name="defaultTransportZone" type="string" read-only="false">
+      <value encoded="n"><![CDATA[vdnscope-2]]></value>
+      <description><![CDATA[Transport Zone ID]]></description>
+    </att>
+    <att name="frkEdgeId" type="string" read-only="false">
+      <value encoded="n"><![CDATA[edge-6]]></value>
+      <description><![CDATA[Franklin Edge ID]]></description>
+    </att>
+    <att name="mkeEdgeId" type="string" read-only="false">
+      <value encoded="n"><![CDATA[edge-26]]></value>
+      <description><![CDATA[Milwaukee Edge ID]]></description>
+    </att>
+    <att name="frkEdge" type="NSX:Edge" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='9b758d9a-f6ef-4f96-b2be-9ffb87ad97a4/edge-6'&dunesName='NSX:Edge']]></value>
+      <description><![CDATA[Franklin Edge]]></description>
+    </att>
+    <att name="mkeEdge" type="NSX:Edge" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='9b758d9a-f6ef-4f96-b2be-9ffb87ad97a4/edge-26'&dunesName='NSX:Edge']]></value>
+      <description><![CDATA[Milwaukee Edge]]></description>
+    </att>
+  </atts>
+</config-element>

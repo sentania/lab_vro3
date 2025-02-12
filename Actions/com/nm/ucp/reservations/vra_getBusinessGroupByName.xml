@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_getBusinessGroupByName" result-type="Properties" api-version="6.0.0" id="87e12168-9782-41dc-a664-36b2d1036a97" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="cafeHost" t="vCACCAFE:VCACHost"/>
+  <param n="tenantName" t="string"/>
+  <param n="businessGroupName" t="string"/>
+  <script encoded="false"><![CDATA[// Variables
+
+var endpoint = "com.vmware.csp.core.cafe.identity.api";
+var resourceUrl = "tenants/" + tenantName + "/subtenants"
+
+// Rest Client
+
+var restClient = cafeHost.createRestClient(endpoint);
+
+// Execute
+var response = restClient.get(resourceUrl)
+
+// Get Response Body
+var responseBodyObject = response.getBodyAsJson()
+
+var businessGroups = responseBodyObject.content
+
+var businessGroups = businessGroups.filter(function (aBusinessGroup) {return aBusinessGroup.name.toUpperCase() == businessGroupName.toUpperCase();});
+
+if (businessGroups.length > 1){
+	throw new Error("Multiple Business Groups found with the same name: " + businessGroupName)
+}
+
+if (businessGroups.length == 0){
+	throw new Error("No Business Group found with the name: " + businessGroupName)
+}
+
+return businessGroups[0];]]></script>
+</dunes-script-module>

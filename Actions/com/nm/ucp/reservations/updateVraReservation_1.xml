@@ -1,0 +1,145 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="updateVraReservation_1" result-type="void" api-version="6.0.0" id="11e2c4a1-711d-4c90-a3f6-67bf4294ef72" version="0.0.2" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="businessGroupName" t="string"/>
+  <param n="memoryToBeReserved" t="string"/>
+  <param n="computeResource" t="string"/>
+  <param n="fullWireMke" t="string"/>
+  <param n="fullWireFrk" t="string"/>
+  <param n="storageSizeToBeReserved" t="string"/>
+  <param n="networkProfileMKE" t="string"/>
+  <param n="networkProfileFRK" t="string"/>
+  <param n="reservationPolicyName" t="string"/>
+  <script encoded="false"><![CDATA[/*var businessGroupName = "Test Business Group 42";
+var memoryToBeReserved = "262144";
+var fullWireMke = "vxw-dvs-269-virtualwire-188-sid-5084-test business group 42-mke";
+var fullWireFrk = "vxw-dvs-269-virtualwire-189-sid-5085-test business group 42-frk";
+var computeResource = "vracompstr01";
+var storageSizeToBeReserved = "1000"*/
+
+var tenant = "vsphere.local";
+var cafeHost = Server.findAllForType("vCACCAFE:VCACHost")[0];
+
+var allReservations = System.getModule("com.nm.ucp.reservations").vra_getReservations(cafeHost).content;
+var reservationPolicyInfo = (System.getModule("com.nm.ucp.reservations").vra_getReservationPolicyByName(cafeHost, reservationPolicyName));
+System.log("Reservation Policy: "+reservationPolicyInfo.id);
+// Try to find vRA vSphere Compute Resource
+var vsphereComputeResource = (System.getModule("com.nm.ucp.reservations").vra_getVsphereComputeResourceByName(cafeHost,computeResource));
+
+var existingReservation = null;
+for each (var aReservation in allReservations){
+	if (aReservation.name == businessGroupName){
+		existingReservation = aReservation;
+		break;
+	}
+}
+
+System.log("aReservation = "+aReservation);
+System.log("existingReservaton = "+existingReservation);
+
+// Create Memory Definition
+var memoryDefinition = System.getModule("com.nm.ucp.reservations").vra_newMemoryDefinition(memoryToBeReserved)
+
+// Get vSphere Compute Resource ID and Label	
+var vsphereComputeResourceId = vsphereComputeResource.underlyingValue.id;
+var vsphereComputeResourceLabel = vsphereComputeResource.underlyingValue.label;
+System.log("vsphereComputeResourceLabel = "+vsphereComputeResourceLabel);
+// Create Alert Policy Definition
+var alertPolicyDefinition = System.getModule("com.nm.ucp.reservations").vra_newAlertPolicyDefinition(false,0,true,null,80,80,80,80)
+
+// Get Networks of vRA Compute Resource, filter out "uplink" port group
+var computeResourceNetworks = (System.getModule("com.nm.ucp.reservations").vra_getVsphereComputeResourceNetworks(cafeHost,vsphereComputeResourceId)).values;
+
+// Loop through all networks, and create a Network Definition for each, then add all the Network Definitions to a "Networks Definition"
+var networkDefinitions = new Array();
+
+for each (computeResourceNetwork in computeResourceNetworks){
+	var computeResourceNetworkLabel = computeResourceNetwork.underlyingValue.values.entries[0].value.label;
+	if (computeResourceNetworkLabel == fullWireMke){
+		System.log("computeResourceNetworkLabel = "+computeResourceNetworkLabel);
+		var networkLabel = networkProfileMKE;
+		networkDefinitions.push(System.getModule("com.nm.ucp.reservations").vra_newNetworkDefinition_2(computeResourceNetwork, networkLabel));
+	}
+	else if (computeResourceNetworkLabel == fullWireFrk){
+		System.log("computeResourceNetworkLabel = "+computeResourceNetworkLabel);
+		var networkLabel = networkProfileFRK;
+		networkDefinitions.push(System.getModule("com.nm.ucp.reservations").vra_newNetworkDefinition_2(computeResourceNetwork, networkLabel));
+	}
+}
+
+//networkDefinitions.push(System.getModule("com.nm.ucp.reservations").eds_vra_update_test(businessGroupName, fullWireMke, networkProfileMKE ));
+//networkDefinitions.push(System.getModule("com.nm.ucp.reservations").eds_vra_update_test(businessGroupName, fullWireFrk, networkProfileFRK ));
+
+System.log("-----------------Network Definitions-----------------");
+System.log(networkDefinitions);
+System.log("-----------------------------------------------------");
+
+var networksDefinition = System.getModule("com.nm.ucp.reservations").vra_newNetworksDefinition(networkDefinitions)
+System.log("-----------------Network Definition------------------");
+System.log(networksDefinition);
+System.log("-----------------------------------------------------");
+
+// Get Storages of vRA Compute Resource
+var computeResourceStorages = (System.getModule("com.nm.ucp.reservations").vra_getVsphereComputeResourceStorages(cafeHost,vsphereComputeResourceId)).values;
+
+// Find "Storage Cluster" amongst these
+var storageDefinitions = new Array();
+
+for each (computeResourceStorage in computeResourceStorages){
+	var computeResourceStorageEntries = computeResourceStorage.underlyingValue.values.entries;
+	var parentArray = computeResourceStorageEntries.filter(function (entry) {return entry.key == "parent";})
+	// If parentArray Length equals zero, then the computeResourceStorage is not a member of a Storage Cluster
+	if (parentArray.length == 0){
+		// Check if computeResourceStorage is a Local ESXi Storage
+		var computeResourceStorageLabel = computeResourceStorage.label;
+		if (computeResourceStorageLabel.search(/metro/i) == -1 ) {
+			// Do nothing
+			//System.log("Doing Nothing for "+computeResourceStorageLabel);
+		} else {
+			System.log("Adding Storage "+computeResourceStorageLabel);
+			storageDefinitions.push(System.getModule("com.nm.ucp.reservations").vra_newStorageDefinition(computeResourceStorage,1,storageSizeToBeReserved));
+		}
+	}
+}
+
+
+// Create a Storage Definition for this, and add that to a "Storages Definition"
+var storagesDefinition = System.getModule("com.nm.ucp.reservations").vra_newStoragesDefinition(storageDefinitions)
+
+// Create a Machine Quota Definition
+var machineQuotaDefinition = System.getModule("com.nm.ucp.reservations").vra_newMachineQuotaDefinition(0)
+
+// Create a Compute Resource Definition
+var computeResourceDefinition = System.getModule("com.nm.ucp.reservations").vra_newComputeResourceDefinition(vsphereComputeResourceId,vsphereComputeResourceLabel)
+
+// Find Business Group by Name, get ID
+//var businessGroupId = (System.getModule("com.nm.ucp.reservations").vra_getBusinessGroupByName(cafeHost,tenant,businessGroupName)).id;
+var groups = vCACCAFEEntitiesFinder.getSubtenants(cafeHost);
+for each(var group in groups){
+	if(group.getName() == businessGroupName){
+	var businessGroupId = group.id
+	}
+}
+
+var reservationPriority = 1;
+
+System.log("--------Variables--------");
+System.log("	Cafe Host: 				"+cafeHost);
+System.log("	Existing Reservation: 	"+existingReservation);
+System.log("	Existing Res. Name:		"+existingReservation.name);
+System.log("	Tenant:					"+tenant);
+System.log("	BG ID:					"+businessGroupId);
+System.log("	Reservation Priority	"+reservationPriority);
+System.log("	Reservation ID			"+reservationPolicyInfo.id);
+System.log("	Alert Policy Def.		"+alertPolicyDefinition);
+System.log("	Machine Quota Def.		"+machineQuotaDefinition);
+System.log("	Compute Resource Def.	"+computeResourceDefinition);
+System.log("	Memory Def.				"+memoryDefinition.value);
+System.log("	Storage Def.			"+storagesDefinition);
+System.log("	Network Def.			"+networksDefinition);
+System.log("-------------------------");
+
+
+//Update existing reservation
+System.log("Updating existing vRA Reservation: " + existingReservation.name)
+System.getModule("com.nm.ucp.reservations").vra_setVsphereReservation(cafeHost,existingReservation,existingReservation.name,"vsphere.local",businessGroupId,reservationPriority,null,alertPolicyDefinition,machineQuotaDefinition,computeResourceDefinition,memoryDefinition,storagesDefinition,networksDefinition)]]></script>
+</dunes-script-module>

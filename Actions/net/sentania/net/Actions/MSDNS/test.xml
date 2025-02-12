@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="test" result-type="Any" api-version="6.0.0" id="018a6c3e-8bb9-4be5-84e7-c1fd441a8bbd" version="0.0.0" category-name="net.sentania.net.Actions.MSDNS">
+  <runtime><![CDATA[powershell:7.4]]></runtime>
+  <param n="ipaddress" t="string"/>
+  <script encoded="false"><![CDATA[function Handler($context, $inputs) {
+
+    $IPAddress = $inputs.ipaddress
+    $testconn = Test-Connection -ComputerName $IPAddress -Count 25
+    write-host $testconn[0].IPV4Address
+
+    return $testconn
+}
+]]></script>
+</dunes-script-module>

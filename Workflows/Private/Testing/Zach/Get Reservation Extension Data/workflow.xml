@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="2980a40b-6dab-4a81-953f-dab1c8c01f6e" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Get Reservation Extension Data]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="res" type="vCACCAFE:Reservation"/>
+  </input>
+  <attrib name="iaasHost" type="vCAC:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='b9c69cb3-e162-4919-be78-4fe8347bc925'&dunesName='vCAC:VCACHost']]></value>
+  </attrib>
+  <attrib name="computeResourceName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[UCP_vRA_Compute01]]></value>
+  </attrib>
+  <attrib name="networkNameFRK" type="string" read-only="false">
+    <value encoded="n"><![CDATA[vxw-dvs-269-virtualwire-17-sid-5011-ed-vra-ls]]></value>
+  </attrib>
+  <attrib name="networkNameMKE" type="string" read-only="false">
+    <value encoded="n"><![CDATA[vxw-dvs-269-virtualwire-18-sid-5011-ed-vra-ls]]></value>
+  </attrib>
+  <attrib name="networkProfileFRK" type="string" read-only="false">
+    <value encoded="n"><![CDATA[TestNetBG1]]></value>
+  </attrib>
+  <attrib name="networkProfileMKE" type="string" read-only="false">
+    <value encoded="n"><![CDATA[TestNetBG2]]></value>
+  </attrib>
+  <attrib name="vcacHost" type="vCACCAFE:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='bd23869b-b58a-43ca-b0b2-b08857c76199'&dunesName='vCACCAFE:VCACHost']]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var extensionData = res.getExtensionData();
+
+//System.log(extensionData);
+//System.log(extensionData.length);]]></script>
+    <in-binding>
+      <bind name="res" type="vCACCAFE:Reservation" export-name="res"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var networkLiteral = buildNetworksMultiLiteral(iaasHost,computeResourceName, networkNameFRK, networkProfileFRK);
+var networkLiteralMKE = buildNetworksMultiLiteral(iaasHost,computeResourceName, networkNameMKE, networkProfileMKE);
+networkLiteral.put(networkLiteralMKE);
+System.log(networkLiteral);
+//var extData = new vCACCAFELiteralMap();
+
+
+////
+function buildComplexNetworkLiteral(vcacHost, computeResourceHostName, netLabel, netProfileLabel){
+var literalMap =  new vCACCAFELiteralMap();
+literalMap.put("networkPath", getNetworkPathEntityReference(vcacHost, computeResourceHostName, netLabel));
+literalMap.put("networkProfile", getNetworkProfileEntityReference(vcacHost, netProfileLabel));
+
+var componentTypeId = "com.vmware.csp.iaas.blueprint.service";
+var componentId = null;
+var classId = "Infrastructure.Reservation.Network";
+var typeFilter = null;
+return new vCACCAFEComplexLiteral(componentTypeId, componentId, classId, typeFilter, literalMap);
+}
+
+////
+function buildNetworksMultiLiteral(vcacHost, computeResourceHostName, netLabel, netProfileLabel){
+var complexNetworkLiteral = buildComplexNetworkLiteral(vcacHost, computeResourceHostName, netLabel, netProfileLabel);
+
+var complexArray =  new Array();
+complexArray.push(complexNetworkLiteral);
+
+var typeID = vCACCAFEDataTypeId.valueOf("COMPLEX") ;
+var networkMultiLiteral = new vCACCAFEMultipleLiteral(complexArray, typeID);
+System.log("buildNetworkLiteral successfull")
+return  networkMultiLiteral;
+}]]></script>
+    <in-binding>
+      <bind name="iaasHost" type="vCAC:VCACHost" export-name="iaasHost"/>
+      <bind name="computeResourceName" type="string" export-name="computeResourceName"/>
+      <bind name="networkNameFRK" type="string" export-name="networkNameFRK"/>
+      <bind name="networkNameMKE" type="string" export-name="networkNameMKE"/>
+      <bind name="networkProfileFRK" type="string" export-name="networkProfileFRK"/>
+      <bind name="networkProfileMKE" type="string" export-name="networkProfileMKE"/>
+      <bind name="vcacHost" type="vCACCAFE:VCACHost" export-name="vcacHost"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="res">
+      <desc><![CDATA[res]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

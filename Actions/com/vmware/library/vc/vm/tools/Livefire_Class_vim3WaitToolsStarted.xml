@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="Livefire_Class_vim3WaitToolsStarted" result-type="void" api-version="6.0.0" id="ef4e05e7-bd0e-40ff-8d18-26a8e065765b" version="0.2.0" allowed-operations="vfe" category-name="com.vmware.library.vc.vm.tools">
+  <description><![CDATA[Wait for the VMware tools to be up and the guest running
+
+Exception:
+- Timeout: When timeout is reached
+- ReferenceError: When vm is not set correctly]]></description>
+  <param n="pollingRate" t="number"><![CDATA[Time between all request information on the tools [seconds]]]></param>
+  <param n="timeout" t="number"><![CDATA[Timeout before throwing a timeout exception [minutes]]]></param>
+  <param n="vm" t="string"/>
+  <script encoded="false"><![CDATA[vmname = vm
+
+query = "xpath:name='"+vmname+"'";
+
+vmname = Server.findAllForType("VC:VirtualMachine", query);
+
+new_vmname = vmname[0];
+
+if (new_vmname == null) throw "ReferenceError: vm is not defined for waiting for the DNS name";
+if (new_vmname.name == null) throw "ReferenceError: vm is not initialized for waiting for the DNS name";
+
+timeout = timeout * 60;
+
+while (true) {
+	if (new_vmname.guest != null) {
+		if (new_vmname.guest.toolsStatus != null && new_vmname.guest.toolsStatus == VcVirtualMachineToolsStatus.toolsOk) {
+			System.log("toolsOK");
+		}
+		if (new_vmname.guest.toolsStatus != null && new_vmname.guest.toolsStatus == VcVirtualMachineToolsStatus.toolsOld) {
+			System.log("toolsOld");
+		}
+		if (new_vmname.guest.toolsStatus != null && (new_vmname.guest.toolsStatus == VcVirtualMachineToolsStatus.toolsOk || new_vmname.guest.toolsStatus == VcVirtualMachineToolsStatus.toolsOld)) {
+			if (new_vmname.guest.guestState == "running") {
+				break;
+			}
+		}
+	}
+	else {
+		System.log("vm.guest is null");
+	}	
+
+	// wait the poolingRate
+	System.sleep(pollingRate*1000);
+	// test timeout
+	timeout -= pollingRate;
+	if (timeout <= 0) {
+		throw "Timeout: Timout waiting for tools to be started on a running OS";
+	}
+}
+
+System.log("VMware tools on VM " + new_vmname.name + " are in state: " + new_vmname.guest.toolsStatus.value + " and guest is " + new_vmname.guest.guestState);]]></script>
+</dunes-script-module>

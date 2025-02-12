@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="4142b2ae-f3bb-4762-b45a-df11ca10e121" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Get Next IP]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="ipamConnection" type="InfobloxIPAM:IpamConnection">
+      <description><![CDATA[Connection to IPAM server]]></description>
+    </param>
+    <param name="netaddr" type="string">
+      <description><![CDATA[IP address of the network]]></description>
+    </param>
+    <param name="cidr" type="number">
+      <description><![CDATA[The CIDR number of the network]]></description>
+    </param>
+    <param name="networkView" type="string">
+      <description><![CDATA[Network view, in which the network resides ]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="actionResult" type="string"/>
+  </output>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task" script-module="com.infoblox.ipam/getNextAvailableIP">
+    <display-name><![CDATA[getNextAvailableIP]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.infoblox.ipam").getNextAvailableIP(ipamConnection,netaddr,cidr,networkView) ;]]></script>
+    <in-binding>
+      <bind name="ipamConnection" type="InfobloxIPAM:IpamConnection" export-name="ipamConnection">
+        <description><![CDATA[Connection to IPAM server]]></description>
+      </bind>
+      <bind name="netaddr" type="string" export-name="netaddr">
+        <description><![CDATA[IP address of the network]]></description>
+      </bind>
+      <bind name="cidr" type="number" export-name="cidr">
+        <description><![CDATA[The CIDR number of the network]]></description>
+      </bind>
+      <bind name="networkView" type="string" export-name="networkView">
+        <description><![CDATA[Network view, in which the network resides ]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="string" export-name="actionResult"/>
+    </out-binding>
+    <description><![CDATA[Finds the next available IP address (IPv4 or IPv6) within the specified network.]]></description>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="ipamConnection">
+      <desc><![CDATA[Connection to IPAM server]]></desc>
+    </p-param>
+    <p-param name="netaddr">
+      <desc><![CDATA[IP address of the network]]></desc>
+    </p-param>
+    <p-param name="cidr">
+      <desc><![CDATA[The CIDR number of the network]]></desc>
+    </p-param>
+    <p-param name="networkView">
+      <desc><![CDATA[Network view, in which the network resides ]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

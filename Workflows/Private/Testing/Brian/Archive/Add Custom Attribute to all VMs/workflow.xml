@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="0d1063ec-a0bd-48c8-a508-af40b0caa0d2" version="0.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Add Custom Attribute to all VMs]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <attrib name="host" type="vCAC:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='b9c69cb3-e162-4919-be78-4fe8347bc925'&dunesName='vCAC:VCACHost']]></value>
+    <description><![CDATA[vCloud Automation Center host]]></description>
+  </attrib>
+  <attrib name="asd" type="VC:VirtualMachine" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='vcvrapf01.nm.nmfco.com%2Cid:vm-125104'&dunesName='VC:VirtualMachine']]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var vms = [];
+var vcVm;
+var bgCustomProp = "nm.ucp.BusinessGroupName";
+var envCustomProp = "ucp.tag.environment";
+var pdlCustomProp = "nm.ucp.businessGroupPDL";
+
+var b = "Business Group";
+var e = "Environment";
+var p = "Business Group PDL";
+
+//Getting sdk connections
+var sdkConnections = VcPlugin.allSdkConnections;
+for(var i in sdkConnections){
+	   var hostvc = sdkConnections[i];
+}
+
+var vms = Server.findAllForType("vCAC:VirtualMachine");
+vms.sort();
+
+for each (var vm in vms) {
+			if (vm.isManaged == true && vm.virtualMachineName!= "ucpadmin01263"){
+				try {
+					//Get Custom Properties from vm
+					var customProp = System.getModule("com.vmware.library.vcac").getPropertiesFromVirtualMachine(host,vm) ;
+						
+					//Setting Variables for properties
+					var env = customProp.get(envCustomProp);
+					var bg = customProp.get(bgCustomProp);
+					var pdl = customProp.get(pdlCustomProp);
+										
+					//Documenting properties
+					System.log("VM name: "+vm.virtualMachineName);
+					System.log("VM is Template: "+vm.isTemplate);
+					System.log("VM is Managed: "+vm.isManaged);
+					System.log("Business Group = "+bg);
+					System.log("Environment = "+env);
+					System.log("PDL = "+pdl);
+						
+					//Convert vcac:virtualmachine to vc:virtualmachine
+	    		   	var vSphereVms = hostvc.getAllVirtualMachines(null, "xpath:contains(name, '" + vm.getEntity().getProperty("VirtualMachineName") + "')");
+				   	vSphereVm = vSphereVms[0];
+										
+					//Setting Custom Attributes on vm within vcenter
+					if (env != null){
+						System.getModule("com.vmware.library.vc.customattribute").setOrCreateCustomField(vSphereVm,e,env);
+					} else if (env == null){
+						System.error("Environment is null for "+vSphereVm.name);
+					}
+						
+					if (bg != null){
+						System.getModule("com.vmware.library.vc.customattribute").setOrCreateCustomField(vSphereVm,b,bg);
+					} else if (bg == null){
+						System.error("Business Group is null for "+vSphereVm.name);
+					}
+						
+					if (pdl != null){
+						System.getModule("com.vmware.library.vc.customattribute").setOrCreateCustomField(vSphereVm,p,pdl);
+					} else if (pdl == null){
+						System.error("PDL is null for "+vSphereVm.name);
+					}
+					
+					System.log("\n");
+				}
+			
+			catch(err){
+				System.error("Error with "+vSphereVm.name+", message = "+err)
+			}
+		}
+}]]></script>
+    <in-binding>
+      <bind name="host" type="vCAC:VCACHost" export-name="host"/>
+      <bind name="asd" type="VC:VirtualMachine" export-name="asd"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

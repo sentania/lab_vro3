@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getVcacVmFromVmEntity" result-type="vCAC:VirtualMachine" api-version="6.0.0" id="7612002c-f097-422c-a2fa-3fe877546e44" version="0.0.1" allowed-operations="evf" category-name="com.sovlabs.vra.utilities">
+  <param n="iaasVmEntity" t="vCAC:Entity"/>
+  <script encoded="false"><![CDATA[if (iaasVmEntity == null) {
+	throw "Virtual Machine entity not supplied";
+}
+
+var vcacVm = iaasVmEntity.getInventoryObject();
+
+if (vcacVm == null) {
+	throw "Unable to convert Virtual Machine entity to VCAC:VirtualMachine: " + iaasVmEntity;
+}
+
+return vcacVm;
+
+
+]]></script>
+</dunes-script-module>

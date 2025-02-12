@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="logPayload" result-type="void" api-version="6.0.0" id="942dba26-2b2e-47aa-8be4-05953de24b77" version="1.0.1" allowed-operations="evf" category-name="com.thinkahead.vra.eventbroker">
+  <description><![CDATA[Logs the contents of an event subscription payload (a Properties object with multiple layers of nested Properties objects)]]></description>
+  <param n="payload" t="Properties"><![CDATA[payload object from the Event Subscription]]></param>
+  <param n="writeToSystemLog" t="boolean"><![CDATA[If false, payload is written to the Debug log instead of the System log]]></param>
+  <script encoded="false"><![CDATA[//Validate input
+if (!payload) { throw "Required workflow input not provided: payload"; }
+
+//Convert the payload to a flat array for logging
+var array = hashmapToArray(payload, "payload");
+array.sort();
+var log = "";	//will contain the formatted output to log
+for each (var line in array) {
+	//Precede HashMap name with new line to separate from previous HashMap
+	if (line.indexOf(" : ") == -1) { log += "\n" + line + "\n"; }
+	//Indent HashMap key:value pair strings
+	else { log += "\t" + line + "\n"; }
+}
+
+//Write the payload to the System.log or System.debug, depending on the input flag
+if (writeToSystemLog) {
+	System.log(log);
+} else {
+	System.debug(log);
+}
+
+
+function hashmapToArray(value,keyPath){
+//Purpose: Accepts a HashMap that may contain multiple levels of child HashMaps and 
+//  recursively converts them to a single-dimensional array of "path>key : value" strings.
+//value: the HashMap (aka Properties) input to convert to an array
+//keyPath: the key for each key:value pair (includes the path of any parent HashMaps)
+//	When initially called, keyPath is just the name of the original HashMap.
+	var output = new Array();
+	if (isHashmap(value)) {
+		//add the name of the HashMap
+		output = output.concat([keyPath]);
+		//add the key pairs within the HashMap
+		for each (var key in value.keys) {
+			var child = value.get(key);
+			output = output.concat( hashmapToArray(child,keyPath + ">" + key) );
+		}
+	}
+	else { //recursive base case: the value is not another HashMap
+		//Insert a space into keyPath after the last >, to help with sorting
+		var newKey = replaceLast(keyPath,">","> ");
+		//Hide the value if it might be a password
+		var valueToOutput = value;
+		if (containsSecret(newKey)) valueToOutput = "[PASSWORD_HIDDEN]";
+		//write the key:value string to the array
+		output = output.concat( [newKey + " : " + valueToOutput] );
+	}
+	return output;
+}
+
+function containsSecret (keyName){
+//Checks a string for substrings that indicate its value may need to be kept secret
+	var keyNameLower = keyName.toLowerCase();
+	if (keyNameLower.indexOf("password") !== -1) return true;
+	if (keyNameLower.indexOf("sharedsecret") !== -1) return true;
+	return false;
+}
+
+function isHashmap(value){
+	if (typeof value != "object") {return false;}
+	if (value == null) {return false;}
+	if (value.constructor.toString().indexOf("Properties()") == -1) {return false;}
+	return true;
+}
+
+function replaceLast(str,findSubStr,replSubStr){
+//Replaces the last occurrence of a substring with a new substring
+//Returns the updated string
+	var pos = str.lastIndexOf(findSubStr);
+	var beginning = str.slice(0,pos);
+	var end = str.slice(pos);
+	end = end.replace(findSubStr,replSubStr);
+	return(beginning + end);
+}]]></script>
+</dunes-script-module>

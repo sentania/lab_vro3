@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="echo" result-type="string" api-version="6.0.0" id="d19c35e7-a36a-4465-ae21-1fbd790ea0e6" version="0.0.0" category-name="net.sentania.Actions">
+  <runtime><![CDATA[powershell:7.4]]></runtime>
+  <param n="input" t="string"/>
+  <script encoded="false"><![CDATA[function Handler($context, $inputs) {
+
+# Display the input
+Write-Host "You entered: " $inputs.input
+
+
+    return $output
+}
+]]></script>
+</dunes-script-module>

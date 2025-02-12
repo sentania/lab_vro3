@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="e7971b06-f0fe-4fbb-a836-a0972bfdc132" version="0.0.2" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[UpdateReservation]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <attrib name="host" type="vCACCAFE:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='bd23869b-b58a-43ca-b0b2-b08857c76199'&dunesName='vCACCAFE:VCACHost']]></value>
+    <description><![CDATA[Host VCAC to run the trun the Workflow]]></description>
+  </attrib>
+  <attrib name="resName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[Test Business Group 42]]></value>
+    <description><![CDATA[Reservation Name]]></description>
+  </attrib>
+  <attrib name="resStoragePathLabel" type="string" read-only="false">
+    <value encoded="n"><![CDATA[vracompstr01-metro-mke]]></value>
+    <description><![CDATA[Storage Path Label to modify, must be part of the reservation]]></description>
+  </attrib>
+  <attrib name="resStorageNewSize" type="number" read-only="false">
+    <value encoded="n"><![CDATA[1000.0]]></value>
+    <description><![CDATA[New reservation size for the Storage Path]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[
+System.log("Retrieving Reservations...") ;
+// Retrieve Reservation Client from Host
+var resCl = host.createReservationClient();
+
+// Retrieve Reservation Service from Client
+var resSrv = resCl.getReservationReservationService();
+
+// Browse All reservations
+for each(var res in resSrv.getAllReservations().getContent())
+{
+	// Find the reservation to Update
+	if(res.getName() == resName)
+	{
+		System.log("Reservation found: " + resName);
+		
+		// Browse all Storage Reservation
+		for each(var resStorage in res.getExtensionData().get("reservationStorages").getValue())
+		{
+			// Find the storage reservation to Update
+			if(resStorage.getValue().get("storagePath").getLabel() == resStoragePathLabel)
+			{
+				System.log("Storage Path found: " + resStoragePathLabel);
+				System.log("Current reservation size: " + resStorage.getValue().get("storageReservedSizeGB").getValue());
+				resStorage.getValue().put("storageReservedSizeGB", new vCACCAFEIntegerLiteral(resStorageNewSize));
+			
+				System.log("Updating reservation to " + resStorageNewSize);
+				// Update Reservation
+				resSrv.updateReservation(res);
+			}
+			
+			//Stop browsing (we found the right storage reservation)
+			break;
+		}
+		
+		//Stop browsing (we found the right reservation)
+		break;
+	}
+}
+
+System.log("Done") ;
+
+
+
+]]></script>
+    <in-binding>
+      <bind name="host" type="vCACCAFE:VCACHost" export-name="host"/>
+      <bind name="resName" type="string" export-name="resName"/>
+      <bind name="resStoragePathLabel" type="string" export-name="resStoragePathLabel"/>
+      <bind name="resStorageNewSize" type="number" export-name="resStorageNewSize"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

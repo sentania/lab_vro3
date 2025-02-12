@@ -1,0 +1,225 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item3" object-name="workflow:name=generic" id="170fc7c5-2d83-4561-b9fc-b756fd9b1a5c" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Create Network in IB and NSX]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="location" type="string">
+      <description><![CDATA[Datacenter location]]></description>
+    </param>
+    <param name="cidr" type="string">
+      <description><![CDATA[CIDR of network.]]></description>
+    </param>
+    <param name="bg" type="string">
+      <description><![CDATA[Business Group Shortname]]></description>
+    </param>
+    <param name="environment" type="string">
+      <description><![CDATA[Envrionment]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="networkStatusCode" type="Number">
+      <description><![CDATA[Response status code]]></description>
+    </param>
+    <param name="networkContentLength" type="Number">
+      <description><![CDATA[Response content length]]></description>
+    </param>
+    <param name="networkHeaders" type="Properties">
+      <description><![CDATA[Response headers]]></description>
+    </param>
+    <param name="getIpStatusCode" type="Number">
+      <description><![CDATA[Response status code]]></description>
+    </param>
+    <param name="getIpContentLength" type="Number">
+      <description><![CDATA[Response content length]]></description>
+    </param>
+    <param name="getIpHeaders" type="Properties">
+      <description><![CDATA[Response headers]]></description>
+    </param>
+    <param name="hostStatusCode" type="Number">
+      <description><![CDATA[Response status code]]></description>
+    </param>
+    <param name="hostContentLength" type="Number">
+      <description><![CDATA[Response content length]]></description>
+    </param>
+    <param name="hostHeaders" type="Properties">
+      <description><![CDATA[Response headers]]></description>
+    </param>
+    <param name="hostContentAsString" type="String">
+      <description><![CDATA[Response content as string]]></description>
+    </param>
+    <param name="switchStatusCode" type="Number">
+      <description><![CDATA[Response status code]]></description>
+    </param>
+    <param name="switchContentLength" type="Number">
+      <description><![CDATA[Response content length]]></description>
+    </param>
+    <param name="switchHeaders" type="Properties">
+      <description><![CDATA[Response headers]]></description>
+    </param>
+    <param name="intStatusCode" type="Number">
+      <description><![CDATA[Response status code]]></description>
+    </param>
+    <param name="intContentLength" type="Number">
+      <description><![CDATA[Response content length]]></description>
+    </param>
+    <param name="intHeaders" type="Properties">
+      <description><![CDATA[Response headers]]></description>
+    </param>
+    <param name="intContentAsString" type="String">
+      <description><![CDATA[Response content as string]]></description>
+    </param>
+    <param name="virtualWire" type="string">
+      <description><![CDATA[VirtualWire Name]]></description>
+    </param>
+    <param name="fullNetwork" type="string">
+      <description><![CDATA[Full Network with CIDR]]></description>
+    </param>
+  </output>
+  <attrib name="switchName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Logical Switch Name]]></description>
+  </attrib>
+  <attrib name="gw" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Gateway Address]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item2" type="link" linked-workflow-id="e03b21f7-997c-4968-a3b0-18620cb963e9">
+    <display-name><![CDATA[Create Network for New Business Group]]></display-name>
+    <in-binding>
+      <bind name="location" type="string" export-name="location">
+        <description><![CDATA[Datacenter location]]></description>
+      </bind>
+      <bind name="cidr" type="string" export-name="cidr">
+        <description><![CDATA[CIDR of network.]]></description>
+      </bind>
+      <bind name="bg" type="string" export-name="bg">
+        <description><![CDATA[Business Group Shortname]]></description>
+      </bind>
+      <bind name="environment" type="string" export-name="environment">
+        <description><![CDATA[Envrionment]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="networkStatusCode" type="Number" export-name="networkStatusCode">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="networkContentLength" type="Number" export-name="networkContentLength">
+        <description><![CDATA[Response content length]]></description>
+      </bind>
+      <bind name="networkHeaders" type="Properties" export-name="networkHeaders">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+      <bind name="getIpStatusCode" type="Number" export-name="getIpStatusCode">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="getIpContentLength" type="Number" export-name="getIpContentLength">
+        <description><![CDATA[Response content length]]></description>
+      </bind>
+      <bind name="getIpHeaders" type="Properties" export-name="getIpHeaders">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+      <bind name="hostStatusCode" type="Number" export-name="hostStatusCode">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="hostContentLength" type="Number" export-name="hostContentLength">
+        <description><![CDATA[Response content length]]></description>
+      </bind>
+      <bind name="hostHeaders" type="Properties" export-name="hostHeaders">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+      <bind name="hostContentAsString" type="String" export-name="hostContentAsString">
+        <description><![CDATA[Response content as string]]></description>
+      </bind>
+      <bind name="gw" type="string" export-name="gw"/>
+      <bind name="fullNetwork" type="string" export-name="fullNetwork"/>
+    </out-binding>
+    <description><![CDATA[Takes in inputs regarding characteristics about a business group. Then it creates a new network within Infoblox. Then it creates a host record for the gateway address (first available IP).]]></description>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item0" type="link" linked-workflow-id="b13117d6-dd2f-4523-bfaa-abfc2578fe76">
+    <display-name><![CDATA[Create Network]]></display-name>
+    <in-binding>
+      <bind name="switchName" type="string" export-name="switchName">
+        <description><![CDATA[Logical Switch Name]]></description>
+      </bind>
+      <bind name="location" type="string" export-name="location">
+        <description><![CDATA[Datacenter Location]]></description>
+      </bind>
+      <bind name="cidr" type="string" export-name="cidr">
+        <description><![CDATA[CIDR notation]]></description>
+      </bind>
+      <bind name="gw" type="string" export-name="gw">
+        <description><![CDATA[Gateway Address]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="switchStatusCode" type="Number" export-name="switchStatusCode">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="switchContentLength" type="Number" export-name="switchContentLength">
+        <description><![CDATA[Response content length]]></description>
+      </bind>
+      <bind name="switchHeaders" type="Properties" export-name="switchHeaders">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+      <bind name="intStatusCode" type="Number" export-name="intStatusCode">
+        <description><![CDATA[Response status code]]></description>
+      </bind>
+      <bind name="intContentLength" type="Number" export-name="intContentLength">
+        <description><![CDATA[Response content length]]></description>
+      </bind>
+      <bind name="intHeaders" type="Properties" export-name="intHeaders">
+        <description><![CDATA[Response headers]]></description>
+      </bind>
+      <bind name="intContentAsString" type="String" export-name="intContentAsString">
+        <description><![CDATA[Response content as string]]></description>
+      </bind>
+      <bind name="virtualWire" type="string" export-name="virtualWire"/>
+    </out-binding>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item1" type="task">
+    <display-name><![CDATA[Define Variables]]></display-name>
+    <script encoded="false"><![CDATA[// Lowercase BG and Environment
+bg = bg.toLowerCase();
+environment = environment.toLowerCase();
+
+// Replace spaces with dashes in BG
+//bg = bg.replace(/ /g, "-");
+
+// Define switchName for NSX
+//var switchName = location+"-"+bg+"-"+environment;
+var switchName = bg+"-"+location;]]></script>
+    <in-binding>
+      <bind name="location" type="string" export-name="location"/>
+      <bind name="bg" type="string" export-name="bg"/>
+      <bind name="environment" type="string" export-name="environment"/>
+    </in-binding>
+    <out-binding>
+      <bind name="switchName" type="string" export-name="switchName"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="location">
+      <desc><![CDATA[Datacenter Location]]></desc>
+      <p-qual kind="static" name="genericEnumeration" type="Array/string"><![CDATA[#{#string#frk#;#string#mke#}#]]></p-qual>
+    </p-param>
+    <p-param name="cidr">
+      <desc><![CDATA[CIDR of Network]]></desc>
+      <p-qual kind="static" name="genericEnumeration" type="Array/string"><![CDATA[#{#string#24#;#string#25#;#string#26#;#string#27#;#string#28#}#]]></p-qual>
+      <p-qual kind="static" name="defaultValue" type="string"><![CDATA[27]]></p-qual>
+    </p-param>
+    <p-param name="bg">
+      <desc><![CDATA[Business Group]]></desc>
+      <p-qual kind="static" name="mandatory" type="boolean"><![CDATA[true]]></p-qual>
+    </p-param>
+    <p-param name="environment">
+      <desc><![CDATA[Envrionment]]></desc>
+      <p-qual kind="static" name="genericEnumeration" type="Array/string"><![CDATA[#{#string#Prod#;#string#Non-Prod#}#]]></p-qual>
+    </p-param>
+  </presentation>
+</workflow>

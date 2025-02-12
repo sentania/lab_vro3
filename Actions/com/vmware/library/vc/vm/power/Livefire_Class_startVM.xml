@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="Livefire_Class_startVM" result-type="VC:Task" api-version="6.0.0" id="3c052d9d-af47-4775-a3fd-e08672fbe93a" version="0.2.0" allowed-operations="vfe" category-name="com.vmware.library.vc.vm.power">
+  <description><![CDATA[Start / Resume a VM. Return the start task]]></description>
+  <param n="vm" t="string"/>
+  <script encoded="false"><![CDATA[vmname = vm
+
+query = "xpath:name='"+vmname+"'";
+
+vmname = Server.findAllForType("VC:VirtualMachine", query);
+
+new_vmname = vmname[0];
+
+return new_vmname.powerOnVM_Task();]]></script>
+</dunes-script-module>

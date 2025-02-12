@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_getVsphereComputeResourceNetworks" result-type="Properties" api-version="6.0.0" id="86a8a1de-172a-4f85-beb1-ad4f1a16db89" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="cafeHost" t="vCACCAFE:VCACHost"/>
+  <param n="vsphereComputeResourceId" t="string"/>
+  <script encoded="false"><![CDATA[// Variables
+var endpoint = "com.vmware.vcac.core.cafe.reservation.api";
+var schemaClassId = "Infrastructure.Reservation.Virtual.vSphere"
+var resourceUrl = "data-service/schema/" + schemaClassId + "/default/reservationNetworks/values";
+
+// Body
+var bodyJsonString =	'{' +
+							'"text": "",' + 
+							'"dependencyValues": {' + 
+								'"entries": [{' + 
+									'"key": "computeResource",' + 
+									'"value": {' + 
+										'"type": "entityRef",' + 
+										'"componentId": null,' + 
+										'"classId": "ComputeResource",' + 
+										'"id": "' + vsphereComputeResourceId + '"' + 
+									'}' + 
+								'}]' + 
+							'}' + 
+						'}'
+
+var bodyObject = JSON.parse(bodyJsonString);
+
+// Rest Client
+var restClient = cafeHost.createRestClient(endpoint);
+
+// Execute
+var response = restClient.post(resourceUrl, bodyObject)
+
+// Get Output
+var responseBodyObject = response.getBodyAsJson()
+
+return responseBodyObject;]]></script>
+</dunes-script-module>

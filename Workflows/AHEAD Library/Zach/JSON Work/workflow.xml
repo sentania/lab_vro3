@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="6717eec9-61dd-404a-8524-f208659e16aa" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[JSON Work]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <attrib name="contentAsString" type="string" read-only="false">
+    <value encoded="n"><![CDATA[{"job":1531,"ignored_fields":{},"id":1531,"type":"job","url":"/api/v2/jobs/1531/","related":{"created_by":"/api/v2/users/1/","modified_by":"/api/v2/users/1/","labels":"/api/v2/jobs/1531/labels/","inventory":"/api/v2/inventories/4/","project":"/api/v2/projects/4/","credential":"/api/v2/credentials/3/","vault_credential":"/api/v2/credentials/4/","extra_credentials":"/api/v2/jobs/1531/extra_credentials/","credentials":"/api/v2/jobs/1531/credentials/","unified_job_template":"/api/v2/job_templates/6/","stdout":"/api/v2/jobs/1531/stdout/","notifications":"/api/v2/jobs/1531/notifications/","job_host_summaries":"/api/v2/jobs/1531/job_host_summaries/","job_events":"/api/v2/jobs/1531/job_events/","activity_stream":"/api/v2/jobs/1531/activity_stream/","job_template":"/api/v2/job_templates/6/","cancel":"/api/v2/jobs/1531/cancel/","create_schedule":"/api/v2/jobs/1531/create_schedule/","relaunch":"/api/v2/jobs/1531/relaunch/"},"summary_fields":{"job_template":{"id":6,"name":"Provision Server - Linux","description":"Provision a Server"},"inventory":{"id":4,"name":"vCenter","description":"","has_active_failures":true,"total_hosts":154,"hosts_with_active_failures":1,"total_groups":11,"groups_with_active_failures":2,"has_inventory_sources":true,"total_inventory_sources":1,"inventory_sources_with_failures":0,"organization_id":1,"kind":""},"vault_credential":{"description":"","credential_type_id":3,"id":4,"kind":"vault","name":"UCP vault files"},"credential":{"description":"packer bootstrap account","credential_type_id":1,"id":3,"kind":"ssh","name":"packer"},"unified_job_template":{"id":6,"name":"Provision Server - Linux","description":"Provision a Server","unified_job_type":"job"},"project":{"id":4,"name":"ucp-desiredConfig","description":"Server Provisioning Job","status":"successful","scm_type":"git"},"created_by":{"id":1,"username":"admin","first_name":"UCP","last_name":"Administration Team"},"modified_by":{"id":1,"username":"admin","first_name":"UCP","last_name":"Administration Team"},"user_capabilities":{"start":true,"delete":true},"labels":{"count":0,"results":[]},"extra_credentials":[],"credentials":[{"description":"packer bootstrap account","credential_type_id":1,"id":3,"kind":"ssh","name":"packer"},{"description":"","credential_type_id":3,"id":4,"kind":"vault","name":"UCP vault files"}]},"created":"2018-03-02T21:17:56.230744Z","modified":"2018-03-02T21:17:56.313287Z","name":"Provision Server - Linux","description":"Provision a Server","job_type":"run","inventory":4,"project":4,"playbook":"provision-server.yml","forks":0,"limit":"*ucp00000131*","verbosity":0,"extra_vars":"{}","job_tags":"","force_handlers":false,"skip_tags":"","start_at_task":"","timeout":0,"use_fact_cache":true,"unified_job_template":6,"launch_type":"manual","status":"pending","failed":false,"started":null,"finished":null,"elapsed":0.0,"job_args":"","job_cwd":"","job_env":{},"job_explanation":"","execution_node":"","result_traceback":"","job_template":6,"passwords_needed_to_start":[],"ask_diff_mode_on_launch":false,"ask_variables_on_launch":false,"ask_limit_on_launch":true,"ask_tags_on_launch":false,"ask_skip_tags_on_launch":false,"ask_job_type_on_launch":false,"ask_verbosity_on_launch":false,"ask_inventory_on_launch":false,"ask_credential_on_launch":false,"allow_simultaneous":true,"artifacts":{},"scm_revision":"","instance_group":null,"diff_mode":false,"credential":3,"vault_credential":4}]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Parse JSON]]></display-name>
+    <script encoded="false"><![CDATA[//string = JSON.stringify(jsonObj)
+//jsonObj = JSON.parse(jsonString)
+
+var obj = JSON.parse(contentAsString);
+jobid = obj.job;
+
+System.log(jobid);
+
+System.log(typeof jobid);
+
+]]></script>
+    <in-binding>
+      <bind name="contentAsString" type="string" export-name="contentAsString"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

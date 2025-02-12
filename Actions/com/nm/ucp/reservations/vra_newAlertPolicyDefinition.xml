@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_newAlertPolicyDefinition" result-type="Properties" api-version="6.0.0" id="795da154-b887-4fa9-92ae-0dcec63f1fd8" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="alertPolicyEnabled" t="boolean"/>
+  <param n="alertPolicyFrequency" t="number"><![CDATA[In Days]]></param>
+  <param n="alertPolicyEmailBgMgr" t="boolean"><![CDATA[Send mail to Business Group Managers]]></param>
+  <param n="alertPolicyRecipients" t="Array/string"><![CDATA[Email addresses]]></param>
+  <param n="alertPolicyStoragePercentageLevel" t="number"><![CDATA[Precentage between 0 and 100]]></param>
+  <param n="alertPolicyMemoryPercentageLevel" t="number"><![CDATA[Precentage between 0 and 100]]></param>
+  <param n="alertPolicyCpuPercentageLevel" t="number"><![CDATA[Precentage between 0 and 100]]></param>
+  <param n="alertPolicyMachineQuotaPercentageLevel" t="number"><![CDATA[Precentage between 0 and 100]]></param>
+  <script encoded="false"><![CDATA[var regexp = "^[0-9][0-9]?$|^100$";
+
+var alertPolicy = new Properties();
+
+alertPolicy.enabled = alertPolicyEnabled;
+alertPolicy.frequencyReminder = Math.round(alertPolicyFrequency);
+alertPolicy.emailBgMgr = alertPolicyEmailBgMgr;
+if (alertPolicyRecipients){
+	alertPolicy.recipients = alertPolicyRecipients.toString();
+} else {
+	alertPolicy.recipients = new Array();
+}
+
+var alertArray = new Array();
+
+// Add Alerts to array
+alertArray.push(createAlertObject(alertPolicyStoragePercentageLevel, "storage"))
+alertArray.push(createAlertObject(alertPolicyMemoryPercentageLevel, "memory"))
+alertArray.push(createAlertObject(alertPolicyCpuPercentageLevel, "cpu"))
+alertArray.push(createAlertObject(alertPolicyMachineQuotaPercentageLevel, "machine"))
+
+alertPolicy.alerts = alertArray;
+
+return alertPolicy;
+
+// Function
+function createAlertObject(precentageLevel, id){
+	var roundedPrecentageLevel = Math.round(precentageLevel)
+	if  ((roundedPrecentageLevel.toString()).match(regexp)){
+		var alertObject = new Properties();
+		alertObject.alertPercentLevel = roundedPrecentageLevel;
+		alertObject.referenceResourceId = id;
+		alertObject.id = id;
+		return alertObject;
+	} else {
+		throw new Error(id + " precentage level not between 0 and 100")
+	}
+}]]></script>
+</dunes-script-module>

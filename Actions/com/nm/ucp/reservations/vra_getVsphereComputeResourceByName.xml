@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_getVsphereComputeResourceByName" result-type="Properties" api-version="6.0.0" id="18dda544-ceed-4a7e-a5e8-b47b3df98570" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="cafeHost" t="vCACCAFE:VCACHost"/>
+  <param n="computeResourceName" t="string"/>
+  <script encoded="false"><![CDATA[// Variables
+var endpoint = "com.vmware.vcac.core.cafe.reservation.api";
+var schemaClassId = "Infrastructure.Reservation.Virtual.vSphere"
+var resourceUrl = "data-service/schema/" + schemaClassId + "/default/computeResource/values";
+
+// Rest Client
+var restClient = cafeHost.createRestClient(endpoint);
+
+// Execute
+var response = restClient.post(resourceUrl, (new Properties()))
+
+// Get Response Body
+var responseBodyObject = response.getBodyAsJson()
+
+var computeResources = responseBodyObject.values
+
+var matchingcomputeResources = computeResources.filter(function (aComputeResource) {return aComputeResource.underlyingValue.label.toUpperCase().indexOf(computeResourceName.toUpperCase()) == 0;});
+
+if (matchingcomputeResources.length > 1){
+	throw new Error("Multiple Compute Resources found which starts with the same name: " + computeResourceName)
+}
+
+if (matchingcomputeResources.length == 0){
+	throw new Error("No Compute Resource found with the name: " + computeResourceName)
+}
+
+return matchingcomputeResources[0];]]></script>
+</dunes-script-module>

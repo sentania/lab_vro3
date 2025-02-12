@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="2ce89f0e-1b50-42da-b3f3-58946b38d0c2" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Get Workflow Name by ID]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="id" type="string"/>
+  </input>
+  <attrib name="workflowName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var workflowToFind = Server.getWorkflowWithId(id);
+var workflowName = workflowToFind.name
+System.log("Workflow name is: " + workflowToFind.name);
+
+
+
+]]></script>
+    <in-binding>
+      <bind name="id" type="string" export-name="id"/>
+    </in-binding>
+    <out-binding>
+      <bind name="workflowName" type="string" export-name="workflowName"/>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="id">
+      <desc><![CDATA[id]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

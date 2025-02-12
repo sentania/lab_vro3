@@ -1,0 +1,155 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getDependentVmsFromRequestId" result-type="Any" api-version="6.0.0" id="f1b63ea6-8594-4f32-b019-5a6f4a498a5f" version="0.0.2" allowed-operations="evf" category-name="com.sovlabs.vra.utilities">
+  <param n="requestId" t="string"/>
+  <param n="cafeHost" t="vCACCAFE:VCACHost"/>
+  <script encoded="false"><![CDATA[if (cafeHost == null) { throw "cafeHost is null"; }
+if (requestId == null) { throw "requestId is null"; }
+
+var vmProps = null;
+
+var version = System.getModule("com.sovlabs.vra.utilities").validateVraCafePluginVersion();
+
+var processedItemIds = new Object();
+var vmPropObjs = findVms(cafeHost, requestId, Server.findAllForType("vCACCAFE:CatalogItemRequest","LATEST_ENTRIES"));
+if (vmPropObjs != null) {
+  return vmPropObjs;
+}
+
+vmPropObjs = findVms(cafeHost, requestId, Server.findAllForType("vCACCAFE:CatalogItemRequest"));
+if (vmPropObjs != null) {
+  return vmPropObjs;
+} else {
+  System.error("Unable to find corresponding VMs for request ID: " + requestId);
+  return [];
+}
+
+return vmProps;
+
+function findVms(cafeHost, requestId, catalogRequests) {
+  var vmProps = null;
+  var catClient = cafeHost.createRestClient(vCACCAFEServicesEnum.CATALOG_SERVICE);
+  var compClient = cafeHost.createRestClient(vCACCAFEServicesEnum.COMPOSITION_SERVICE);
+  var o11nGwClient = cafeHost.createRestClient("com.vmware.csp.core.o11n.gateway.api");
+
+  var workflowId = workflow.rootWorkflow.id;
+  var workflowTokenId = workflow.id;
+  //System.log("Workflow ID = " + workflowId);
+  //System.log("Workflow Token ID = " + workflowTokenId);
+
+  var requestObjs = new Array();
+main:
+  for each (var req in catalogRequests) {
+    if (processedItemIds[req.id] != null) {
+      continue;
+    }
+    processedItemIds[req.id] = true;
+	
+	if (!version.match(/^7.3/)) {
+    	if (requestId == req.id) { return new Object(); }
+	}
+    try {
+      var requestStr = catClient.getWithVariables("consumer/requests/{requestId}", [req.id]).getBodyAsString();
+      var requestObj = JSON.parse(requestStr.replace(/\\"/g, "").replace(/\\'/g, ""));
+      var deploymentObjs = compClient.getWithVariables("requests/external/{requestId}/info", [req.id]).getBodyAsJson();
+      //System.debug("deploymentObjs: " + JSON.stringify(deploymentObjs));
+      for each (var deploymentObj in deploymentObjs) {
+        var componentRequestStatusStr = compClient.getWithVariables("requests/{requestId}/status", [deploymentObj.id]).getBodyAsString();
+        var componentRequestStatusObj = JSON.parse(componentRequestStatusStr.replace(/\\"/g, "").replace(/\\'/g, ""));
+        //System.debug("componentRequestStatusObj: " + JSON.stringify(componentRequestStatusObj));
+
+        if (version.match(/^7.3/)) {
+          for each (var statusObj in componentRequestStatusObj.componentRequestStatuses.content) {
+			if(statusObj.status == "IN_PROGRESS") {
+	            var runRequestId = statusObj.requestBindingId;
+	            //System.log("runRequestId = " +  runRequestId);
+	
+	            if (runRequestId != null) {
+	              var runInfo = null;    
+	              try {    
+	                runInfo = o11nGwClient.getWithVariables("tenants/{tenantId}/requests/correlation/{correlationType}/{correlationId}/info",
+	                                    [cafeHost.tenant, "CsWorkflowRunRequest", runRequestId]).getBodyAsString();
+	              } catch (e) {
+	              }
+	              
+	              if (runInfo !== null) {
+					//System.log("RUN INFO: " + runInfo);
+	                //System.log("statusObj : " + statusObj.toSource());
+	                var workflowRoutineId = JSON.parse(runInfo).routineId; //matches workflowId
+	                var workflowExecutionId = JSON.parse(runInfo).executionId; //matches workflowTokenId
+	
+	                System.warn("Routine ID: " + workflowRoutineId + " vs WorkflowId " + workflowId);
+	                System.warn("Execution ID: " + workflowExecutionId + " vs WorkflowTokenId " + workflowTokenId);
+	
+	                if (workflowRoutineId == workflowId && workflowExecutionId == workflowTokenId) {
+	                  //System.log("WE FOUND A MATCH!");
+	                  vmProps = findDependentVms(cafeHost, requestId, componentRequestStatusObj.componentRequestStatuses.content, statusObj.waitsFor);
+	                  
+	                  var baseMsg = "Processed deploymentObj: " + JSON.stringify(deploymentObj);
+	                    if (vmProps != null) {
+	                        System.debug(baseMsg + " and found " + vmProps.length + " dependent VMs");
+	                    } else {
+	                        System.debug(baseMsg + " and did not find a corresponding catalog request");
+	                    }
+						return vmProps;
+	                }
+				  }
+              } else {
+                //System.log("Skipped statusObj: " + statusObj.toSource());
+              }
+            }
+          }
+        } else {
+          for each (var statusObj in componentRequestStatusObj.componentRequestStatuses) {
+            if (statusObj.id == requestId) {
+              System.debug("Found catalog request " + req.id + " for request ID: " + requestId);
+              //System.debug("statusObj : " + JSON.stringify(statusObj));
+              vmProps = findDependentVms(cafeHost, requestId, componentRequestStatusObj.componentRequestStatuses, statusObj.waitsFor);
+              break main;
+            } 
+          }
+        }
+      }
+      requestObjs.push(requestObj);
+    } catch (e) {
+      System.debug("Skipping invalid request number " + req.requestNumber + " - " + e);
+    }
+  }
+  var baseMsg = "Processed " + Object.keys(processedItemIds).length + " catalog requests";
+  if (vmProps != null) {
+    System.debug(baseMsg + " and found " + vmProps.length + " dependent VMs");
+  } else {
+    System.debug(baseMsg + " and did not find a corresponding catalog request");
+  }
+  return vmProps;
+}
+
+function findDependentVms(cafeHost, requestId, componentRequestStatuses, waitsForObj) {
+  var vmProperties = new Array();
+  if (waitsForObj == null) { return vmProperties; }
+  var propEntitySet = "VirtualMachines";
+  var queries = new Array();
+  for each (var statusObj in componentRequestStatuses) {
+    if (statusObj.componentTypeRef != null && statusObj.componentTypeRef.id != null &&
+      statusObj.componentTypeRef.id.match("^Infrastructure.CatalogItem.Machine") && waitsForObj[statusObj.id] != null) {
+      queries.push("(p/PropertyName eq '__api.request.id' and p/PropertyValue eq '" + statusObj.requestBindingId + "')");
+      continue;
+    }     
+  }
+  //System.debug("queries: " + queries);
+  if (queries.length > 0) {
+    var filter = "VirtualMachineProperties/any(p: " + queries.join(" or ") + " )";
+    for each (var iaasHost in Server.findAllForType("vCAC:VCACHost")) {
+      var vmEntities = vCACEntityManager.readModelEntitiesBySystemQuery(iaasHost.id, "ManagementModelEntities.svc", propEntitySet, filter);
+      if (vmEntities != null && vmEntities.length > 0) {
+        for each (var iaasVmEntity in vmEntities) {
+          var iaasVm = iaasVmEntity.getInventoryObject();
+          var vmProps = System.getModule("com.sovlabs.vra.utilities").initialize_vmProperties(iaasHost, iaasVm, iaasVmEntity, cafeHost.tenant, cafeHost);
+          vmProperties.push(vmProps);
+        }
+        break;
+      }
+    }
+  }
+  return vmProperties;
+}]]></script>
+</dunes-script-module>

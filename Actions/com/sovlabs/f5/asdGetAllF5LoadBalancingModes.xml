@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="asdGetAllF5LoadBalancingModes" result-type="Array/string" api-version="6.0.0" id="cc6b8d93-ddc5-4811-a9db-312b1df2d733" version="0.0.0" allowed-operations="evf" category-name="com.sovlabs.f5">
+  <script encoded="false"><![CDATA[var retArray = [];
+retArray.push("round-robin");
+retArray.push("ratio-member");
+retArray.push("least-connections-member");
+retArray.push("observed-member");
+retArray.push("predictive-member");
+retArray.push("ratio-node");
+retArray.push("least-connections-node");
+retArray.push("fastest-node");
+retArray.push("observed-node");
+retArray.push("predictive-node");
+retArray.push("dynamic-ratio-node");
+retArray.push("fastest-app-response");
+retArray.push("least-sessions");
+retArray.push("dynamic-ratio-member");
+retArray.push("weighted-least-connections-member");
+retArray.push("weighted-least-connections-node");
+retArray.push("ratio-session");
+retArray.push("ratio-least-connections-member");
+retArray.push("ratio-least-connections-node");
+
+return retArray;]]></script>
+</dunes-script-module>

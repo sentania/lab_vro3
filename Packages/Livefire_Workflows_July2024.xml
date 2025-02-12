@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<package>
+<description><![CDATA[Packages used during Livefire Infrastructure and Automation Class July 2024]]></description>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='028e4b7f-e9f5-49e1-ab2c-00b5774c2c26'&dunesName='Workflow']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/ConfigurationElement?id='0cc8560b-e5a4-40ae-b425-4e30348f4189'&dunesName='ConfigurationElement']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='2df561fb-20bc-418f-a91c-9d314e712a37'&dunesName='Workflow']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Action?id='3c052d9d-af47-4775-a3fd-e08672fbe93a'&dunesName='Action'&name='Livefire_Class_startVM'&category='com.vmware.library.vc.vm.power']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='7010b9c5-c8ad-475a-860e-c311ba9e8e6b'&dunesName='Workflow']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Action?id='7db8a008-b443-4505-b593-081909723b76'&dunesName='Action'&name='Livefire_class_createSnapshot'&category='com.vmware.library.vc.vm.snapshot']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='a29dff9a-a12d-4625-9a3a-296630b0c5ce'&dunesName='Workflow']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='b25237bd-372e-4b9b-89e9-2c40a0a8f451'&dunesName='Workflow']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='e3d8dd60-e699-44a3-b8c9-4e3204a6efdf'&dunesName='Workflow']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='e94a6e1f-681e-44a0-b070-35df7d157a3d'&dunesName='Workflow']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Action?id='ef4e05e7-bd0e-40ff-8d18-26a8e065765b'&dunesName='Action'&name='Livefire_Class_vim3WaitToolsStarted'&category='com.vmware.library.vc.vm.tools']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='f873c461-37db-43b6-926e-9251d0526836'&dunesName='Workflow']]></elm>
+<used-plugin name='REST' version='2.6.0' />
+<used-plugin name='VC' version='8.1.0' />
+</package>

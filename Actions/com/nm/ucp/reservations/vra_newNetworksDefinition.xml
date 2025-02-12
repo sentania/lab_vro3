@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_newNetworksDefinition" result-type="Properties" api-version="6.0.0" id="cf07e794-a842-425b-8b5f-f80b57c2bb66" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="networkDefinitions" t="Array/Properties"/>
+  <script encoded="false"><![CDATA[
+var networksDefinition = new Properties();
+
+networksDefinition.key = "reservationNetworks";
+var valueObject = new Properties();
+valueObject.type = "multiple";
+valueObject.elementTypeId = "COMPLEX";
+valueObject.items = networkDefinitions;
+networksDefinition.value = valueObject;
+
+return networksDefinition;]]></script>
+</dunes-script-module>

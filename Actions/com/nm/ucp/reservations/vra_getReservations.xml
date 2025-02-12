@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_getReservations" result-type="Properties" api-version="6.0.0" id="70ad4100-9ac5-4463-9807-b892fcbe7093" version="0.0.1" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="cafeHost" t="vCACCAFE:VCACHost"/>
+  <script encoded="false"><![CDATA[// Variables
+
+var endpoint = "com.vmware.vcac.core.cafe.reservation.api";
+var resourceUrl = "reservations?limit=1000";
+
+// Rest Client
+
+var restClient = cafeHost.createRestClient(endpoint);
+
+// Execute
+var response = restClient.get(resourceUrl)
+
+// Get Output
+var body = response.getBodyAsJson()
+
+return body;]]></script>
+</dunes-script-module>

@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="CheckUCPserver" result-type="string" api-version="6.0.0" id="9a4f21d7-1351-47ef-a30a-c57d798bf1aa" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp">
+  <param n="propertyValue" t="string"/>
+  <script encoded="false"><![CDATA[propertyValue = propertyValue.toLowerCase()
+if(propertyValue == null ||propertyValue == 'NA' || propertyValue == 'na' ){
+	endvalue = "No"
+	return endvalue
+}
+var VirtualMachinelist = VcPlugin.getAllVirtualMachines();
+for each(Vmlist in VirtualMachinelist){
+	if(propertyValue == Vmlist.name){
+			os = Vmlist.guestOS
+		}
+	}
+	
+if(propertyValue.match("ucp")){
+	 	endvalue = "INBuildCreds"
+	}else if (os.match("Windows")){
+		endvalue = "WindowsYes"
+	}else if (os.match("Linux")){
+		endvalue = "LinuxYes"
+	}	
+			
+return endvalue]]></script>
+</dunes-script-module>

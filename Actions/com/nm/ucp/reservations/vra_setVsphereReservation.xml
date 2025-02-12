@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="vra_setVsphereReservation" result-type="void" api-version="6.0.0" id="aaa6472b-dca6-4a71-958f-559f58f611a9" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.reservations">
+  <param n="cafeHost" t="vCACCAFE:VCACHost"/>
+  <param n="existingReservation" t="Properties"/>
+  <param n="reservationName" t="string"/>
+  <param n="tenantName" t="string"/>
+  <param n="businessGroupId" t="string"/>
+  <param n="priority" t="number"/>
+  <param n="reservationPolicyId" t="string"><![CDATA[Optional]]></param>
+  <param n="alertPolicyDefinition" t="Properties"/>
+  <param n="machineQuotaDefinition" t="Properties"/>
+  <param n="computeResourceDefinition" t="Properties"/>
+  <param n="memoryDefinition" t="Properties"/>
+  <param n="storagesDefinition" t="Properties"/>
+  <param n="networksDefinition" t="Properties"/>
+  <script encoded="false"><![CDATA[// Variables
+var existingReservationId = existingReservation.id
+var endpoint = "com.vmware.vcac.core.cafe.reservation.api";
+var resourceUrl = "reservations/" + existingReservationId;
+var reservationTypeId = "Infrastructure.Reservation.Virtual.vSphere"
+
+// Create Reservation Object
+var reservationObject = new Properties()
+
+// Add Existing Info
+reservationObject.createdDate = existingReservation.createdDate;
+reservationObject.lastUpdated = existingReservation.lastUpdated;
+reservationObject.version = existingReservation.version;
+reservationObject.id = existingReservation.id;
+
+// Add basic info
+reservationObject.name = reservationName;
+reservationObject.reservationTypeId = reservationTypeId;
+reservationObject.tenantId = tenantName;
+reservationObject.subTenantId = businessGroupId;
+reservationObject.enabled = true;
+reservationObject.priority = priority;
+
+// Add Reservation Policy if provided
+if (reservationPolicyId){
+	reservationObject.reservationPolicyId = reservationPolicyId;
+} else {
+	if (existingReservation.reservationPolicyId == undefined){
+		reservationObject.reservationPolicyId = null;
+	} else {
+		reservationObject.reservationPolicyId = existingReservation.reservationPolicyId;
+	}
+}
+
+// Add Alerts
+reservationObject.alertPolicy = alertPolicyDefinition;
+
+// Create ExtensionData and Entries
+var extensionDataObject = new Properties();
+var entriesArray = new Array();
+
+// Add different Definitions to entriesArray
+entriesArray.push(machineQuotaDefinition);
+entriesArray.push(computeResourceDefinition);
+entriesArray.push(memoryDefinition);
+entriesArray.push(storagesDefinition);
+entriesArray.push(networksDefinition);
+
+// Add entriesArray to ExtensionDataObject
+extensionDataObject.entries = entriesArray;
+
+// Add ExtensionDataObject to reservationObject
+reservationObject.extensionData = extensionDataObject;
+
+
+// Rest Client
+var restClient = cafeHost.createRestClient(endpoint);
+
+// Execute
+restClient.put(resourceUrl, reservationObject)]]></script>
+</dunes-script-module>

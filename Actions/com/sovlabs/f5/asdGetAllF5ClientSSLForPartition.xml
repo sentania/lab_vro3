@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="asdGetAllF5ClientSSLForPartition" result-type="Array/string" api-version="6.0.0" id="86c93a38-b13e-4742-8642-e9a521417ae2" version="0.0.3" allowed-operations="evf" category-name="com.sovlabs.f5">
+  <param n="f5EndpointName" t="string"/>
+  <param n="tenant" t="string"/>
+  <param n="partition" t="string"/>
+  <script encoded="false"><![CDATA[var retArray = [];
+
+var restipe = "---\n"+
+        "restipeName: SovLabs F5 Utilities\n"+
+        "description: SovLabs F5 Utilities - Get all F5 Client SSLs\n"+
+        "debugLogging: true\n"+
+        "user: \"{{restipe.host.user}}\"\n"+
+        "password: \"{{restipe.host.password}}\"\n"+
+        "useBasicAuth: true\n"+
+        "baseurl: \"{{restipe.host.protocol}}://{{restipe.host.hostname}}:{{restipe.host.port}}/mgmt/tm\"\n"+
+		"#########################\n"+
+		"#  Start the steps Here\n"+
+		"#########################\n"+
+        "steps:\n"+
+        "  getClientSSLs:\n"+
+        "    description: Get the list of F5 Client SSLs\n"+
+        "    url: \"{{restipe.baseurl}}/ltm/profile/client-ssl\"\n"+
+        "    method: get\n"+
+        "    nextStep: \"{% if restipe.getClientSSLs.status == 200%}SUCCESS{% else %}FAILURE{% endif %}\"";
+
+try {
+	if (f5EndpointName !== null && tenant !== null && partition !== null) {
+		var response = sovlabsF5Manager.executeRestipeString(f5EndpointName , tenant , "{}" , restipe , "getClientSSLs");
+		ret = JSON.parse(response);
+		
+		for each( var item in ret.restipe.getClientSSLs.body.items )  {
+		  if ( item.partition == partition ) { 
+		    retArray.push(item.name);
+		  }
+		}
+	}
+} catch (e) {
+
+}
+return retArray;
+]]></script>
+</dunes-script-module>

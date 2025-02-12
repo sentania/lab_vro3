@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="b293bff4-4450-425e-8358-753a778b17e1" version="1.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Record an Error]]></display-name>
+  <description><![CDATA[Adds an error message to a running list of errors, so that a parent workflow can move on and then process all of its errors at the end.]]></description>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="errorCode" type="string">
+      <description><![CDATA[Error message from the parent workflow]]></description>
+    </param>
+    <param name="errorList" type="Array/string">
+      <description><![CDATA[Object to track all errors in the parent workflow. Will be updated to include errorCode.]]></description>
+    </param>
+  </input>
+  <output>
+    <param name="updatedErrorList" type="Array/string">
+      <description><![CDATA[Object to track all errors in the parent workflow. Will be updated to include errorCode.]]></description>
+    </param>
+    <param name="hasErrors" type="boolean">
+      <description><![CDATA[Will be True. Parent workflow should have a matching attribute to track if errors were encounted. Bind it to this.]]></description>
+    </param>
+  </output>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Process error]]></display-name>
+    <script encoded="false"><![CDATA[//Initialize errorList if this is parent workflow's the first error
+if (!errorList) { errorList = []; }
+
+//Set flag for the parent workflow
+hasErrors = true;
+
+//Add the new error to the error list for output
+errorList.push(errorCode);
+updatedErrorList = errorList;]]></script>
+    <in-binding>
+      <bind name="errorCode" type="string" export-name="errorCode">
+        <description><![CDATA[Error message from the parent workflow]]></description>
+      </bind>
+      <bind name="errorList" type="Array/string" export-name="errorList">
+        <description><![CDATA[Object to track all errors in the parent workflow. Will be updated to include errorCode.]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="updatedErrorList" type="Array/string" export-name="updatedErrorList">
+        <description><![CDATA[Object to track all errors in the parent workflow. Will be updated to include errorCode.]]></description>
+      </bind>
+      <bind name="hasErrors" type="boolean" export-name="hasErrors">
+        <description><![CDATA[Will be True. Parent workflow should have a matching attribute to track if errors were encounted. Bind it to this.]]></description>
+      </bind>
+    </out-binding>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="errorCode">
+      <desc><![CDATA[Error message from the parent workflow]]></desc>
+    </p-param>
+    <p-param name="errorList">
+      <desc><![CDATA[Object to track all errors in the parent workflow. Will be updated to include errorCode.]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

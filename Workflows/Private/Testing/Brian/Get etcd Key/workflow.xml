@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="c832c74e-6320-4dd0-91b2-401faed0e6d3" version="0.0.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Get etcd Key]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="server" type="string">
+      <description><![CDATA[Name of Server to query]]></description>
+    </param>
+  </input>
+  <attrib name="returnValue" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Value of key queried]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var getHosts = Server.findAllForType("REST:RESTOperation")
+for(var i =0; i < getHosts.length ; i++){
+	if(getHosts[i].name == "Unified Compute etcd GET"){
+		var restOp = getHosts[i]
+			System.log("Name - " + restOp.name)
+		}
+}
+
+content = "iAmpData/" + server + "/name"
+var inParamtersValues = [content];
+var request = restOp.createRequest(inParamtersValues);
+//set the request content type
+request.contentType = "application\/json";
+System.log("Request: " + request);
+System.log("Request URL: " + request.fullUrl);
+
+//Customize the request here
+//request.setHeader("headerName", "headerValue");
+
+//execute request
+//Do not edit 
+var response = request.execute();
+//prepare output parameters
+System.log("Response: " + response);
+statusCode = response.statusCode;
+statusCodeAttribute = statusCode;
+System.log("Status code: " + statusCode);
+contentLength = response.contentLength;
+headers = response.getAllHeaders();
+contentAsString = response.contentAsString;
+System.log("Content as string: " + contentAsString);
+var keyValue = JSON.parse(contentAsString)
+System.log("Key Value = " + keyValue.node.value);
+returnValue = keyValue.node.value
+
+]]></script>
+    <in-binding>
+      <bind name="server" type="string" export-name="server"/>
+      <bind name="returnValue" type="string" export-name="returnValue"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="server">
+      <desc><![CDATA[Name of Server to query]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

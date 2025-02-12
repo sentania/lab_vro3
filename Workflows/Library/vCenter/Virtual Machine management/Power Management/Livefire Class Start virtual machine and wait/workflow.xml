@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="Workflow:name=generic" id="f873c461-37db-43b6-926e-9251d0526836" version="0.3.1" api-version="6.0.0" allowed-operations="vfe" editor-version="2.0" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Livefire Class Start virtual machine and wait]]></display-name>
+  <description><![CDATA[Starts a virtual machine and waits for VMware Tools to start.]]></description>
+  <ref-types><![CDATA[(VC:VirtualMachine)]]></ref-types>
+  <position y="50.0" x="120.0"/>
+  <input>
+    <param name="vm" type="string">
+      <description><![CDATA[Virtual machine to start]]></description>
+    </param>
+  </input>
+  <attrib name="task" type="VC:Task" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Task to await]]></description>
+  </attrib>
+  <attrib name="timeout" type="number" read-only="false">
+    <value encoded="n"><![CDATA[5.0]]></value>
+    <description><![CDATA[Timeout before throwing a timeout exception, in minutes]]></description>
+  </attrib>
+  <attrib name="pollingRate" type="number" read-only="false">
+    <value encoded="n"><![CDATA[1.0]]></value>
+    <description><![CDATA[Time between all request information on the tools [seconds]]]></description>
+  </attrib>
+  <workflow-item name="item1" out-name="item7" type="custom-condition" alt-out-name="item0">
+    <display-name><![CDATA[VM is poweredOn?]]></display-name>
+    <script encoded="false"><![CDATA[vmname = vm
+
+query = "xpath:name='"+vmname+"'";
+
+vmname = Server.findAllForType("VC:VirtualMachine", query);
+
+new_vmname = vmname[0];
+
+return new_vmname.runtime.powerState.value == "poweredOn";]]></script>
+    <in-binding>
+      <bind name="vm" type="string" export-name="vm"/>
+    </in-binding>
+    <out-binding/>
+    <position y="50.0" x="80.0"/>
+  </workflow-item>
+  <workflow-item name="item7" out-name="item5" type="task" interaction="l">
+    <display-name><![CDATA[Already started]]></display-name>
+    <script encoded="false"><![CDATA[System.log("VM already started");]]></script>
+    <in-binding/>
+    <out-binding/>
+    <position y="120.0" x="80.0"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item2" type="task" script-module="com.vmware.library.vc.vm.tools/Livefire_Class_vim3WaitToolsStarted">
+    <display-name><![CDATA[Livefire_Class_vim3WaitToolsStarted]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+System.getModule("com.vmware.library.vc.vm.tools").Livefire_Class_vim3WaitToolsStarted(pollingRate,timeout,vm);
+]]></script>
+    <in-binding>
+      <bind name="pollingRate" type="number" export-name="pollingRate">
+        <description><![CDATA[Time between all request information on the tools [seconds]]]></description>
+      </bind>
+      <bind name="timeout" type="number" export-name="timeout">
+        <description><![CDATA[Timeout before throwing a timeout exception [minutes]]]></description>
+      </bind>
+      <bind name="vm" type="string" export-name="vm"/>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Wait for the VMware tools to be up and the guest running
+
+Exception:
+- Timeout: When timeout is reached
+- ReferenceError: When vm is not setted correctly]]></description>
+    <position y="180.0" x="180.0"/>
+  </workflow-item>
+  <workflow-item name="item2" type="end" end-mode="0">
+    <in-binding/>
+    <position y="210.0" x="220.0"/>
+  </workflow-item>
+  <workflow-item name="item0" out-name="item5" type="task" script-module="com.vmware.library.vc.vm.power/Livefire_Class_startVM">
+    <display-name><![CDATA[Livefire_Class_startVM]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+actionResult = System.getModule("com.vmware.library.vc.vm.power").Livefire_Class_startVM(vm);
+]]></script>
+    <in-binding>
+      <bind name="vm" type="string" export-name="vm"/>
+    </in-binding>
+    <out-binding>
+      <bind name="actionResult" type="VC:Task" export-name="task"/>
+    </out-binding>
+    <description><![CDATA[Start / Resume a VM. Return the start task]]></description>
+    <position y="60.0" x="280.0"/>
+  </workflow-item>
+  <presentation/>
+</workflow>

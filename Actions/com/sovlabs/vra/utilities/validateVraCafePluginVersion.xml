@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="validateVraCafePluginVersion" result-type="string" api-version="6.0.0" id="fc4b6b7d-60e4-4578-8405-0d37c8bea5c1" version="0.0.0" allowed-operations="evf" category-name="com.sovlabs.vra.utilities">
+  <script encoded="false"><![CDATA[var vraCafePluginVersion = null;
+
+System.log("Getting plug-in info...");
+var pluginInfos = Server.getAllPluginInfo();
+
+for each (var plugin in pluginInfos) {
+	System.log(plugin.name + ": " + plugin.version);
+	if (plugin.name == "vCACCAFE") {
+		vraCafePluginVersion = plugin.version;
+	}
+}
+
+if (vraCafePluginVersion == null) {
+	throw "Unable to detect vRA CAFE plugin";
+} else {
+	if (! vraCafePluginVersion.match("^(6.1|6.2|7)")) {
+		throw "Unsupported vRA Cafe plugin (vCACCAFE) version: " + vraCafePluginVersion;
+	}
+	System.log("vraCafePluginVersion: " + vraCafePluginVersion);
+}
+
+return vraCafePluginVersion;]]></script>
+</dunes-script-module>

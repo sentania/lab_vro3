@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="asdGetAllTenantIpamProfiles" result-type="Array/string" api-version="6.0.0" id="b59c19ed-f6f5-434f-85ff-3a90baef0ca0" version="0.0.0" allowed-operations="evf" category-name="com.sovlabs.f5">
+  <param n="tenant" t="string"/>
+  <script encoded="false"><![CDATA[var retArray = [];
+if (tenant !== null && tenant !== undefined && tenant !== "") {
+	try {
+		var items = sovlabsIpamManager.getAllbyTenant(tenant);
+		
+		for each (var item in items) {
+			retArray.push(item.shortName);
+		}
+	} catch (e) {
+	
+	}
+}
+
+return retArray;]]></script>
+</dunes-script-module>

@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="7c3c3e2a-10fd-4f8b-969c-7c3d688a6f07" version="0.0.3" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Manage users in serverSudoSpec and Check Status (etcd)]]></display-name>
+  <position y="45.90909090909091" x="285.0"/>
+  <input>
+    <param name="serverName" type="string"/>
+    <param name="state" type="string">
+      <description><![CDATA[A flag used by the ansible job to determine which actions to take.]]></description>
+    </param>
+    <param name="requestor" type="string">
+      <description><![CDATA[Who requested this change]]></description>
+    </param>
+    <param name="sudoer" type="string"/>
+    <param name="specName" type="string"/>
+  </input>
+  <output>
+    <param name="etcd_output" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)"/>
+  </output>
+  <workflow-item name="item2" out-name="item0" type="link" linked-workflow-id="f5ace837-fdea-4deb-8507-bc8d98e2e666">
+    <display-name><![CDATA[Manage users in serverSudoSpec]]></display-name>
+    <in-binding>
+      <bind name="serverName" type="string" export-name="serverName">
+        <description><![CDATA[Server name to apply the post deploy configuration]]></description>
+      </bind>
+      <bind name="state" type="string" export-name="state">
+        <description><![CDATA[A flag used by the ansible job to determine which actions to take.]]></description>
+      </bind>
+      <bind name="requestor" type="string" export-name="requestor">
+        <description><![CDATA[Who requested this change]]></description>
+      </bind>
+      <bind name="sudoer" type="string" export-name="sudoer"/>
+      <bind name="specName" type="string" export-name="specName"/>
+    </in-binding>
+    <out-binding>
+      <bind name="etcd_output" type="Array/CompositeType(statusCode:Number,contentLength:Number,headers:Properties,contentAsString:String)" export-name="etcd_output"/>
+    </out-binding>
+    <description><![CDATA[This workflow adds or removes access to an already existing sudoer server spec.]]></description>
+    <position y="55.40909090909091" x="384.5"/>
+  </workflow-item>
+  <workflow-item name="item0" out-name="item1" type="link" linked-workflow-id="a437e8ea-f33f-4eca-b1fd-1da46c738a57">
+    <display-name><![CDATA[Check Server Status (etcd)]]></display-name>
+    <in-binding>
+      <bind name="serverName" type="string" export-name="serverName"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="525.0"/>
+  </workflow-item>
+  <workflow-item name="item1" type="end" end-mode="0">
+    <position y="45.40909090909091" x="725.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="serverName">
+      <desc><![CDATA[serverName]]></desc>
+    </p-param>
+    <p-param name="state">
+      <desc><![CDATA[A flag used by the ansible job to determine which actions to take.]]></desc>
+    </p-param>
+    <p-param name="requestor">
+      <desc><![CDATA[Who requested this change]]></desc>
+    </p-param>
+    <p-param name="sudoer">
+      <desc><![CDATA[sudoer]]></desc>
+    </p-param>
+    <p-param name="specName">
+      <desc><![CDATA[specName]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

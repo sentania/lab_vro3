@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="1813c62c-8670-4275-acb7-f88d94de8f39" version="0.0.1" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Get Custom Property Not Set for All Servers]]></display-name>
+  <description><![CDATA[Gets a Custom Property for all servers and returns which servers are null or blank]]></description>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="custProp" type="string"/>
+  </input>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="664.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[var host = Server.findAllForType("vCAC:VCACHost")[0]; //find vcac host
+var vms = Server.findAllForType("vCAC:VirtualMachine");//find all vcac virtual machines
+var module = System.getModule("com.vmware.library.vcac")//pulling getmodule out of the loop for performance
+//var custProp = "nm.ucp.BusinessGroupName";
+
+//Sorting vms
+vms.sort();
+		
+for each (vm in vms) {
+	if (vm.isManaged == true) {
+		
+		//Getting Properties of vm
+		var props = module.getPropertyFromVirtualMachine(host,vm,custProp);
+		
+		if (props == null || props == ""){
+		var VMName = vm.virtualMachineName;
+		System.log("VMName = "+VMName+" / "+props);
+		}
+	}
+}	
+
+
+]]></script>
+    <in-binding>
+      <bind name="custProp" type="string" export-name="custProp"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="custProp">
+      <desc><![CDATA[custProp]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

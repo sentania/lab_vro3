@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getDBASParamFromFriendlyName" result-type="string" api-version="6.0.0" id="cbe20dab-f389-424b-902b-9b376c9986e2" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp.dbas">
+  <description><![CDATA[This is called during the MachineProvisioned lifecycle workflow.  It takes the dbms_type pretty name passed from the blueprint selection, and uses that to pull back what the paramater that needs to be made available to the DBAS ansible job is.]]></description>
+  <param n="friendlyNameInput" t="string"/>
+  <script encoded="false"><![CDATA[// Returns a collection of REST:RESTHost object types from the inventory service plugin
+var restHost = RESTHostManager.getHost('5fec3274-e146-4f07-9340-1a13e6d7f890')
+var restOperation = restHost.getOperation('5fec3274-e146-4f07-9340-1a13e6d7f890:96ca0446-3d7f-4241-b9d1-aaff6e8d10bb')
+var request = restOperation.createRequest();
+
+var request = restOperation.createRequest();
+//set the request content type
+request.contentType = "application\/json";
+
+//Customize the request here
+request.setHeader("accept", "application/vnd.github.VERSION.raw");
+var response = request.execute();
+//prepare output parameters
+
+statusCode = response.statusCode;
+statusCodeAttribute = statusCode;
+
+contentLength = response.contentLength;
+headers = response.getAllHeaders();
+contentAsString = response.contentAsString;
+
+
+var contentArray = contentAsString.split("\n");
+for (index = 0; index < contentArray.length; ++index)
+{
+ 	var friendlyName = contentArray[index].split(',')[0];
+	if (friendlyName == friendlyNameInput)
+	{
+		var variableoutput = (contentArray[index].split(',')[1]).trim();
+	}
+}
+return variableoutput;]]></script>
+</dunes-script-module>

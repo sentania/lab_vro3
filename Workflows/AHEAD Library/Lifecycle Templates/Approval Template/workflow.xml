@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item1" object-name="workflow:name=generic" id="552227b3-425e-4354-97e9-c5a11da1a5c4" version="1.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Approval Template]]></display-name>
+  <error-handler name="item5" throw-bind-name="errorCode">
+    <position y="136.3181818181818" x="245.0"/>
+  </error-handler>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="payload" type="Properties"/>
+  </input>
+  <output>
+    <param name="approved" type="boolean">
+      <description><![CDATA[True = Approved, False = Rejected]]></description>
+    </param>
+    <param name="fieldValues" type="Properties">
+      <description><![CDATA[Updates to any of the input properties (found in payload.fieldValues)]]></description>
+    </param>
+  </output>
+  <attrib name="vcacCafeHost" type="vCACCAFE:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Set this to the vCAC plug-in connection you want to use]]></description>
+  </attrib>
+  <attrib name="dailyCostPerInstance" type="number" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Multiply by days and instances for total cost]]></description>
+  </attrib>
+  <attrib name="leaseCurrency" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Example: USD]]></description>
+  </attrib>
+  <attrib name="requestId" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Request ID of the request to be approved]]></description>
+  </attrib>
+  <attrib name="catalogItemRequest" type="vCACCAFE:CatalogItemRequest" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Request object of the request to be approved]]></description>
+  </attrib>
+  <attrib name="leaseDays" type="number" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Duration of the requested lease, in days]]></description>
+  </attrib>
+  <attrib name="errorCode" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="instances" type="number" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+    <description><![CDATA[Number of Instances in the request]]></description>
+  </attrib>
+  <attrib name="logPayload" type="boolean" read-only="true" conf-id="4a366594-86e6-4cda-a66d-d805f0c43634" conf-key="logPayload">
+    <value encoded="n"><![CDATA[true]]></value>
+    <description><![CDATA[Determines if the contents of the payload input will be logged]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="804.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item0" type="task">
+    <display-name><![CDATA[Approve or Reject]]></display-name>
+    <script encoded="false"><![CDATA[approved = false;
+var reason = "Example: not enough funds remain in your budget.";
+
+//Output the reason
+fieldValues = new Properties();
+fieldValues.put("businessJustification", reason);
+
+]]></script>
+    <in-binding>
+      <bind name="payload" type="Properties" export-name="payload"/>
+    </in-binding>
+    <out-binding>
+      <bind name="approved" type="boolean" export-name="approved">
+        <description><![CDATA[True = Approved, False = Rejected]]></description>
+      </bind>
+      <bind name="fieldValues" type="Properties" export-name="fieldValues">
+        <description><![CDATA[Custom or system properties that were modified by the vRO workflow and returned to vRA]]></description>
+      </bind>
+    </out-binding>
+    <position y="55.40909090909091" x="624.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item2" type="task">
+    <display-name><![CDATA[Get Request Details]]></display-name>
+    <script encoded="false"><![CDATA[//Get the number of lease days and instances
+var fieldValues = payload.get("fieldValues");
+leaseDays = fieldValues.get("source-provider-_leaseDays");
+System.log("leaseDays (null=Unlimited): " + leaseDays);
+instances = fieldValues.get("source-provider-_number_of_instances");
+System.log("instances: " + instances);
+
+//Get the request object from vCACCAFE connection
+var sourceInfo = payload.get("sourceInfo");
+requestId = sourceInfo.externalInstanceId; 
+catalogItemRequest = vCACCAFEEntitiesFinder.getCatalogItemRequest(vcacCafeHost, requestId);
+System.debug("Request description: " + catalogItemRequest.description);
+
+//Get the cost info from the request object
+var quote = catalogItemRequest.getQuote();
+var rate = quote.getLeaseRate();
+var cost = rate.getCost();
+dailyCostPerInstance = cost.amount;
+leaseCurrency = cost.currencyCode;
+System.log("dailyCostPerInstance: " + dailyCostPerInstance);
+System.log("leaseCurrency: " + leaseCurrency);
+
+//Additional info for debugging dailyCost, just in case
+var basis = rate.getBasis();
+System.debug("Lease unit (should always be DAYS): " + basis.unit);		 
+System.debug("Lease amount (of units, should always be 1): " + basis.amount);
+]]></script>
+    <in-binding>
+      <bind name="payload" type="Properties" export-name="payload"/>
+      <bind name="vcacCafeHost" type="vCACCAFE:VCACHost" export-name="vcacCafeHost">
+        <description><![CDATA[Set this to the vCAC plug-in connection you want to use]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="dailyCostPerInstance" type="number" export-name="dailyCostPerInstance"/>
+      <bind name="leaseCurrency" type="string" export-name="leaseCurrency">
+        <description><![CDATA[Example: USD]]></description>
+      </bind>
+      <bind name="requestId" type="string" export-name="requestId">
+        <description><![CDATA[Request ID of the request to be approved]]></description>
+      </bind>
+      <bind name="catalogItemRequest" type="vCACCAFE:CatalogItemRequest" export-name="catalogItemRequest">
+        <description><![CDATA[Request object of the request to be approved]]></description>
+      </bind>
+      <bind name="leaseDays" type="number" export-name="leaseDays">
+        <description><![CDATA[Duration of the requested lease, in days]]></description>
+      </bind>
+      <bind name="instances" type="number" export-name="instances">
+        <description><![CDATA[Number of Instances in the request]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Looks the request up in the vCACCAFE connection to get cost and lease info]]></description>
+    <position y="55.40909090909091" x="484.5"/>
+  </workflow-item>
+  <workflow-item name="item4" throw-bind-name="errorCode" type="end" end-mode="1">
+    <position y="136.3181818181818" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item5" out-name="item4" type="task">
+    <display-name><![CDATA[Set Reject Error]]></display-name>
+    <script encoded="false"><![CDATA[//Wrap the error in a user-friendly message, since the end user will see it when they
+// drill into their "Rejected" Approval Status.
+var niceError = "Approval workflow error, contact your system administrator. " +
+	"Error details: " + errorCode;
+
+errorCode = niceError;]]></script>
+    <in-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+    </in-binding>
+    <out-binding>
+      <bind name="errorCode" type="string" export-name="errorCode"/>
+    </out-binding>
+    <position y="146.3181818181818" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item6" out-name="item3" type="task">
+    <display-name><![CDATA[Validate Inputs]]></display-name>
+    <script encoded="false"><![CDATA[//fieldValues contains the number of lease days and instances
+var fieldValues = payload.get("fieldValues");
+if (fieldValues == null) {
+	throw "Required input, payload>fieldValues, is null. Be sure your " +
+		"Approval Policy is set to the proper blueprint type. For example, " +
+		"use 'Service Catalog - Catalog Item Request - Composite Blueprint' " +
+		"and not 'Service Catalog - Catalog Item Request'.";
+}
+
+//sourceInfo contains the externalInstanceId we need to lookup additional info about the request
+var sourceInfo = payload.get("sourceInfo");
+if (sourceInfo == null) { throw "Required input, payload>sourceInfo, is null."; }
+]]></script>
+    <in-binding>
+      <bind name="payload" type="Properties" export-name="payload"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item6" type="task" script-module="com.thinkahead.vra.eventbroker/logPayload">
+    <display-name><![CDATA[logPayload]]></display-name>
+    <script encoded="false"><![CDATA[//Auto generated script, cannot be modified !
+System.getModule("com.thinkahead.vra.eventbroker").logPayload(payload,writeToSystemLog) ;]]></script>
+    <in-binding>
+      <bind name="payload" type="Properties" export-name="payload">
+        <description><![CDATA[payload object from the Event Subscription]]></description>
+      </bind>
+      <bind name="writeToSystemLog" type="boolean" export-name="logPayload">
+        <description><![CDATA[If false, payload is written to the Debug log instead of the System log]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Logs the contents of an event subscription payload (a Properties object with multiple layers of nested Properties objects)]]></description>
+    <position y="55.90909090909091" x="205.0"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="payload">
+      <desc><![CDATA[payload]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

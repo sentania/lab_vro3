@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getAdGroupByName_bySearch" result-type="Array/string" api-version="6.0.0" id="7c16c897-3dd2-4bc4-81ac-5366f9dc81e1" version="0.0.0" allowed-operations="evf" category-name="com.nm.ucp">
+  <description><![CDATA[Returns an AD:UserGroup object for the specified group name.
+
+Be sure you've run the "Configure Active Directory plug-in options" workflow and set a default AD Server.]]></description>
+  <param n="groupName" t="string"><![CDATA[The name of the group to find in AD]]></param>
+  <param n="os" t="string"><![CDATA[Operating System]]></param>
+  <param n="environment" t="string"><![CDATA[Environment]]></param>
+  <script encoded="false"><![CDATA[if(groupName) {
+// 1. Set domain and AdHost Name to each within config element
+// If Linux, set domain.
+var domain;
+var adHostString;
+if(os.search("Windows") == -1) {
+	domain = "nm.nmfco.com";
+	adHostString = "adProd";
+} else {
+// For windows, select domain by environment.
+	if(environment == "Production") {
+		domain = "nm.nmfco.com";
+		adHostString = "adProd";
+	} else if(environment == "Non-Production") {
+		domain = "nmtest.nmfco.com";
+		adHostString = "adNonProd";
+	} else {
+		domain = "nmdev.nmfco.com";
+		adHostString = "adDev";
+	}
+}
+
+System.log(domain);
+System.log(adHostString);
+
+// 2. Find ADHost from Config Element
+	// 2. Get OUs from Configuration Elements
+	// 2.1 Get ConfigElement values
+	var adElement = [];
+	var ConfigElCategory = Server.getConfigurationElementCategoryWithPath("UCP");
+	System.log(ConfigElCategory.name);
+	var configEls = ConfigElCategory.allConfigurationElements;
+	for(element in configEls) {
+		if(configEls[element].name == "ActiveDirectory") {
+		adElement = configEls[element];
+		System.log("AD Elements: "+adElement.name);
+		}
+	}
+
+	// 2.1.2 Get AD Host
+	var adHost;
+	if(adElement.getAttributeWithKey(adHostString) != null) {
+		attribute = adElement.getAttributeWithKey(adHostString);
+		adHost = attribute.value;
+		System.log(adHost.name);
+	}
+
+
+
+//Search AD for all groups with the specified name (max 20 results)
+var groupList = ActiveDirectory.search("UserGroup",groupName,adHost);
+if (!groupList || groupList.length == 0) { throw "AD plug-in did not find any groups named '" + groupName + "'."; }
+
+// 6. Return results
+	var groups = [];
+	if(groupList.length > 0) {
+		for(g in groupList) {
+			var name = groupList[g].name;
+			if(os.search("Windows") == -1) {
+				// Get GID Number for Linux requirement.
+				var gidNum = groupList[g].getAttribute("gidNumber");
+				if(gidNum) {
+					System.log("GID Number: "+gidNum);
+					groups.push(name);
+				} else {
+					var noValidGroup = "No Valid Group Found.";
+					groups.push(noValidGroup);
+				}
+			} else {
+				groups.push(name);
+			}
+		}
+		return groups;
+	}
+} else {
+var empty = "Please search for group above.";
+var groups = [];
+groups.push(empty);
+return groups;
+}]]></script>
+</dunes-script-module>

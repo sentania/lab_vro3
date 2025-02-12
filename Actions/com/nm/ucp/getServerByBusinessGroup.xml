@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getServerByBusinessGroup" result-type="Array/string" api-version="6.0.0" id="3a013cee-8fcb-4a84-9df3-e157c135a63f" version="0.0.1" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="propertyValue" t="string"/>
+  <param n="environment" t="string"/>
+  <script encoded="false"><![CDATA[var propertyName = "nm.ucp.BusinessGroupName";
+var propertyValue;
+var host = Server.findAllForType("vCAC:VCACHost")[1];
+var servers = new Array();
+
+// Define the filter that is used for search for the entities
+var filter = "VirtualMachineProperties/any(p: p/PropertyName eq '" + propertyName + "' and p/PropertyValue eq '" + propertyValue + "')";
+ 
+var machines = vCACEntityManager.readModelEntitiesBySystemQuery(
+    host.id,                        //vCAC IaaS host id
+    "ManagementModelEntities.svc",  //model
+    "VirtualMachines",              //Entity Type in IaaS API
+    filter                          //filter
+    )
+ 
+machines.forEach(function(machine) {
+	var servername = (machine.getProperty("VirtualMachineName"));
+	servers.push(servername);
+	}
+);
+servers.sort();
+return servers;]]></script>
+</dunes-script-module>

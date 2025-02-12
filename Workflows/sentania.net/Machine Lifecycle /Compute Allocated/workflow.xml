@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:workflow xmlns:ns2="http://vmware.com/vco/workflow" root-name="item1" object-name="workflow:name=generic" id="af157dd7-5b50-440c-a0e0-f7bdb74134ae" editor-version="2.0" version="0.2.0" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+    <display-name>Compute Allocated</display-name>
+    <position y="50.0" x="100.0"/>
+    <input>
+        <param name="inputProperties" type="Properties"/>
+    </input>
+    <output>
+        <param name="resourceNames" type="Array/string"/>
+        <param name="customProperties" type="Properties"/>
+    </output>
+    <attrib name="customProps" type="string">
+        <value encoded="n"></value>
+    </attrib>
+    <workflow-item name="item0" type="end" end-mode="0" comparator="0">
+        <in-binding/>
+        <out-binding/>
+        <position y="50.0" x="580.0"/>
+    </workflow-item>
+    <workflow-item name="item1" out-name="item2" type="task" script-module="net.sentania.Actions/logInputProperties" comparator="0">
+        <display-name>logInputProperties</display-name>
+        <script encoded="false">//Auto generated script, cannot be modified !
+actionResult = System.getModule("net.sentania.Actions").logInputProperties(inputProperties);
+</script>
+        <in-binding>
+            <bind name="inputProperties" type="Properties" export-name="inputProperties"/>
+        </in-binding>
+        <out-binding>
+            <bind name="actionResult" type="string" export-name=""/>
+        </out-binding>
+        <description>Add a note to the workflow schema.</description>
+        <position y="60.0" x="200.0"/>
+    </workflow-item>
+    <workflow-item name="item2" out-name="item0" type="link" linked-workflow-id="d7ffcac1-d281-4f6a-9ad1-da3b510823f9" comparator="0">
+        <display-name>Generate a Random Machine Name</display-name>
+        <script encoded="false"></script>
+        <in-binding>
+            <bind name="inputProperties" type="Properties" export-name="inputProperties"/>
+        </in-binding>
+        <out-binding>
+            <bind name="resourceNames" type="Array/string" export-name="resourceNames"/>
+            <bind name="customProperties" type="Properties" export-name="customProperties"/>
+        </out-binding>
+        <description> </description>
+        <position y="60.0" x="380.0"/>
+    </workflow-item>
+</ns2:workflow>

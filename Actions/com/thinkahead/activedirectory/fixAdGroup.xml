@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="fixAdGroup" result-type="void" api-version="6.0.0" id="0f03a101-bcbf-4144-b858-59979546f5ff" version="1.0.0" allowed-operations="evf" category-name="com.thinkahead.activedirectory">
+  <description><![CDATA[Call this Action after creating a new AD Group.
+Fixes a bug in which the vRO AD Plug-In's createUserGroup function populates the "Group name (pre-Windows 2000)" field (aka SamAccountName) with junk.
+
+References:
+https://communities.vmware.com/thread/479159?start=0&tstart=0
+http://www.jonathanmedd.net/2014/05/vco-active-directory-create-user-group-action-does-not-populate-samaccountname-with-expected-result.html]]></description>
+  <param n="adGroup" t="AD:UserGroup"><![CDATA[The AD Group to fix]]></param>
+  <script encoded="false"><![CDATA[var groupName = adGroup.getAttribute('Name');
+System.debug("Fixing the 'Group name (pre-Windows 2000)' field for AD group '" + groupName + "'");
+adGroup.setAttribute('SamAccountName',groupName);]]></script>
+</dunes-script-module>

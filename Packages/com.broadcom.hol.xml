@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<package>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Action?id='1bccff77-b84b-40a1-b5e9-06f899c8549d'&dunesName='Action'&name='AutoScale_In_AriaAuto'&category='com.broadcom.hol']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='45a86fe0-d286-46aa-b4c8-0f6c9aea785f'&dunesName='Workflow']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Action?id='529a95b0-e9bb-4960-a922-c2ffd3ace6a2'&dunesName='Action'&name='AutoScale_Out_AriaAuto'&category='com.broadcom.hol']]></elm>
+<elm src-category='null'><![CDATA[dunes://service.dunes.ch/Workflow?id='c7e501d5-d05b-4e08-852b-d626e1119b83'&dunesName='Workflow']]></elm>
+<used-plugin name='VC' version='8.1.0' />
+</package>

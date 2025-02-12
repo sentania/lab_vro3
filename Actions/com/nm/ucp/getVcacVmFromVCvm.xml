@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="getVcacVmFromVCvm" result-type="vCAC:VirtualMachine" api-version="6.0.0" id="084522e7-71cc-43e7-8e7f-a5f7bac9dd2c" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="vm" t="VC:VirtualMachine"/>
+  <script encoded="false"><![CDATA[
+// Copyright 2017, VMware, Inc. All Rights Reserved
+//
+// VMware vRealize Orchestrator action sample
+// 
+// Finds a vCAC:VirtualMachine object corresponding to a VC:VirtualMachine object.
+
+var vCACVMs = Server.findAllForType("vCAC:VirtualMachine", "VMUniqueID eq '" + vm.config.instanceUuid + "'");
+System.log(vm.config.instanceUuid);
+var vCACVM = null;
+//if (vCACVMs != null && vCACVMs.length ==1) { 
+if (vCACVMs != null && vCACVMs.length >0) { //Remove this line when the SovLabs connection is removed.
+	vCACVM = vCACVMs[0];
+	
+} else {
+	if (vCACVMs == null || vCACVMs.length ==0) {
+		//could not find
+		throw("Could not find vCAC VM matching VMUniqueID of "+vm.config.instanceUuid);
+	} /*else {
+		//found more than one!  Should never happen
+		System.log(vCACVMs.length);
+		for (v in vCACVMs) {
+			System.log(vCACVMs[v].virtualMachineName);
+		}
+		throw("Found more than one vCAC VM matching VMUniqueID of "+vm.config.instanceUuid);
+	}*/
+}
+
+return vCACVM;]]></script>
+</dunes-script-module>

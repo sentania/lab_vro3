@@ -1,0 +1,213 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="cacddbda-feab-4e00-aed4-1ccb8e1b121e" version="0.0.6" api-version="6.0.0" allowed-operations="vfe" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[Re-RegisterVM]]></display-name>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="Server_Name" type="string"/>
+  </input>
+  <attrib name="VMName" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="compositebp" type="vCACCAFE:CompositeBlueprint" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="vcvmname" type="VC:VirtualMachine" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="vcacreservation" type="vCAC:Reservation" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="owner" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="vCACHost" type="vCAC:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="identityuser" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+  </attrib>
+  <attrib name="vcacvmname" type="vCAC:VirtualMachine" read-only="false">
+    <value encoded="n"><![CDATA[__NULL__]]></value>
+  </attrib>
+  <attrib name="del" type="vCAC:VCACHost" read-only="false">
+    <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='b9c69cb3-e162-4919-be78-4fe8347bc925'&dunesName='vCAC:VCACHost']]></value>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="804.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item1" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[System.log(VMName)
+var VirtualMachinelist = VcPlugin.getAllVirtualMachines();
+for each(Vmlist in VirtualMachinelist){
+		if(VMName == Vmlist.name){
+			System.log("Found Match")
+			var VM = Vmlist
+			}
+	}
+strvcvm = VM.name
+vcvmname = VM
+var vcacHost = Server.findAllForType("vCAC:VCACHost")[1];  
+var BgList = Server.findAllForType("vCACCAFE:VCACHost")[0]
+var MODEL_MANAGEMENTMODELENTITIES = "ManagementModelEntities.svc";  
+var ENTITYSET_VIRTUALMACHINES = "VirtualMachines";  
+var virtualMachinesQueryProperties = new Properties();  
+var allVirtualMachineEntitiesList = vCACEntityManager.readModelEntitiesByCustomFilter(vcacHost.id, MODEL_MANAGEMENTMODELENTITIES, ENTITYSET_VIRTUALMACHINES, virtualMachinesQueryProperties, null);  
+for each(var virtualMachine in allVirtualMachineEntitiesList) { 
+	if((virtualMachine.getProperty("VirtualMachineName"))== strvcvm ){
+			strVcacVM = virtualMachine
+			var vCACMachineEntityProperties = virtualMachine.getLink(vcacHost,"VirtualMachineProperties");
+			var vCACVmProperties = new Properties();
+			for each(var vCACMachineEntityProperty in vCACMachineEntityProperties){
+					/*System.log(vCACMachineEntityProperty.getProperty("PropertyName"))
+					System.log(vCACMachineEntityProperty.getProperty("PropertyValue"))
+					}
+					}
+					}*/
+					if(vCACMachineEntityProperty.getProperty("PropertyName") == "nm.ucp.BusinessGroupName"){
+							var BgName = vCACMachineEntityProperty.getProperty("PropertyValue")
+							System.log("Business Group = " + BgName )
+					 }else if(vCACMachineEntityProperty.getProperty("PropertyName") == 'VirtualMachine.Cafe.Blueprint.Name'){
+							var blueprintname = vCACMachineEntityProperty.getProperty("PropertyValue")
+							System.log("blueprintname = " + blueprintname )
+					 }else if (vCACMachineEntityProperty.getProperty("PropertyName") == 'VirtualMachine.Cafe.Blueprint.Id'){
+							var blueprintcomponent = vCACMachineEntityProperty.getProperty("PropertyValue")
+							System.log("blueprintcomponent = " + blueprintcomponent )
+					 }else if (vCACMachineEntityProperty.getProperty("PropertyName") == '__Legacy.Workflow.User'){
+							var userid = vCACMachineEntityProperty.getProperty("PropertyValue")
+							System.log("userid = " + userid )
+					 }else if (vCACMachineEntityProperty.getProperty("PropertyName") == 'VirtualMachine.Admin.UUID'){
+							var vmuuid = vCACMachineEntityProperty.getProperty("PropertyValue")
+							System.log("vmuuid = " + vmuuid )
+					 }	
+		    }
+	}
+  }
+
+
+var vcacbp = Server.findAllForType("vCACCAFE:CompositeBlueprint"); 
+
+for each(bp in vcacbp){
+	if(bp.name == blueprintname)
+		compositebp = bp
+	}
+
+var reservation = Server.findAllForType("vCAC:Reservation"); 
+for each(res in reservation){
+	if(res.displayName == BgName ){
+		vcacreservation = res
+		}
+	}
+
+owner = userid
+System.log(owner)
+vCACHost = vcacHost
+vcvmname = VM
+vcacvmname = strVcacVM
+identityuser = userid.split("@")[0]
+System.log(identityuser)
+]]></script>
+    <in-binding>
+      <bind name="VMName" type="string" export-name="Server_Name"/>
+    </in-binding>
+    <out-binding>
+      <bind name="compositebp" type="vCACCAFE:CompositeBlueprint" export-name="compositebp"/>
+      <bind name="vcvmname" type="VC:VirtualMachine" export-name="vcvmname"/>
+      <bind name="vcacreservation" type="vCAC:Reservation" export-name="vcacreservation"/>
+      <bind name="owner" type="string" export-name="owner"/>
+      <bind name="vCACHost" type="vCAC:VCACHost" export-name="vCACHost"/>
+      <bind name="identityuser" type="string" export-name="identityuser"/>
+      <bind name="vcacvmname" type="vCAC:VirtualMachine" export-name="vcacvmname"/>
+    </out-binding>
+    <position y="55.40909090909091" x="264.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item3" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[System.log("My Comp  " + compositebp.name)
+System.log("My VM Name " + vcvmname.displayName )
+System.log("My Res " + vcacreservation.displayName)
+System.log("Owner - " + owner)
+System.log("vcachost - " + vCACHost)
+System.log("identity - " + identityuser)
+System.log("Vcav VM Name - "+ vcacvmname)
+var workflowToLaunch = Server.getWorkflowWithId("9f5d259e-0856-45a3-b6f4-cd5d1fcc4446");
+	if (workflowToLaunch == null) {
+			throw "Workflow not found";
+	    }
+	System.log(vcvmname.name)
+	var workflowParameters = new Properties();
+	workflowParameters.put("vm", vcvmname);
+	workflowParameters.put("host", vCACHost);
+	workflowParameters.put("hostReservation", vcacreservation);
+	workflowParameters.put("owner", owner);
+	workflowParameters.put("identityUser", identityuser);
+	workflowParameters.put("blueprint", compositebp);
+	System.log(workflowParameters)
+	workflowToLaunch.execute(workflowParameters);
+	
+
+]]></script>
+    <in-binding>
+      <bind name="compositebp" type="vCACCAFE:CompositeBlueprint" export-name="compositebp"/>
+      <bind name="vcvmname" type="VC:VirtualMachine" export-name="vcvmname"/>
+      <bind name="vcacreservation" type="vCAC:Reservation" export-name="vcacreservation"/>
+      <bind name="owner" type="string" export-name="owner"/>
+      <bind name="vCACHost" type="vCAC:VCACHost" export-name="vCACHost"/>
+      <bind name="identityuser" type="string" export-name="identityuser"/>
+      <bind name="vcacvmname" type="vCAC:VirtualMachine" export-name="vcacvmname"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="424.5"/>
+  </workflow-item>
+  <workflow-item name="item3" out-name="item0" type="task">
+    <display-name><![CDATA[Scriptable task]]></display-name>
+    <script encoded="false"><![CDATA[System.sleep(20000)
+var hostlist = Server.findAllForType("vCAC:HostMachine");
+vcclustername = vcvmname.runtime.host.parent.name
+System.log("Machine is registered on - " + vcclustername)
+
+for each(hlist in hostlist){
+	if(hlist.displayName == vcclustername){
+		hostmachineid = hlist.hostId
+		}
+	}
+System.log(hostmachineid)
+
+var modelName = 'ManagementModelEntities.svc';
+var entitySetName = 'DataCollectionStatuses';
+ //Read a list of entities
+var entities = vCACEntityManager.readModelEntitiesByCustomFilter(del.id, modelName, entitySetName, null, null);
+for each(entity in entities ){
+	if(entity.getProperty("EntityID") == hostmachineid){
+		var filterSpec = entity.getLink(del,"FilterSpec")[0]
+		var filterSpecGroup = filterSpec.getLink(del,"FilterSpecGroup")[0];
+  		var filterSpecGroupName = filterSpecGroup.getProperty("FilterSpecGroupName");
+		 if (filterSpecGroupName == "state"){
+			System.log("filterSpecGroupName: " + filterSpecGroupName)
+			var entityKey = entity.keyString;
+			System.log("Updating entity with key: " + entityKey);
+			var links = null;
+			var headers = null;
+			var updateProperties = {
+						"LastCollectedTime":null
+		   			}
+		    vCACEntityManager.updateModelEntityBySerializedKey(del.id, modelName, entitySetName, entityKey, updateProperties, links, headers);
+	    }
+
+    }
+}
+]]></script>
+    <in-binding>
+      <bind name="vCACHost" type="vCAC:VCACHost" export-name="vCACHost"/>
+      <bind name="del" type="vCAC:VCACHost" export-name="del"/>
+      <bind name="vcvmname" type="VC:VirtualMachine" export-name="vcvmname"/>
+    </in-binding>
+    <out-binding/>
+    <position y="55.40909090909091" x="624.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="Server_Name">
+      <desc><![CDATA[Server_Name]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

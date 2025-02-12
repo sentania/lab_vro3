@@ -1,0 +1,135 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workflow xmlns="http://vmware.com/vco/workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://vmware.com/vco/workflow http://vmware.com/vco/workflow/Workflow-v4.xsd" root-name="item2" object-name="workflow:name=generic" id="d1f53b96-7ffc-484b-95f9-86bbb5885ca5" version="1.0.0" api-version="6.0.0" allowed-operations="evf" restartMode="1" resumeFromFailedMode="0">
+  <display-name><![CDATA[vRO Email Alert]]></display-name>
+  <description><![CDATA[Can be called when an error occurs in a workflow.  Sends an email alert to vRA/vRO Admins, who are defined in a Configuration Element.
+
+Subject line includes the name of the parent workflow.  
+E-mail body includes errorCode (input), which typically mapped to an Exception attribute in the parent workflow.]]></description>
+  <position y="50.0" x="100.0"/>
+  <input>
+    <param name="errorCode" type="string">
+      <description><![CDATA[Error message to include in the alert email Body]]></description>
+    </param>
+  </input>
+  <attrib name="smtpHost" type="string" read-only="true" conf-id="6937c29c-fa14-4b19-adf7-afcf6e38b4d3" conf-key="smtpHost">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[SMTP host]]></description>
+  </attrib>
+  <attrib name="smtpPort" type="number" read-only="true" conf-id="6937c29c-fa14-4b19-adf7-afcf6e38b4d3" conf-key="smtpPort">
+    <description><![CDATA[SMTP port]]></description>
+  </attrib>
+  <attrib name="username" type="string" read-only="true">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Username for authentication]]></description>
+  </attrib>
+  <attrib name="password" type="SecureString" read-only="true">
+    <description><![CDATA[Password for authentication]]></description>
+  </attrib>
+  <attrib name="fromName" type="string" read-only="true" conf-id="6937c29c-fa14-4b19-adf7-afcf6e38b4d3" conf-key="fromName">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Sender's name]]></description>
+  </attrib>
+  <attrib name="fromAddress" type="string" read-only="true" conf-id="6937c29c-fa14-4b19-adf7-afcf6e38b4d3" conf-key="fromAddress">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Sender's address]]></description>
+  </attrib>
+  <attrib name="toAddressList" type="Array/string" read-only="true" conf-id="6937c29c-fa14-4b19-adf7-afcf6e38b4d3" conf-key="toAddressList">
+    <description><![CDATA[List of destination addresses]]></description>
+  </attrib>
+  <attrib name="subject" type="string" read-only="false">
+    <value encoded="n"><![CDATA[]]></value>
+    <description><![CDATA[Email subject]]></description>
+  </attrib>
+  <attrib name="content" type="string" read-only="false">
+    <value encoded="n"><![CDATA[<html>     <head>         <title> </title>     </head>     <body> 		<H1> [SUBJECT] </H1>         <P> [MESSAGE] </P>     </body> </html>]]></value>
+    <description><![CDATA[Email content (text or HTML)]]></description>
+  </attrib>
+  <attrib name="useSsl" type="boolean" read-only="true" conf-id="6937c29c-fa14-4b19-adf7-afcf6e38b4d3" conf-key="useSsl">
+    <description><![CDATA[If set to true, use SSL to connect ]]></description>
+  </attrib>
+  <attrib name="useStartTls" type="boolean" read-only="true" conf-id="6937c29c-fa14-4b19-adf7-afcf6e38b4d3" conf-key="useStartTls">
+    <description><![CDATA[If true, enables the use of the STARTTLS command (if supported by the server) to switch the connection to a TLS-protected connection before issuing any login commands]]></description>
+  </attrib>
+  <workflow-item name="item0" type="end" end-mode="0">
+    <position y="45.40909090909091" x="524.5"/>
+  </workflow-item>
+  <workflow-item name="item1" out-name="item0" type="link" linked-workflow-id="8F808080808080808080808080808080B1808080012318760241416446ce5b52f">
+    <display-name><![CDATA[Send notification to mailing list]]></display-name>
+    <in-binding>
+      <bind name="smtpHost" type="string" export-name="smtpHost">
+        <description><![CDATA[SMTP host]]></description>
+      </bind>
+      <bind name="smtpPort" type="number" export-name="smtpPort">
+        <description><![CDATA[SMTP port]]></description>
+      </bind>
+      <bind name="username" type="string" export-name="username">
+        <description><![CDATA[Username for authentication]]></description>
+      </bind>
+      <bind name="password" type="SecureString" export-name="password">
+        <description><![CDATA[Password for authentication]]></description>
+      </bind>
+      <bind name="fromName" type="string" export-name="fromName">
+        <description><![CDATA[Sender's name]]></description>
+      </bind>
+      <bind name="fromAddress" type="string" export-name="fromAddress">
+        <description><![CDATA[Sender's address]]></description>
+      </bind>
+      <bind name="toAddressList" type="Array/string" export-name="toAddressList">
+        <description><![CDATA[List of destination addresses]]></description>
+      </bind>
+      <bind name="subject" type="string" export-name="subject">
+        <description><![CDATA[Email subject]]></description>
+      </bind>
+      <bind name="content" type="string" export-name="content">
+        <description><![CDATA[Email content (text or HTML)]]></description>
+      </bind>
+      <bind name="ccList" type="Array/string" explicitly-not-bound="true">
+        <description><![CDATA[List of carbon copy addresses]]></description>
+      </bind>
+      <bind name="bccList" type="Array/string" explicitly-not-bound="true">
+        <description><![CDATA[List of blind carbon copy addresses]]></description>
+      </bind>
+      <bind name="useSsl" type="boolean" export-name="useSsl">
+        <description><![CDATA[If set to true, use SSL to connect ]]></description>
+      </bind>
+      <bind name="useStartTls" type="boolean" export-name="useStartTls">
+        <description><![CDATA[If true, enables the use of the STARTTLS command (if supported by the server) to switch the connection to a TLS-protected connection before issuing any login commands]]></description>
+      </bind>
+    </in-binding>
+    <out-binding/>
+    <description><![CDATA[Sends an email with specified content to a given email address list, CC list, and BCC list.
+
+Uses the default settings from the Orchestrator Configuration interface for the following optional input parameters:
+SMTP host, SMTP port, username, password, from Address and from Name. You can override these values by providing input parameters.]]></description>
+    <position y="55.40909090909091" x="344.5"/>
+  </workflow-item>
+  <workflow-item name="item2" out-name="item1" type="task">
+    <display-name><![CDATA[Format Inputs]]></display-name>
+    <script encoded="false"><![CDATA[subject = "vRO Alert from workflow '" + workflow.rootWorkflow.name + "'";
+content = content.replace("[SUBJECT]", subject);
+content = content.replace("[MESSAGE]", alertMessage);]]></script>
+    <in-binding>
+      <bind name="alertMessage" type="string" export-name="errorCode">
+        <description><![CDATA[Error message to include in the alert email Body]]></description>
+      </bind>
+      <bind name="content" type="string" export-name="content">
+        <description><![CDATA[Email content (text or HTML)]]></description>
+      </bind>
+    </in-binding>
+    <out-binding>
+      <bind name="subject" type="string" export-name="subject">
+        <description><![CDATA[Email subject]]></description>
+      </bind>
+      <bind name="content" type="string" export-name="content">
+        <description><![CDATA[Email content (text or HTML)]]></description>
+      </bind>
+    </out-binding>
+    <description><![CDATA[Insert inputs into standard Subject and Body text.]]></description>
+    <position y="55.40909090909091" x="204.5"/>
+  </workflow-item>
+  <presentation>
+    <p-param name="errorCode">
+      <desc><![CDATA[Error message to include in the alert email Body]]></desc>
+    </p-param>
+  </presentation>
+</workflow>

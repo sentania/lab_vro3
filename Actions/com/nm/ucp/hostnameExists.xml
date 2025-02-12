@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dunes-script-module name="hostnameExists" result-type="string" api-version="6.0.0" id="70704126-0a98-4bf9-b855-0ccd3ea4cd90" version="0.0.0" allowed-operations="vfe" category-name="com.nm.ucp">
+  <param n="hostname" t="string"><![CDATA[Hostname to check for existence]]></param>
+  <script encoded="false"><![CDATA[if(hostname) {
+	var hostNameExists = System.resolveHostName(hostname);
+
+	if(hostNameExists == null) {
+		return "Hostname/Alias is unique.";
+	} else {
+		return "Hostname/Alias exists. Please choose a different hostname or alias.";
+	}
+} else {
+	return "Please enter a hostname or alias for validation. Then click in the white space to perform validation.";
+}]]></script>
+</dunes-script-module>

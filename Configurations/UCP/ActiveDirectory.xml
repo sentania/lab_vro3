@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<config-element id="7d4164f2-efb0-4873-9161-17cb9f36e414" version="0.0.0">
+  <display-name><![CDATA[ActiveDirectory]]></display-name>
+  <atts>
+    <att name="adProd" type="AD:AdHost" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23RootItem%23%2C%2304f57e41-daba-46a0-9e0a-62730f828775%23'&dunesName='AD:AdHost']]></value>
+      <description><![CDATA[Production AD environment]]></description>
+    </att>
+    <att name="adDev" type="AD:AdHost" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23RootItem%23%2C%23b86b505e-54ff-43f4-8a8d-3041370e2caf%23'&dunesName='AD:AdHost']]></value>
+      <description><![CDATA[Development AD environment]]></description>
+    </att>
+    <att name="adNonProd" type="AD:AdHost" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23RootItem%23%2C%237e407ede-0bd1-43f6-a9e2-2882e6059037%23'&dunesName='AD:AdHost']]></value>
+      <description><![CDATA[Non-Production AD environment]]></description>
+    </att>
+    <att name="prodWinOU" type="AD:OrganizationalUnit" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%2304f57e41-daba-46a0-9e0a-62730f828775%23%2C%23OU%3DWindows%2COU%3DUnified%20Compute%2COU%3DServers%2CDC%3Dnm%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+      <description><![CDATA[Default OU for Prod Windows Servers]]></description>
+    </att>
+    <att name="prodLinuxOU" type="AD:OrganizationalUnit" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%237e407ede-0bd1-43f6-a9e2-2882e6059037%23%2C%23OU%3DLinux%2COU%3DUnified%20Compute%2COU%3DWST-Staging%2COU%3DServers%2CDC%3Dnmtest%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+      <description><![CDATA[Default OU for Prod Linux Servers]]></description>
+    </att>
+    <att name="devWinOU" type="AD:OrganizationalUnit" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%23b86b505e-54ff-43f4-8a8d-3041370e2caf%23%2C%23OU%3DWindows%2COU%3DUnifiedCompute%2COU%3DServers%2CDC%3Dnmdev%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+      <description><![CDATA[Default OU for Dev Windows Servers]]></description>
+    </att>
+    <att name="devLinuxOU" type="AD:OrganizationalUnit" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%2304f57e41-daba-46a0-9e0a-62730f828775%23%2C%23OU%3DLinux%2COU%3DUnified%20Compute%2COU%3DServers%2CDC%3Dnm%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+      <description><![CDATA[Default OU for Dev Linux Servers]]></description>
+    </att>
+    <att name="nonProdWinOU" type="AD:OrganizationalUnit" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%237e407ede-0bd1-43f6-a9e2-2882e6059037%23%2C%23OU%3DWindows%2COU%3DUnified%20Compute%2COU%3DServers%2CDC%3Dnmtest%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+      <description><![CDATA[Default OU for Non-Prod Windows Servers]]></description>
+    </att>
+    <att name="nonProdLinuxOU" type="AD:OrganizationalUnit" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%237e407ede-0bd1-43f6-a9e2-2882e6059037%23%2C%23OU%3DLinux%2COU%3DUnified%20Compute%2COU%3DWST-Staging%2COU%3DServers%2CDC%3Dnmtest%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+      <description><![CDATA[Default OU for Non-Prod Linux Servers]]></description>
+    </att>
+    <att name="adProdExcludeOU" type="AD:OrganizationalUnit" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%2304f57e41-daba-46a0-9e0a-62730f828775%23%2C%23OU%3DWindows%2COU%3DUnified%20Compute%2COU%3DServers%2CDC%3Dnm%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+      <description><![CDATA[Exclusion OU for Prod Domain]]></description>
+    </att>
+    <att name="adDevExcludeOU" type="AD:OrganizationalUnit" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%23b86b505e-54ff-43f4-8a8d-3041370e2caf%23%2C%23OU%3DWindows%2COU%3DUnifiedCompute%2COU%3DServers%2CDC%3Dnmdev%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+      <description><![CDATA[Exclusion OU for Dev Domain]]></description>
+    </att>
+    <att name="adTestExcludeOU" type="AD:OrganizationalUnit" read-only="false">
+      <value encoded="n"><![CDATA[dunes://service.dunes.ch/CustomSDKObject?id='%23_v2_%23%2C%23OU%23%2C%237e407ede-0bd1-43f6-a9e2-2882e6059037%23%2C%23OU%3DWindows%2COU%3DUnified%20Compute%2COU%3DServers%2CDC%3Dnmtest%2CDC%3Dnmfco%2CDC%3Dcom%23'&dunesName='AD:OrganizationalUnit']]></value>
+      <description><![CDATA[Exclusion OU for Test Domain]]></description>
+    </att>
+  </atts>
+</config-element>
